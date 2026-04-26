@@ -39,7 +39,7 @@ module.exports = {
             // 1. Punto de entrada para el LOGIN (Será la ventana inicial)
             {
               html: './src/renderer/app.html', // Tu nuevo archivo
-              js: './src/renderer/js/app.js',   // Tu nuevo JS
+              js: './src/renderer/app.js',   // Tu nuevo JS
               name: 'main_window',                // Nombre interno
               preload: {
                 js: './src/main/preload.js',

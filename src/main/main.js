@@ -256,10 +256,10 @@ ipcMain.handle('obtener-datos-constancia', async () => {
   try {
     const db = getDB();
     
-    const docentes = db.prepare('SELECT id, codigo, apellido_paterno, nombres FROM docentes WHERE estado = "activo" ORDER BY apellido_paterno ASC').all();
-    const periodos = db.prepare('SELECT id, clave, descripcion FROM periodos WHERE estado != "cerrado" ORDER BY fecha_inicio DESC').all();
-    const ee = db.prepare('SELECT id, clave_ee, nombre FROM experiencias_educativas WHERE estado = "activa" ORDER BY nombre ASC').all();
-    const programas = db.prepare('SELECT id, nombre FROM programas_institucionales WHERE estado = "vigente" ORDER BY nombre ASC').all();
+    const docentes = db.prepare("SELECT id, codigo, apellido_paterno, nombres FROM docentes WHERE estado = 'activo' ORDER BY apellido_paterno ASC").all();
+    const periodos = db.prepare("SELECT id, clave, descripcion FROM periodos WHERE estado != 'cerrado' ORDER BY fecha_inicio DESC").all();
+    const ee = db.prepare("SELECT id, clave_ee, nombre FROM experiencias_educativas WHERE estado = 'activa' ORDER BY nombre ASC").all();
+    const programas = db.prepare("SELECT id, nombre FROM programas_institucionales WHERE estado = 'vigente' ORDER BY nombre ASC").all();
 
     return { 
       success: true, 

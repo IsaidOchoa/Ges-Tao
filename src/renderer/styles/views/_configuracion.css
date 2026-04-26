@@ -1,0 +1,53 @@
+/* Contenedor principal de configuraciones */
+.settings-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: 50px;
+}
+
+/* Títulos de Sección (Estilo Sidebar pero en horizontal) */
+.section-title {
+  font-size: 1.1rem;
+  color: var(--primary-color);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.section-desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  margin-top: 0;
+}
+
+/* Línea Divisoria Gruesa entre secciones */
+.settings-divider {
+  border: 0;
+  height: 1px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
+  margin: 40px 0;
+}
+
+/* Ajustes para inputs dentro de config */
+.settings-section input[type="text"],
+.settings-section input[type="email"],
+.settings-section input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: white;
+}
+
+/* Switch Label simple */
+.switch-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+}

@@ -16,11 +16,12 @@
   flex-shrink: 0;
   transition: width var(--transition-speed) ease;
   max-width: var(--sidebar-width);
-  overflow: visible; /* Permitir dropdowns */
+  overflow: visible;
+  /* Permitir dropdowns */
   white-space: nowrap;
   position: relative;
   z-index: 1000;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar.collapsed {
@@ -33,7 +34,7 @@
   display: flex;
   align-items: center;
   padding: 0 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   gap: 15px;
   transition: all var(--transition-speed);
   position: relative;
@@ -90,7 +91,8 @@
   flex-shrink: 0;
   width: 40px;
   height: 40px;
-  margin-left: auto; /* Empuja a la derecha cuando está abierto */
+  margin-left: auto;
+  /* Empuja a la derecha cuando está abierto */
   position: static;
 }
 
@@ -101,7 +103,7 @@
 }
 
 .btn-icon-sidebar:hover {
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(255, 255, 255, 0.1);
   color: white;
 }
 
@@ -120,7 +122,7 @@
   padding-top: 20px;
   overflow-y: auto;
   display: flex;
-  flex-direction: column; 
+  flex-direction: column;
 }
 
 .nav-section-title {
@@ -131,7 +133,7 @@
   padding: 15px 20px 5px 20px;
   font-weight: bold;
   margin-top: 10px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
 }
 
@@ -147,8 +149,9 @@
   flex-shrink: 0;
 }
 
-.nav-item:hover, .nav-item.active {
-  background-color: rgba(255,255,255,0.1);
+.nav-item:hover,
+.nav-item.active {
+  background-color: rgba(255, 255, 255, 0.1);
   color: white;
   border-left-color: var(--accent-color);
 }
@@ -166,7 +169,8 @@
 
 /* Ajustes para iconos FontAwesome dentro de .icon */
 .nav-item .icon i {
-  font-size: inherit; /* Hereda el tamaño del padre */
+  font-size: inherit;
+  /* Hereda el tamaño del padre */
   width: 1em;
   height: 1em;
 }
@@ -176,17 +180,19 @@
   padding: 15px 0;
 }
 
-.sidebar.collapsed .nav-item .text{
-  display: none !important; /* Fuerza a que desaparezca */
+.sidebar.collapsed .nav-item .text {
+  display: none !important;
+  /* Fuerza a que desaparezca */
   opacity: 0;
   pointer-events: none;
 }
+
 .sidebar.collapsed .nav-item .icon {
   margin-right: 0 !important;
 }
 
 .sidebar.collapsed .nav-section-title {
-  display: none; 
+  display: none;
 }
 
 .sidebar.collapsed .settings-link {
@@ -209,13 +215,15 @@
   align-items: center;
   justify-content: center;
   padding: 15px 0;
-  color: #27ae60; /* Verde por defecto */
+  color: #27ae60;
+  /* Verde por defecto */
   transition: color 0.3s;
   cursor: default;
 }
 
 .connection-indicator-sidebar.offline {
-  color: #e74c3c; /* Rojo si está offline */
+  color: #e74c3c;
+  /* Rojo si está offline */
 }
 
 .connection-indicator-sidebar svg {
@@ -300,7 +308,8 @@
 
 /* Icono de Usuario Grande */
 .user-avatar-icon {
-  font-size: 2rem; /* Tamaño grande para el círculo */
+  font-size: 2rem;
+  /* Tamaño grande para el círculo */
   color: var(--primary-color);
   transition: color 0.3s;
   display: flex;
@@ -313,50 +322,6 @@
 }
 
 /* Dropdown Menu (Ahora colgado del Top Bar) */
-.dropdown-menu {
-  position: absolute;
-  top: 100%; /* Debajo del trigger */
-  right: 0;  /* Alineado a la derecha del padre */
-  left: auto;
-  margin-top: 10px;
-  width: 220px;
-  background: white;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid #eef2f7;
-  z-index: 1002;
-  overflow: hidden;
-  animation: fadeInDown 0.2s ease-out;
-}
-
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.dropdown-header {
-  padding: 10px 15px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #eee;
-  text-align: center;
-}
-.dropdown-header strong { display: block; color: var(--text-dark); font-size: 1rem; }
-.dropdown-header small { color: var(--text-muted); font-size: 0.8rem; }
-
-.dropdown-item {
-  display: block;
-  padding: 10px 15px;
-  color: var(--text-dark);
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.dropdown-item:hover { background: #f1f7ff; }
-.dropdown-item.text-danger { color: var(--danger-color); }
-.dropdown-item.text-danger:hover { background: #fadbd8; }
 
 /* --- INDICADOR DE CONEXIÓN (NUBE) EN TOP BAR --- */
 .connection-indicator {
@@ -365,11 +330,13 @@
   gap: 8px;
   cursor: default;
   transition: color 0.3s;
-  color: #27ae60; /* Verde por defecto */
+  color: #27ae60;
+  /* Verde por defecto */
 }
 
 .connection-indicator.offline {
-  color: #e74c3c; /* Rojo si está offline */
+  color: #e74c3c;
+  /* Rojo si está offline */
 }
 
 .status-dot {
@@ -381,11 +348,6 @@
   animation: pulse 2s infinite;
 }
 
-@keyframes pulse {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
-  100% { opacity: 1; transform: scale(1); }
-}
 
 /* Contenido Principal */
 .content-area {
@@ -401,22 +363,21 @@
   animation: fadeIn 0.4s ease-in-out;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 
 /* Enlace de Configuración (Abajo del todo) */
 .settings-link {
-  margin-top: 10px; /* Pequeño espacio extra respecto a lo último */
-  border-top: 1px solid rgba(255,255,255,0.05); /* Línea sutil arriba */
+  margin-top: 10px;
+  /* Pequeño espacio extra respecto a lo último */
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  /* Línea sutil arriba */
   padding-top: 15px;
-  color: #95a5a6; /* Un poco más apagado para indicar que es secundario */
+  color: #95a5a6;
+  /* Un poco más apagado para indicar que es secundario */
 }
 
 .settings-link:hover {
   color: white;
-  background-color: rgba(255,255,255,0.05);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 /* Asegurar que cuando esté colapsado, la línea y el margen no rompan el diseño */

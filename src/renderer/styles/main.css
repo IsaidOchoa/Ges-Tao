@@ -5,6 +5,7 @@
 @import './core/02-reset.css';
 @import './core/03-layout.css';
 @import './core/04-components.css';
+@import './core/05-animations.css';
 
 /* 2. Estilos Específicos por Vista */
 @import './views/_home.css';

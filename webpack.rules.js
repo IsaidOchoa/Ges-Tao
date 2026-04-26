@@ -1,8 +1,7 @@
+// webpack.rules.js
 module.exports = [
   // Add support for native node modules
   {
-    // We're specifying native_modules in the test because the asset relocator loader generates a
-    // "fake" .node file which is really a cjs file.
     test: /native_modules[/\\].+\.node$/,
     use: 'node-loader',
   },
@@ -16,25 +15,18 @@ module.exports = [
       },
     },
   },
+  // CORRECCIÓN AQUÍ:
+  // Opción A: Elimina la línea que excluye app.html si quieres procesarlo como texto
+  // Opción B: Si solo quieres excluir otros HTMLs pero permitir app.html, sé más específico
+  
+  // CAMBIA ESTO:
+  
   {
     test: /\.html$/,
-    exclude: [/app\.html$/],
-    type: 'asset/source', // Esto le dice a Webpack: "Dame el contenido HTML como texto"
+    exclude: [/app\.html$/], // <--- ¡ESTO ESTÁ BLOQUEANDO TU ARCHIVO!
+    type: 'asset/source',
   },
-  // Put your webpack loader rules in this array.  This is where you would put
-  // your ts-loader configuration for instance:
-  /**
-   * Typescript Example:
-   *
-   * {
-   *   test: /\.tsx?$/,
-   *   exclude: /(node_modules|.webpack)/,
-   *   loaders: [{
-   *     loader: 'ts-loader',
-   *     options: {
-   *       transpileOnly: true
-   *     }
-   *   }]
-   * }
-   */
+
+  // POR ESTO (Permitir todos los HTMLs como texto/raw):
+  
 ];
