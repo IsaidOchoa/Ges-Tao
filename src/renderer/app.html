@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ges-TAO</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <!-- VISTA 1: LOGIN -->
+    <div id="view-login" class="app-view active">
+      <div class="login-wrapper">
+        <div class="login-card">
+          <div class="logo-area">
+            <h1>Ges-TAO</h1>
+            <p>Gestión de Constancias MSICU</p>
+          </div>
+          <form id="loginForm">
+            <div class="input-group">
+              <label>Usuario</label>
+              <input
+                type="text"
+                id="username"
+                placeholder="directora"
+                required
+              />
+            </div>
+            <div class="input-group">
+              <label>Contraseña</label>
+              <input
+                type="password"
+                id="password"
+                placeholder="admin123"
+                required
+              />
+            </div>
+            <button type="submit" id="btnLogin">Ingresar</button>
+            <div id="errorMsg" class="error-msg hidden"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA 2: DASHBOARD -->
+    <div id="view-dashboard" class="app-view hidden">
+      <div class="app-container">
+        <!-- SIDEBAR (Limpio, sin footer ni nube) -->
+        <aside class="sidebar collapsed" id="main-sidebar">
+          <div class="sidebar-header">
+            <h2 class="logo-text">Ges-TAO</h2>
+            <button
+              id="btn-toggle-sidebar"
+              class="btn-icon-sidebar"
+              title="Mostrar/Ocultar menú"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="-0.5 -0.5 16 16"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                height="16"
+                width="16"
+              >
+                <path
+                  d="M3.125 1.875h8.75s1.25 0 1.25 1.25v8.75s0 1.25 -1.25 1.25H3.125s-1.25 0 -1.25 -1.25V3.125s0 -1.25 1.25 -1.25"
+                  stroke-width="1"
+                ></path>
+                <path d="m5.625 1.875 0 11.25" stroke-width="1"></path>
+              </svg>
+            </button>
+          </div>
+
+          <nav class="sidebar-nav">
+            <div class="nav-section-title">Operación</div>
+            <a href="#" class="nav-item active" onclick="navigate('home')">
+              <span class="icon"><i class="fa-regular fa-house"></i></span>
+              <span class="text">Inicio</span>
+            </a>
+            <a href="#" class="nav-item" onclick="navigate('emision')">
+              <span class="icon"><i class="fa-regular fa-file-lines"></i></span>
+              <span class="text">Emitir Constancia</span>
+            </a>
+            <a href="#" class="nav-item" onclick="navigate('historial')">
+              <span class="icon"
+                ><i class="fa-solid fa-clock-rotate-left"></i
+              ></span>
+              <span class="text">Historial</span>
+            </a>
+
+            <div class="nav-section-title">Catálogos</div>
+            <a href="#" class="nav-item" onclick="navigate('catalogos')">
+              <span class="icon"
+                ><i class="fa-regular fa-square-plus"></i
+              ></span>
+              <span class="text">Gestión de Datos</span>
+            </a>
+
+            <div class="nav-section-title">Sistema</div>
+            <a href="#" class="nav-item" onclick="navigate('reportes')">
+              <span class="icon"><i class="fa-regular fa-chart-bar"></i></span>
+              <span class="text">Reportes</span>
+            </a>
+
+            <div style="flex-grow: 1"></div>
+
+            <a
+              href="#"
+              class="nav-item settings-link"
+              onclick="navigate('configuracion')"
+              style="color: #bdc3c7"
+            >
+              <span class="icon"><i class="fa-solid fa-gear"></i></span>
+              <span class="text">Configuración</span>
+            </a>
+          </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+          <header class="top-bar">
+            <div class="header-left">
+              <h2 id="pageTitle">Panel Principal</h2>
+            </div>
+
+            <!-- BARRA DERECHA: USUARIO + NUBE -->
+            <div class="header-right">
+              <!-- 1. Perfil de Usuario (Izquierda) -->
+              <div class="user-profile-wrapper" style="position: relative">
+                <div class="user-profile-trigger" id="user-avatar-btn">
+                  <div class="user-details">
+                    <span id="userNameDisplay">Usuario</span>
+                    <small id="userRoleDisplay">Rol</small>
+                  </div>
+                  <i class="fa-solid fa-circle-user user-avatar-icon"></i>
+                </div>
+
+                <!-- Dropdown Menu -->
+                <div id="profile-dropdown" class="dropdown-menu hidden">
+                  <div class="dropdown-header">
+                    <strong id="dropUserName">Usuario</strong>
+                    <small id="dropUserRole">Rol</small>
+                  </div>
+                  <hr
+                    style="border: 0; border-top: 1px solid #eee; margin: 5px 0"
+                  />
+                  <a
+                    href="#"
+                    class="dropdown-item"
+                    onclick="
+                      navigate('perfil');
+                      toggleProfileMenu();
+                    "
+                  >
+                    <i class="fa-regular fa-id-card"></i> Mi Perfil
+                  </a>
+                  <a
+                    href="#"
+                    class="dropdown-item text-danger"
+                    onclick="
+                      doLogout();
+                      toggleProfileMenu();
+                    "
+                  >
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                  </a>
+                </div>
+              </div>
+
+              <!-- Separador Vertical -->
+              <div
+                style="
+                  width: 1px;
+                  height: 24px;
+                  background: #e2e8f0;
+                  margin: 0 10px;
+                "
+              ></div>
+
+              <!-- 2. Indicador de Conexión (Derecha) -->
+              <div
+                class="connection-indicator"
+                id="connection-status"
+                title="Estado de la conexión"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"
+                  ></path>
+                </svg>
+                <span class="status-dot"></span>
+              </div>
+            </div>
+          </header>
+
+          <div id="content-area" class="content-area">
+            <p style="text-align: center; color: #7f8c8d; margin-top: 50px">
+              Cargando módulo...
+            </p>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script src="./js/app.js"></script>
+  </body>
+</html>

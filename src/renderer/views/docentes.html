@@ -1,0 +1,82 @@
+<div class="fade-in">
+  <div class="view-header">
+    <h3>Gestión de Docentes</h3>
+    <button class="btn-primary" onclick="toggleFormDocente()">+ Nuevo Docente</button>
+  </div>
+
+  <!-- Formulario (Oculto por defecto) -->
+  <div id="form-docente-container" class="card" style="display:none;">
+    <h4>Registrar / Editar Docente</h4>
+    <form id="form-nuevo-docente" onsubmit="event.preventDefault(); alert('Guardado (Demo)'); toggleFormDocente();">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre Completo:</label>
+          <input type="text" placeholder="Ej. Juan Pérez" required>
+        </div>
+        <div class="form-group">
+          <label>Código Institucional:</label>
+          <input type="text" placeholder="Ej. 2023001" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>CURP:</label>
+          <input type="text" placeholder="CURP completo" maxlength="18" style="text-transform:uppercase;">
+        </div>
+        <div class="form-group">
+          <label>Correo Institucional:</label>
+          <input type="email" placeholder="juan.perez@uv.mx">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="toggleFormDocente()">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar Datos</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabla de Listado -->
+  <div class="card">
+    <h4>Docentes Registrados</h4>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>CURP</th>
+          <th>Correo</th>
+          <th style="width: 100px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>2023001</strong></td>
+          <td>Juan Pérez Hernández</td>
+          <td>PEHJ800101HVCRRR09</td>
+          <td>juan.perez@uv.mx</td>
+          <td>
+            <button class="btn-sm btn-primary">✏️</button>
+            <button class="btn-sm btn-danger">🗑️</button>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>2023002</strong></td>
+          <td>María López García</td>
+          <td>LOGM850505MVZPRR02</td>
+          <td>maria.lopez@uv.mx</td>
+          <td>
+            <button class="btn-sm btn-primary">✏️</button>
+            <button class="btn-sm btn-danger">🗑️</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function toggleFormDocente() {
+    const form = document.getElementById('form-docente-container');
+    form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+  }
+</script>

@@ -1,0 +1,99 @@
+<div class="fade-in">
+  <div class="view-header">
+    <h3>Emisión de Constancias Académicas</h3>
+  </div>
+
+  <!-- Paso 1: Filtros -->
+  <div class="card">
+    <h4>1. Seleccionar Docente y Periodo</h4>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Buscar Docente:</label>
+        <select id="select-docente-constancia" class="form-control">
+          <option value="">Seleccione un docente...</option>
+          <option value="1">Juan Pérez (2023001)</option>
+          <option value="2">María López (2023002)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Periodo Académico:</label>
+        <select id="select-periodo" class="form-control">
+          <option value="">Seleccione periodo...</option>
+          <option value="2024-A">2024-A (Enero-Junio)</option>
+          <option value="2023-B">2023-B (Agosto-Diciembre)</option>
+        </select>
+      </div>
+      <div class="form-group" style="display:flex; align-items:flex-end;">
+        <button class="btn-primary" style="width:100%;" onclick="cargarAsignacionesDummy()">
+          🔍 Buscar Asignaciones
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paso 2: Resultados (Solo Lectura) -->
+  <div id="panel-asignaciones" class="card" style="display:none;">
+    <h4>2. Asignaciones Validadas (Datos Inmutables)</h4>
+    <p class="help-text">
+      ⚠️ Los siguientes datos provienen directamente del registro académico. 
+      Para corregir información, debe editar al docente en el módulo correspondiente.
+    </p>
+    
+    <div class="assignments-list">
+      <!-- Item 1 -->
+      <div class="assignment-item">
+        <div class="check-box">
+          <input type="checkbox" id="asig-1" checked>
+          <label for="asig-1">Incluir</label>
+        </div>
+        <div class="assignment-info">
+          <strong>Ingeniería de Software Avanzado</strong>
+          <span>Clave: IS-501 • 4 Horas Semanales • Tipo: Titular</span>
+        </div>
+      </div>
+      <!-- Item 2 -->
+      <div class="assignment-item">
+        <div class="check-box">
+          <input type="checkbox" id="asig-2" checked>
+          <label for="asig-2">Incluir</label>
+        </div>
+        <div class="assignment-info">
+          <strong>Bases de Datos Distribuidas</strong>
+          <span>Clave: BD-402 • 3 Horas Semanales • Tipo: Colaborador</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paso 3: Generación -->
+    <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+      <div class="form-group">
+        <label>Tipo de Documento a Generar:</label>
+        <select class="form-control">
+          <option>Constancia de Contenidos Impartidos</option>
+          <option>Constancia de Carga Académica Global</option>
+          <option>Constancia de Dirección de Trabajos Recepcionales</option>
+        </select>
+      </div>
+      <button class="btn-success btn-lg" onclick="alert('Generando PDF... (Conectando motor de plantillas)')">
+        📄 Generar y Previsualizar Constancia
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function cargarAsignacionesDummy() {
+    const panel = document.getElementById('panel-asignaciones');
+    const docente = document.getElementById('select-docente-constancia').value;
+    const periodo = document.getElementById('select-periodo').value;
+
+    if(!docente || !periodo) {
+      alert("Por favor seleccione docente y periodo.");
+      return;
+    }
+
+    // Simular carga
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth' });
+  }
+</script>

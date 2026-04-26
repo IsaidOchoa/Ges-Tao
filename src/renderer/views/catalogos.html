@@ -1,0 +1,259 @@
+<div class="fade-in">
+  <!-- ENCABEZADO -->
+  <div class="view-header" style="margin-bottom: 20px;">
+    <h2 style="margin:0; font-size: 1.5rem; color: var(--text-dark);">Gestión de Catálogos Académicos</h2>
+    <p style="margin:5px 0 0 0; color: var(--text-muted); font-size: 0.9rem;">Administre los datos maestros del sistema.</p>
+  </div>
+
+  <!-- PESTAÑAS (BOTONES) -->
+  <div class="tabs-container">
+    <button class="tab-btn active" id="btn-tab-docentes">
+      <i class="fa-solid fa-chalkboard-user"></i> Docentes
+    </button>
+    <button class="tab-btn" id="btn-tab-ee">
+      <i class="fa-solid fa-book-open"></i> Experiencias (EE)
+    </button>
+    <button class="tab-btn" id="btn-tab-periodos">
+      <i class="fa-regular fa-calendar-days"></i> Periodos
+    </button>
+    <button class="tab-btn" id="btn-tab-programas">
+      <i class="fa-solid fa-trophy"></i> Programas Inst.
+    </button>
+  </div>
+
+  <!-- CONTENIDO: DOCENTES -->
+  <div id="tab-docentes" class="tab-content active">
+    <div class="card">
+      <div class="card-header-action">
+        <h3>Directorio de Docentes</h3>
+        <button class="btn btn-primary" id="btn-nuevo-docente">
+          <i class="fa-solid fa-plus"></i> Nuevo Docente
+        </button>
+      </div>
+      <input type="text" id="buscador-docentes" placeholder="Buscar docente..." style="width: 100%; padding: 10px; margin: 15px 0; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-white); color: var(--text-dark);">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>CÓDIGO</th>
+              <th>NOMBRE</th>
+              <th>CORREO</th>
+              <th>ESTADO</th>
+              <th style="text-align:right">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-docentes-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+    <!-- CONTENIDO: EE -->
+  <div id="tab-ee" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <h3>Experiencias Educativas</h3>
+        <button class="btn btn-primary" onclick="abrirModal('modal-ee')"><i class="fa-solid fa-plus"></i> Nueva EE</button>
+      </div>
+      <input type="text" id="buscador-ee" placeholder="Buscar EE por nombre o clave..." style="width:100%; padding:10px; margin:15px 0; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>CLAVE</th><th>NOMBRE</th><th>TIPO</th><th>CRÉDITOS</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
+          <tbody id="tabla-ee-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENIDO: PERIODOS -->
+  <div id="tab-periodos" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <h3>Periodos Escolares</h3>
+        <button class="btn btn-primary" onclick="abrirModal('modal-periodo')"><i class="fa-solid fa-plus"></i> Nuevo Periodo</button>
+      </div>
+      <input type="text" id="buscador-periodos" placeholder="Buscar periodo..." style="width:100%; padding:10px; margin:15px 0; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>CLAVE</th><th>DESCRIPCIÓN</th><th>INICIO</th><th>FIN</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
+          <tbody id="tabla-periodos-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENIDO: PROGRAMAS -->
+  <div id="tab-programas" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <h3>Programas Institucionales</h3>
+        <button class="btn btn-primary" onclick="abrirModal('modal-programa')"><i class="fa-solid fa-plus"></i> Nuevo Programa</button>
+      </div>
+      <input type="text" id="buscador-programas" placeholder="Buscar programa..." style="width:100%; padding:10px; margin:15px 0; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>NOMBRE</th><th>RESPONSABLE</th><th>FECHA REGISTRO</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
+          <tbody id="tabla-programas-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EE -->
+  <div id="modal-ee" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-header"><h3>Nueva Experiencia Educativa</h3><button class="btn-close" onclick="cerrarModal('modal-ee')">&times;</button></div>
+      <div class="modal-body">
+        <form id="form-ee">
+          <div style="display:flex; gap:15px; margin-bottom:15px;">
+            <div class="form-group" style="flex:1; margin-bottom:0;"><label>Clave EE *</label><input type="text" id="ee-clave" required placeholder="Ej. MSC-101"></div>
+            <div class="form-group" style="flex:1; margin-bottom:0;"><label>Tipo</label><select id="ee-tipo" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px;"><option>Obligatoria</option><option>Optativa</option><option>Taller</option></select></div>
+          </div>
+          <div class="form-group" style="margin-bottom:15px;"><label>Nombre de la Experiencia *</label><input type="text" id="ee-nombre" required></div>
+          <div style="display:flex; gap:15px; margin-bottom:15px;">
+            <div class="form-group" style="flex:1; margin-bottom:0;"><label>Créditos</label><input type="number" id="ee-creditos" value="0"></div>
+            <div class="form-group" style="flex:1; margin-bottom:0;"><label>Hrs Teoría</label><input type="number" id="ee-h-teoria" value="0"></div>
+            <div class="form-group" style="flex:1; margin-bottom:0;"><label>Hrs Práctica</label><input type="number" id="ee-h-practica" value="0"></div>
+          </div>
+          <div class="form-group"><label>Programa Académico</label><input type="text" id="ee-programa" placeholder="Ej. Maestría"></div>
+          <div class="form-group"><label>Estado</label><select id="ee-estado" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px;"><option value="activa">Activa</option><option value="inactiva">Inactiva</option></select></div>
+        </form>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-ee')">Cancelar</button><button class="btn btn-primary" onclick="guardarEE()">Guardar</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL PERIODO -->
+  <div id="modal-periodo" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header"><h3>Nuevo Periodo Escolar</h3><button class="btn-close" onclick="cerrarModal('modal-periodo')">&times;</button></div>
+      <div class="modal-body">
+        <form id="form-periodo">
+          <div class="form-group" style="margin-bottom:15px;"><label>Clave *</label><input type="text" id="per-clave" required placeholder="Ej. 2024-A"></div>
+          <div class="form-group" style="margin-bottom:15px;"><label>Descripción *</label><input type="text" id="per-desc" required placeholder="Ej. Agosto-Diciembre 2024"></div>
+          <div style="display:flex; gap:15px; margin-bottom:15px;">
+            <div class="form-group" style="flex:1; margin-bottom:0;"><label>Fecha Inicio *</label><input type="date" id="per-inicio" required></div>
+            <div class="form-group" style="flex:1; margin-bottom:0;"><label>Fecha Fin *</label><input type="date" id="per-fin" required></div>
+          </div>
+          <div class="form-group"><label>Estado</label><select id="per-estado" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px;"><option value="abierto">Abierto</option><option value="cerrado">Cerrado</option><option value="en_proceso">En Proceso</option></select></div>
+        </form>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-periodo')">Cancelar</button><button class="btn btn-primary" onclick="guardarPeriodo()">Guardar</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL PROGRAMA -->
+  <div id="modal-programa" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header"><h3>Nuevo Programa Institucional</h3><button class="btn-close" onclick="cerrarModal('modal-programa')">&times;</button></div>
+      <div class="modal-body">
+        <form id="form-programa">
+          <div class="form-group" style="margin-bottom:15px;"><label>Nombre del Programa *</label><input type="text" id="prog-nombre" required placeholder="Ej. PRODEP"></div>
+          <div class="form-group" style="margin-bottom:15px;"><label>Descripción</label><textarea id="prog-desc" rows="3" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px;"></textarea></div>
+          <div class="form-group" style="margin-bottom:15px;"><label>Responsable</label><input type="text" id="prog-resp" placeholder="Nombre del responsable"></div>
+          <div class="form-group" style="margin-bottom:15px;"><label>Fecha de Registro</label><input type="date" id="prog-fecha"></div>
+          <div class="form-group"><label>Estado</label><select id="prog-estado" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px;"><option value="vigente">Vigente</option><option value="finalizado">Finalizado</option></select></div>
+        </form>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-programa')">Cancelar</button><button class="btn btn-primary" onclick="guardarPrograma()">Guardar</button></div>
+    </div>
+  </div>
+
+   <!-- MODAL NUEVO DOCENTE (ACTUALIZADO) -->
+  <div id="modal-docente" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-header">
+        <h3>Nuevo Docente</h3>
+        <button class="btn-close" id="btn-cerrar-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-docente">
+          
+          <!-- Fila 1: Código y Nivel -->
+          <div style="display:flex; gap:15px; margin-bottom:15px;">
+            <div class="form-group" style="flex:1; margin-bottom:0;">
+              <label>Código Único *</label>
+              <input type="text" id="doc-codigo" required placeholder="Ej. DOC-001">
+            </div>
+            <div class="form-group" style="flex:1; margin-bottom:0;">
+              <label>Nivel Académico</label>
+              <select id="doc-nivel" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-white); color:var(--text-dark);">
+                <option value="">Seleccione...</option>
+                <option value="Tiempo Completo">Tiempo Completo</option>
+                <option value="Profesor de Asignatura">Profesor de Asignatura</option>
+                <option value="Investigador">Investigador</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Fila 2: Apellidos -->
+          <div style="display:flex; gap:15px; margin-bottom:15px;">
+            <div class="form-group" style="flex:2; margin-bottom:0;">
+              <label>Apellido Paterno *</label>
+              <input type="text" id="doc-ap-paterno" required placeholder="Pérez">
+            </div>
+            <div class="form-group" style="flex:2; margin-bottom:0;">
+              <label>Apellido Materno</label>
+              <input type="text" id="doc-ap-materno" placeholder="Hernández">
+            </div>
+          </div>
+
+          <!-- Fila 3: Nombres -->
+          <div class="form-group" style="margin-bottom:15px;">
+            <label>Nombres *</label>
+            <input type="text" id="doc-nombres" required placeholder="Juan Carlos">
+          </div>
+
+          <!-- Fila 4: Contacto -->
+          <div style="display:flex; gap:15px; margin-bottom:15px;">
+            <div class="form-group" style="flex:2; margin-bottom:0;">
+              <label>Correo de Contacto</label>
+              <input type="email" id="doc-correo" placeholder="juan@uv.mx">
+            </div>
+            <div class="form-group" style="flex:2; margin-bottom:0;">
+              <label>Teléfono</label>
+              <input type="tel" id="doc-telefono" placeholder="(228) ...">
+            </div>
+          </div>
+
+          <!-- Fila 5: Estado -->
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Estado</label>
+            <select id="doc-estado" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-white); color:var(--text-dark);">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-cancelar-modal">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-docente">Guardar</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ESTILOS (Estos sí funcionan en innerHTML) -->
+  <style>
+    .tabs-container { display:flex; gap:5px; border-bottom:2px solid var(--border-color); margin-bottom:20px; }
+    .tab-btn { background:transparent; border:none; padding:12px 20px; cursor:pointer; color:var(--text-muted); border-bottom:2px solid transparent; margin-bottom:-2px; font-size:0.95rem; display:flex; align-items:center; gap:8px; }
+    .tab-btn:hover { color:var(--text-dark); }
+    .tab-btn.active { color:var(--primary-color); border-bottom-color:var(--primary-color); font-weight:600; }
+    .tab-content { display:none; animation:fadeIn 0.3s; }
+    .tab-content.active { display:block; }
+    .card-header-action { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+    .card-header-action h3 { margin:0; font-size:1.1rem; color:var(--text-dark); }
+    .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; display:flex; justify-content:center; align-items:center; }
+    .modal-content { background:var(--bg-white); padding:20px; border-radius:var(--radius-md); width:90%; max-width:600px; }
+    .modal-header { display:flex; justify-content:space-between; margin-bottom:15px; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:15px; border-top:1px solid var(--border-color); }
+    .btn-close { background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted); }
+    .form-group { margin-bottom:15px; }
+    .form-group label { display:block; margin-bottom:5px; font-weight:600; font-size:0.9rem; color:var(--text-dark); }
+    .form-group input, .form-group select { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-white); color:var(--text-dark); }
+    .badge { padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:600; }
+    .badge-success { background:#d4edda; color:#155724; }
+    .badge-danger { background:#f8d7da; color:#721c24; }
+  </style>
+</div>

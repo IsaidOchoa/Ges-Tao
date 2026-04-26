@@ -1,0 +1,99 @@
+/* --- VARIABLES GLOBALES DE DISEÑO --- */
+:root {
+  /* Colores Institucionales */
+  --primary-color: #2c3e50;      /* Azul oscuro (Sidebar, Botones Primarios) */
+  --secondary-color: #95a5a6;    /* Gris (Botones Secundarios) */
+  --accent-color: #3498db;       /* Azul claro (Enlaces, Focus) */
+  
+  /* Colores de Estado */
+  --success-color: #27ae60;      /* Verde (Éxito) */
+  --warning-color: #e67e22;      /* Naranja (Advertencia) */
+  --danger-color: #e74c3c;       /* Rojo (Error, Peligro) */
+  --error-color: #e74c3c;        /* Alias para consistencia */
+  --info-color: #3498db;         /* Azul Info */
+
+  /* Fondos y Bordes */
+  --bg-body: #f4f6f9;            /* Fondo general de la app */
+  --bg-light: #f8f9fa;           /* Fondo de tarjetas/tablas */
+  --bg-white: #ffffff;
+  --border-color: #dee2e6;       /* Bordes suaves */
+  
+  /* Textos */
+  --text-dark: #2c3e50;          /* Texto principal */
+  --text-muted: #7f8c8d;         /* Texto secundario/ayuda */
+  --text-light: #ecf0f1;         /* Texto sobre fondo oscuro */
+
+  /* Dimensiones del Layout */
+  --sidebar-width: 260px;
+  --sidebar-width-collapsed: 65px;
+  --header-height: 70px;
+  --transition-speed: 0.3s;
+  
+  /* Bordes y Sombras */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 2px 5px rgba(0,0,0,0.05);
+  --shadow-md: 0 5px 15px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,0.25);
+
+  /* ... tus variables actuales ... */
+
+/* =========================================
+   TEMA OSCURO (Se activa con data-theme="dark")
+   ========================================= */
+  body[data-theme="dark"] {
+    /* Colores de Fondo */
+    --bg-body: #1a1a1a;          /* Fondo principal muy oscuro */
+    --bg-light: #2c2c2c;         /* Fondo de tarjetas/secciones */
+    --bg-white: #242424;         /* Fondo de inputs/blancos */
+    
+    /* Textos */
+    --text-dark: #ecf0f1;        /* Texto principal claro */
+    --text-muted: #bdc3c7;       /* Texto secundario gris claro */
+    --text-light: #bdc3c7;       /* Texto sobre fondos oscuros */
+
+    /* Bordes y Sombras */
+    --border-color: #444444;     /* Bordes sutiles */
+    --shadow-sm: 0 2px 5px rgba(0,0,0,0.3);
+    --shadow-md: 0 5px 15px rgba(0,0,0,0.4);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
+
+    /* Ajustes específicos para la Top Bar en oscuro */
+    .top-bar {
+      background-color: #2c2c2c !important;
+      border-bottom: 1px solid #444;
+      color: #ecf0f1;
+    }
+    
+    /* Ajustes para Inputs en oscuro */
+    input, select, textarea {
+      background-color: #333 !important;
+      border-color: #555 !important;
+      color: #ecf0f1 !important;
+    }
+    
+    /* Ajustes para Dropdowns */
+    .dropdown-menu {
+      background-color: #2c2c2c !important;
+      border-color: #444 !important;
+      color: #ecf0f1 !important;
+    }
+    .dropdown-item {
+      color: #ecf0f1 !important;
+    }
+    .dropdown-item:hover {
+      background-color: #444 !important;
+    }
+    .dropdown-header {
+      background-color: #333 !important;
+      border-bottom-color: #444 !important;
+      color: #ecf0f1 !important;
+    }
+    
+    /* Ajustes para la vista de Configuración */
+    .settings-divider {
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+    }
+  }
+}

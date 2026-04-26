@@ -1,0 +1,422 @@
+/* --- LAYOUT PRINCIPAL (Dashboard) --- */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width var(--transition-speed) ease;
+  max-width: var(--sidebar-width);
+  overflow: visible; /* Permitir dropdowns */
+  white-space: nowrap;
+  position: relative;
+  z-index: 1000;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+/* Header del Sidebar */
+.sidebar-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  gap: 15px;
+  transition: all var(--transition-speed);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 0;
+}
+
+.logo-icon {
+  font-size: 2rem;
+  min-width: 40px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.logo-text {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: bold;
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.2s, transform 0.3s;
+  white-space: nowrap;
+  flex-grow: 1;
+}
+
+.sidebar.collapsed .logo-text {
+  opacity: 0;
+  transform: translateX(-20px);
+  pointer-events: none;
+  position: absolute;
+  width: 0;
+}
+
+/* Botón Toggle (Hamburguesa/Sidebar) */
+.btn-icon-sidebar {
+  background: transparent;
+  border: none;
+  color: #bdc3c7;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin-left: auto; /* Empuja a la derecha cuando está abierto */
+  position: static;
+}
+
+.btn-icon-sidebar svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.btn-icon-sidebar:hover {
+  background-color: rgba(255,255,255,0.1);
+  color: white;
+}
+
+/* Centrado perfecto al colapsar */
+.sidebar.collapsed .btn-icon-sidebar {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-left: 0;
+  right: auto;
+}
+
+/* Navegación */
+.sidebar-nav {
+  flex-grow: 1;
+  padding-top: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column; 
+}
+
+.nav-section-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #7f8c8d;
+  padding: 15px 20px 5px 20px;
+  font-weight: bold;
+  margin-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  color: #bdc3c7;
+  text-decoration: none;
+  transition: 0.3s;
+  cursor: pointer;
+  border-left: 4px solid transparent;
+  flex-shrink: 0;
+}
+
+.nav-item:hover, .nav-item.active {
+  background-color: rgba(255,255,255,0.1);
+  color: white;
+  border-left-color: var(--accent-color);
+}
+
+.nav-item .icon {
+  font-size: 1.4rem;
+  min-width: 30px;
+  text-align: center;
+  margin-right: 15px;
+  transition: margin 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ajustes para iconos FontAwesome dentro de .icon */
+.nav-item .icon i {
+  font-size: inherit; /* Hereda el tamaño del padre */
+  width: 1em;
+  height: 1em;
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 15px 0;
+}
+
+.sidebar.collapsed .nav-item .text{
+  display: none !important; /* Fuerza a que desaparezca */
+  opacity: 0;
+  pointer-events: none;
+}
+.sidebar.collapsed .nav-item .icon {
+  margin-right: 0 !important;
+}
+
+.sidebar.collapsed .nav-section-title {
+  display: none; 
+}
+
+.sidebar.collapsed .settings-link {
+  border-top: none;
+  margin-top: 0;
+  padding: 15px 0;
+  justify-content: center;
+}
+
+.sidebar.collapsed .nav-item span:not(.icon) {
+  display: none;
+}
+
+
+
+/* --- INDICADOR DE CONEXIÓN (NUBE) EN SIDEBAR --- */
+/* Útil si decides poner la nube aquí al final del menú */
+.connection-indicator-sidebar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 0;
+  color: #27ae60; /* Verde por defecto */
+  transition: color 0.3s;
+  cursor: default;
+}
+
+.connection-indicator-sidebar.offline {
+  color: #e74c3c; /* Rojo si está offline */
+}
+
+.connection-indicator-sidebar svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* --- MAIN CONTENT & TOP BAR --- */
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--bg-body);
+  position: relative;
+  z-index: 1;
+}
+
+.top-bar {
+  background: white;
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+#pageTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-dark);
+}
+
+/* --- NUEVO PERFIL DE USUARIO EN TOP BAR --- */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Contenedor del Trigger (Icono + Texto) */
+.user-profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.user-profile-trigger:hover {
+  background-color: #f1f5f9;
+}
+
+.user-details {
+  text-align: right;
+  line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+}
+
+#userNameDisplay {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+
+#userRoleDisplay {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Icono de Usuario Grande */
+.user-avatar-icon {
+  font-size: 2rem; /* Tamaño grande para el círculo */
+  color: var(--primary-color);
+  transition: color 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-profile-trigger:hover .user-avatar-icon {
+  color: var(--accent-color);
+}
+
+/* Dropdown Menu (Ahora colgado del Top Bar) */
+.dropdown-menu {
+  position: absolute;
+  top: 100%; /* Debajo del trigger */
+  right: 0;  /* Alineado a la derecha del padre */
+  left: auto;
+  margin-top: 10px;
+  width: 220px;
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid #eef2f7;
+  z-index: 1002;
+  overflow: hidden;
+  animation: fadeInDown 0.2s ease-out;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-header {
+  padding: 10px 15px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+  text-align: center;
+}
+.dropdown-header strong { display: block; color: var(--text-dark); font-size: 1rem; }
+.dropdown-header small { color: var(--text-muted); font-size: 0.8rem; }
+
+.dropdown-item {
+  display: block;
+  padding: 10px 15px;
+  color: var(--text-dark);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dropdown-item:hover { background: #f1f7ff; }
+.dropdown-item.text-danger { color: var(--danger-color); }
+.dropdown-item.text-danger:hover { background: #fadbd8; }
+
+/* --- INDICADOR DE CONEXIÓN (NUBE) EN TOP BAR --- */
+.connection-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  transition: color 0.3s;
+  color: #27ae60; /* Verde por defecto */
+}
+
+.connection-indicator.offline {
+  color: #e74c3c; /* Rojo si está offline */
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+  box-shadow: 0 0 5px currentColor;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Contenido Principal */
+.content-area {
+  padding: 25px;
+  overflow-y: auto;
+  flex-grow: 1;
+  position: relative;
+  z-index: 0;
+}
+
+/* Animación de entrada */
+.fade-in {
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Enlace de Configuración (Abajo del todo) */
+.settings-link {
+  margin-top: 10px; /* Pequeño espacio extra respecto a lo último */
+  border-top: 1px solid rgba(255,255,255,0.05); /* Línea sutil arriba */
+  padding-top: 15px;
+  color: #95a5a6; /* Un poco más apagado para indicar que es secundario */
+}
+
+.settings-link:hover {
+  color: white;
+  background-color: rgba(255,255,255,0.05);
+}
+
+/* Asegurar que cuando esté colapsado, la línea y el margen no rompan el diseño */

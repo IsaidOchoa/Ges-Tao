@@ -1,0 +1,17 @@
+/* src/renderer/styles/main.css */
+
+/* 1. Núcleo Global */
+@import './core/01-variables.css';
+@import './core/02-reset.css';
+@import './core/03-layout.css';
+@import './core/04-components.css';
+
+/* 2. Estilos Específicos por Vista */
+@import './views/_home.css';
+@import './views/_catalogos.css';
+@import './views/_configuracion.css';
+@import './views/_emision.css';
+@import './views/_historial.css';
+@import './views/_reportes.css';
+
+@import '@fortawesome/fontawesome-free/css/all.min.css';

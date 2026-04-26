@@ -1,0 +1,141 @@
+<div class="fade-in">
+  <div class="settings-container">
+    <!-- SECCIÓN 2: PREFERENCIAS DE LA APP -->
+    <div class="settings-section">
+      <h3 class="section-title">
+        <i class="fa-solid fa-palette"></i> Preferencias de la Aplicación
+      </h3>
+      <p class="section-desc">
+        Personalice la apariencia y comportamiento del sistema.
+      </p>
+
+      <!-- Fila 1: Tema Visual (Botones) -->
+      <div class="form-group" style="margin-bottom: 25px;">
+        <label class="toggle-label" style="font-size: 1rem; font-weight: 600;">
+          <span>Modo Oscuro</span>
+          <label class="toggle-switch">
+            <!-- El ID es importante para luego guardar la preferencia -->
+            <input type="checkbox" id="toggle-dark-mode">
+            <span class="slider"></span>
+          </label>
+        </label>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; margin-left: 60px;">
+          Cambia la interfaz a un tema oscuro para reducir la fatiga visual.
+        </p>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+
+      <!-- Fila 2: Interruptores (Toggles) -->
+      <div class="form-group">
+        <!-- Toggle 1: Animaciones -->
+        <label class="toggle-label">
+          <span>Activar efectos visuales y animaciones</span>
+          <label class="toggle-switch">
+            <input type="checkbox" checked />
+            <span class="slider"></span>
+          </label>
+        </label>
+
+        <!-- Toggle 2: Notificaciones (Ejemplo extra) -->
+        <label class="toggle-label">
+          <span>Mostrar notificaciones de éxito</span>
+          <label class="toggle-switch">
+            <input type="checkbox" checked />
+            <span class="slider"></span>
+          </label>
+        </label>
+
+        <!-- Toggle 3: Confirmaciones -->
+        <label class="toggle-label">
+          <span>Pedir confirmación antes de eliminar</span>
+          <label class="toggle-switch">
+            <input type="checkbox" />
+            <span class="slider"></span>
+          </label>
+        </label>
+      </div>
+
+      <!-- Ruta de Guardado -->
+      <div class="form-group" style="margin-top: 20px">
+        <label style="font-weight: 600; margin-bottom: 8px; display: block"
+          >Ruta de Guardado de PDFs</label
+        >
+        <div style="display: flex; gap: 5px">
+          <input
+            type="text"
+            value="%USERPROFILE%/Documents/Ges-TAO"
+            readonly
+            style="background: #f1f5f9; flex-grow: 1"
+          />
+          <button class="btn btn-outline">Examinar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LÍNEA DIVISORIA GRANDE -->
+    <hr class="settings-divider" />
+
+    <!-- SECCIÓN 3: DATOS INSTITUCIONALES -->
+    <div class="settings-section">
+      <h3 class="section-title">
+        <i class="fa-solid fa-building-columns"></i> Datos Institucionales
+        (Plantillas)
+      </h3>
+      <p class="section-desc">
+        Estos datos se imprimen automáticamente en todas las constancias
+        emitidas.
+      </p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre de la Facultad</label>
+          <input type="text" value="Facultad de Estadística e Informática" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre del Programa Educativo</label>
+          <input
+            type="text"
+            value="Maestría en Sistemas Computacionales e Informática"
+          />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre del Director(a)</label>
+          <input type="text" value="Dra. Ejemplo Nombre" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary">Actualizar Plantillas</button>
+      </div>
+    </div>
+
+    <!-- LÍNEA DIVISORIA GRANDE -->
+    <hr class="settings-divider" />
+
+    <!-- SECCIÓN 4: TUTORIAL Y AYUDA -->
+    <div class="settings-section">
+      <h3 class="section-title">
+        <i class="fa-solid fa-graduation-cap"></i> Tutorial y Ayuda
+      </h3>
+      <p class="section-desc">Recursos para aprender a usar Ges-TAO.</p>
+
+      <div class="form-actions" style="justify-content: flex-start">
+        <button
+          class="btn btn-info"
+          onclick="alert('Iniciando tutorial interactivo...')"
+        >
+          <i class="fa-solid fa-play"></i> Repetir Tutorial de Bienvenida
+        </button>
+        <button class="btn btn-outline">
+          <i class="fa-solid fa-phone"></i> Contactar Soporte
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

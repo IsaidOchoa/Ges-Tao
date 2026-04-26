@@ -1,0 +1,277 @@
+<div class="fade-in">
+  <div class="view-header">
+    <h2 style="margin:0; color: var(--text-dark);">Emisión de Constancias</h2>
+    <p style="margin:5px 0 0 0; color: var(--text-muted);">Seleccione los datos para generar el documento oficial.</p>
+  </div>
+
+  <div class="emission-container">
+    
+    <!-- COLUMNA IZQUIERDA: FORMULARIO -->
+    <div class="card emission-form">
+      <h3><i class="fa-solid fa-pen-to-square"></i> Datos de la Constancia</h3>
+      
+      <form id="form-constancia">
+        <!-- 1. Docente -->
+        <div class="form-group">
+          <label>Docente *</label>
+          <select id="sel-docente" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+            <option value="">Cargando docentes...</option>
+          </select>
+        </div>
+
+        <!-- 2. Tipo de Constancia -->
+        <div class="form-group">
+          <label>Tipo de Constancia *</label>
+          <select id="sel-tipo" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+            <option value="">Seleccione un tipo...</option>
+            <option value="participacion_docente">Participación como Docente</option>
+            <option value="participacion_alumno">Participación como Alumno</option>
+            <option value="dictaminador">Dictaminador de Proyectos</option>
+            <option value="autoridad">Autoridad Académica</option>
+            <option value="reconocimiento">Reconocimiento Especial</option>
+          </select>
+        </div>
+
+        <!-- 3. Periodo (Opcional según tipo) -->
+        <div class="form-group">
+          <label>Periodo Escolar</label>
+          <select id="sel-periodo" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+            <option value="">Sin periodo específico</option>
+          </select>
+        </div>
+
+        <!-- 4. Experiencia Educativa (Opcional) -->
+        <div class="form-group">
+          <label>Experiencia Educativa (Materia)</label>
+          <select id="sel-ee" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+            <option value="">Ninguna / General</option>
+          </select>
+        </div>
+
+        <!-- 5. Programa Institucional (Opcional) -->
+        <div class="form-group">
+          <label>Programa Institucional</label>
+          <select id="sel-programa" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+            <option value="">Ninguno</option>
+          </select>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+
+        <div class="form-actions" style="display:flex; gap:10px; justify-content:flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="limpiarFormulario()">Limpiar</button>
+          <button type="submit" class="btn btn-primary" id="btn-generar">
+            <i class="fa-solid fa-file-pdf"></i> Generar Constancia
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- COLUMNA DERECHA: VISTA PREVIA -->
+    <div class="card emission-preview">
+      <h3><i class="fa-regular fa-eye"></i> Vista Previa</h3>
+      <div id="preview-area" style="flex:1; background:#fff; color:#000; padding:40px; border:1px solid #ddd; border-radius:4px; min-height:400px; position:relative;">
+        
+        <!-- Simulación de hoja carta -->
+        <div style="font-family: 'Times New Roman', serif; line-height:1.6; text-align:center;">
+          <div style="margin-bottom:30px;">
+            <img src="" alt="" style="height:80px; display:none;"> <!-- Aquí iría logo UV -->
+            <h3 style="margin:10px 0; font-size:1.2rem;">UNIVERSIDAD VERACRUZANA</h3>
+            <h4 style="margin:5px 0; font-size:1rem;">Facultad de Estadística e Informática</h4>
+          </div>
+          
+          <h2 style="margin:30px 0; text-transform:uppercase; font-size:1.4rem;">CONSTANCIA</h2>
+          
+          <p style="text-align:justify; margin:20px 0;">
+            La Dirección de la Facultad de Estadística e Informática hace constar que:
+          </p>
+          
+          <h3 id="preview-nombre" style="font-size:1.3rem; margin:20px 0; text-decoration:underline;">[NOMBRE DEL DOCENTE]</h3>
+          
+          <p style="text-align:justify; margin:20px 0;">
+            Ha participado exitosamente como <strong id="preview-tipo">[TIPO]</strong> 
+            <span id="preview-ee">en la experiencia educativa [EE]</span>
+            <span id="preview-periodo">durante el periodo [PERIODO]</span>.
+          </p>
+          
+          <p style="text-align:justify; margin:20px 0;">
+            Se expide la presente a petición del interesado para los fines legales que convengan.
+          </p>
+          
+          <div style="margin-top:60px; text-align:center;">
+            <p>Xalapa, Ver. a <span id="preview-fecha"></span></p>
+            <br><br>
+            <p>__________________________<br><strong>Directora MSICU</strong></p>
+          </div>
+          
+          <!-- Marca de agua simulada -->
+          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); opacity:0.05; font-size:5rem; font-weight:bold; pointer-events:none;">
+            BORRADOR
+          </div>
+        </div>
+
+      </div>
+      <p style="text-align:center; color:var(--text-muted); font-size:0.8rem; margin-top:10px;">
+        * Esta es una vista previa preliminar. El PDF final incluirá firmas digitales y códigos QR.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .emission-container {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; /* Formulario más estrecho, preview más ancho */
+    gap: 20px;
+    height: calc(100vh - 150px);
+  }
+  .emission-form, .emission-preview {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .emission-preview #preview-area {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  /* Ajustes modo oscuro para la preview (que siempre debe verse como papel blanco) */
+  body[data-theme="dark"] .emission-preview #preview-area {
+    background: #ffffff;
+    color: #000000;
+  }
+  @media (max-width: 900px) {
+    .emission-container { grid-template-columns: 1fr; height: auto; }
+  }
+</style>
+
+<script>
+  // Variables globales para almacenar datos cargados
+  let datosMaestros = { docentes: [], periodos: [], ee: [], programas: [] };
+
+  // 1. Cargar datos al iniciar
+  async function cargarDatosIniciales() {
+    try {
+      const respuesta = await window.electronAPI.obtenerDatosConstancia();
+      if (respuesta.success) {
+        datosMaestros = respuesta.data;
+        llenarSelectores();
+      } else {
+        alert('Error al cargar datos: ' + respuesta.error);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // 2. Llenar los selectores (Dropdowns)
+  function llenarSelectores() {
+    // Docentes
+    const selDoc = document.getElementById('sel-docente');
+    selDoc.innerHTML = '<option value="">Seleccione un docente...</option>';
+    datosMaestros.docentes.forEach(d => {
+      selDoc.innerHTML += `<option value="${d.id}">${d.codigo} - ${d.apellido_paterno}, ${d.nombres}</option>`;
+    });
+
+    // Periodos
+    const selPer = document.getElementById('sel-periodo');
+    selPer.innerHTML = '<option value="">Sin periodo específico</option>';
+    datosMaestros.periodos.forEach(p => {
+      selPer.innerHTML += `<option value="${p.id}">${p.clave} (${p.descripcion})</option>`;
+    });
+
+    // EE
+    const selEE = document.getElementById('sel-ee');
+    selEE.innerHTML = '<option value="">Ninguna / General</option>';
+    datosMaestros.ee.forEach(e => {
+      selEE.innerHTML += `<option value="${e.id}">${e.clave_ee} - ${e.nombre}</option>`;
+    });
+
+    // Programas
+    const selProg = document.getElementById('sel-programa');
+    selProg.innerHTML = '<option value="">Ninguno</option>';
+    datosMaestros.programas.forEach(p => {
+      selProg.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+    });
+  }
+
+  // 3. Actualizar Vista Previa en tiempo real
+  function actualizarPreview() {
+    const docId = document.getElementById('sel-docente').value;
+    const tipo = document.getElementById('sel-tipo').value;
+    const perId = document.getElementById('sel-periodo').value;
+    const eeId = document.getElementById('sel-ee').value;
+
+    // Buscar datos completos
+    const docente = datosMaestros.docentes.find(d => d.id == docId);
+    const periodo = datosMaestros.periodos.find(p => p.id == perId);
+    const ee = datosMaestros.ee.find(e => e.id == eeId);
+
+    // Actualizar DOM
+    document.getElementById('preview-nombre').innerText = docente ? `${docente.nombres} ${docente.apellido_paterno}` : '[NOMBRE DEL DOCENTE]';
+    document.getElementById('preview-tipo').innerText = tipo ? tipo.replace('_', ' ').toUpperCase() : '[TIPO]';
+    
+    const spanEE = document.getElementById('preview-ee');
+    spanEE.style.display = ee ? 'inline' : 'none';
+    if(ee) spanEE.innerText = `en la experiencia educativa "${ee.nombre}"`;
+
+    const spanPer = document.getElementById('preview-periodo');
+    spanPer.style.display = periodo ? 'inline' : 'none';
+    if(periodo) spanPer.innerText = `durante el periodo ${periodo.clave}`;
+
+    const hoy = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('preview-fecha').innerText = hoy;
+  }
+
+  // Listeners para cambios en los inputs
+  ['sel-docente', 'sel-tipo', 'sel-periodo', 'sel-ee', 'sel-programa'].forEach(id => {
+    document.getElementById(id).addEventListener('change', actualizarPreview);
+  });
+
+  // 4. Manejar Envío del Formulario
+  document.getElementById('form-constancia').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btn-generar');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+
+    const datos = {
+      docente_id: document.getElementById('sel-docente').value,
+      tipo_constancia: document.getElementById('sel-tipo').value,
+      periodo_id: document.getElementById('sel-periodo').value || null,
+      ee_id: document.getElementById('sel-ee').value || null,
+      programa_id: document.getElementById('sel-programa').value || null
+    };
+
+    if(!datos.docente_id || !datos.tipo_constancia) {
+      alert('Por favor seleccione al menos el Docente y el Tipo de Constancia.');
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      return;
+    }
+
+    try {
+      const resultado = await window.electronAPI.guardarConstancia(datos);
+      if(resultado.success) {
+        alert(`✅ ${resultado.message}\nFolio generado: ${resultado.folio}`);
+        limpiarFormulario();
+      } else {
+        alert('❌ Error: ' + resultado.error);
+      }
+    } catch (err) {
+      alert('Error de conexión al generar.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  });
+
+  function limpiarFormulario() {
+    document.getElementById('form-constancia').reset();
+    actualizarPreview();
+  }
+
+  // Iniciar
+  cargarDatosIniciales();
+</script>
