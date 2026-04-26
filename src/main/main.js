@@ -325,3 +325,42 @@ ipcMain.handle('obtener-historial', async () => {
     return { success: false, error: error.message };
   }
 });
+
+// 11. OBTENER LISTA DE CONSTANCIAS (BIBLIOTECA)
+ipcMain.handle('obtener-biblioteca-constancias', async () => {
+  try {
+    const db = getDB();
+    
+    // Consulta JOIN para traer datos legibles
+    const query = `
+      SELECT 
+        c.id, c.folio, c.tipo_constancia, c.estado, c.fecha_emision, c.ruta_archivo,
+        d.apellido_paterno, d.nombres,
+        p.clave as periodo_clave
+      FROM constancias c
+      LEFT JOIN docentes d ON c.docente_id = d.id
+      LEFT JOIN periodos p ON c.periodo_id = p.id
+      ORDER BY c.fecha_emision DESC
+    `;
+    
+    const rows = db.prepare(query).all();
+    return { success: true,  rows };
+  } catch (error) {
+    console.error('Error obteniendo biblioteca:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 12. ABRIR ARCHIVO PDF (Utilidad del SO)
+ipcMain.handle('abrir-archivo-pdf', async (event, rutaArchivo) => {
+  const { shell } = require('electron');
+  try {
+    if (!rutaArchivo) return { success: false, error: 'No hay ruta registrada' };
+    
+    // Intenta abrir el archivo con la aplicación predeterminada del SO
+    await shell.openPath(rutaArchivo);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'No se pudo abrir el archivo. Verifica que exista en la ruta: ' + rutaArchivo };
+  }
+});

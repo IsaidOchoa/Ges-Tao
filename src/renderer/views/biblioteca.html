@@ -1,0 +1,71 @@
+<div class="fade-in">
+  <div class="view-header">
+    <h2 style="margin:0; color: var(--text-dark);">Biblioteca de Constancias</h2>
+    <p style="margin:5px 0 0 0; color: var(--text-muted);">Gestión, búsqueda e impresión de documentos emitidos.</p>
+  </div>
+
+  <div class="card">
+    <!-- Barra de Herramientas -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+      <h3 style="margin:0; font-size:1.1rem; color:var(--text-dark);"><i class="fa-solid fa-folder-open"></i> Constancias Emitidas</h3>
+      
+      <!-- Buscador Global -->
+      <div style="position:relative; width: 300px;">
+        <i class="fa-solid fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+        <input type="text" id="buscador-biblioteca" placeholder="Buscar por folio, docente o tipo..." 
+          style="width:100%; padding:10px 10px 10px 35px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:120px;">FOLIO</th>
+            <th>DOCENTE</th>
+            <th>TIPO</th>
+            <th>PERIODO</th>
+            <th style="width:120px;">FECHA</th>
+            <th>ESTADO</th>
+            <th style="text-align:right; width:150px;">ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-biblioteca-body">
+          <!-- Se llena dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div id="no-results" style="text-align:center; padding:40px; color:var(--text-muted); display:none;">
+      <i class="fa-regular fa-folder-open" style="font-size:2rem; margin-bottom:10px;"></i>
+      <p>No se encontraron constancias registradas.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Estilos específicos si fueran necesarios, aunque usaremos clases globales */
+  .btn-action {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  .btn-view { background: var(--primary-color); color: white; }
+  .btn-view:hover { background: #1a252f; }
+  
+  .btn-print { background: var(--success-color); color: white; }
+  .btn-print:hover { background: #219150; }
+</style>
+
+<script>
+  // Este script será reemplazado por la lógica en BibliotecaModule.js
+  // Solo dejamos esto como marcador de posición o para pruebas rápidas si fuera necesario.
+  // La lógica real irá en el módulo JS.
+</script>

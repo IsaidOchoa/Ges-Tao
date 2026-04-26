@@ -12,12 +12,14 @@ import historialHtml from './views/historial.html';
 import configuracionHtml from './views/configuracion.html';
 import reportesHtml from './views/reportes.html';
 import perfilHtml from './views/perfil.html';
+import bibliotecaHtml from './views/biblioteca.html';
 
 // Módulos (Lógica POO)
 import { AuthModule } from './modules/AuthModule.js';
 import { CatalogoModule } from './modules/CatalogoModule.js';
 import { EmisionModule } from './modules/EmisionModule.js';
 import { HistorialModule } from './modules/HistorialModule.js';
+import { BibliotecaModule } from './modules/BibliotecaModule.js';
 
 // Mapa de vistas HTML
 const views = {
@@ -26,8 +28,9 @@ const views = {
   'configuracion': configuracionHtml,
   'perfil': perfilHtml,
   'reportes': reportesHtml || '<div class="card"><h3>Reportes</h3><p>En construcción...</p></div>',
-  'emision': emisionHtml || '<div class="card"><h3>Emitir</h3><p>En construcción...</p></div>',
-  'historial': historialHtml || '<div class="card"><h3>Historial</h3><p>En construcción...</p></div>',
+  'emision': emisionHtml,
+  'historial': historialHtml,
+  'biblioteca': bibliotecaHtml,
 };
 
 // =======================================================
@@ -38,6 +41,7 @@ const auth = new AuthModule();
 const catalogos = new CatalogoModule();
 const emision = new EmisionModule();
 const historial = new HistorialModule();
+const biblioteca = new BibliotecaModule();
 
 // Variables de estado global mínimo
 let currentUser = null;
@@ -188,6 +192,9 @@ async function navigate(viewName) {
         break;
       case 'historial':
         historial.init();
+        break;
+      case 'biblioteca':
+        biblioteca.init();
         break;
       case 'configuracion':
         // Lógica específica de configuración (modo oscuro)

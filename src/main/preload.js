@@ -2,7 +2,6 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 console.log('🛡️ [PRELOAD] Script iniciado...');
 
-// Verificación de seguridad
 if (!process.contextIsolated) {
   console.error('❌ [PRELOAD] Error: contextIsolation debe estar activado.');
   throw new Error('Context Isolation falló. Revisa main.js');
@@ -22,9 +21,8 @@ try {
     },
     
     // ==========================================
-    // 2. GESTIÓN DE DOCENTES (Antes Colaboradores)
+    // 2. GESTIÓN DE DOCENTES
     // ==========================================
-    // Nota: Se renombra para coincidir con la tabla 'docentes' en la BD
     guardarDocente: (datos) => {
       console.log('📡 [PRELOAD] Guardando docente:', datos.nombres);
       return ipcRenderer.invoke('guardar-docente', datos);
@@ -54,17 +52,37 @@ try {
     },
 
     // ==========================================
-    // 4. CATÁLOGOS ADICIONALES (Para futuro uso inmediato)
+    // 4. BIBLIOTECA DE CONSTANCIAS (NUEVO)
     // ==========================================
-    listarPeriodos: () => {
-      return ipcRenderer.invoke('obtener-periodos');
+    obtenerBibliotecaConstancias: () => {
+      console.log('📡 [PRELOAD] Solicitando biblioteca de constancias...');
+      return ipcRenderer.invoke('obtener-biblioteca-constancias');
     },
-    listarEE: () => {
-      return ipcRenderer.invoke('obtener-ee');
+
+    abrirArchivoPDF: (ruta) => {
+      console.log('📡 [PRELOAD] Abriendo archivo PDF:', ruta);
+      return ipcRenderer.invoke('abrir-archivo-pdf', ruta);
     },
-    listarProgramas: () => {
-      return ipcRenderer.invoke('obtener-programas');
-    }
+
+    // ==========================================
+    // 5. HISTORIAL Y AUDITORÍA
+    // ==========================================
+    obtenerHistorial: () => {
+      console.log('📡 [PRELOAD] Solicitando historial de auditoría...');
+      return ipcRenderer.invoke('obtener-historial');
+    },
+
+    // ==========================================
+    // 6. CATÁLOGOS ADICIONALES (EE, PERIODOS, PROGRAMAS)
+    // ==========================================
+    listarEE: () => ipcRenderer.invoke('obtener-ee'),
+    guardarEE: (datos) => ipcRenderer.invoke('guardar-ee', datos),
+    
+    listarPeriodos: () => ipcRenderer.invoke('obtener-periodos'),
+    guardarPeriodo: (datos) => ipcRenderer.invoke('guardar-periodo', datos),
+    
+    listarProgramas: () => ipcRenderer.invoke('obtener-programas'),
+    guardarPrograma: (datos) => ipcRenderer.invoke('guardar-programa', datos),
   });
   
   console.log('✅ [PRELOAD] electronAPI expuesto correctamente con todos los módulos.');
