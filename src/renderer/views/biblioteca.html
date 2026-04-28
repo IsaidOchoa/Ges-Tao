@@ -1,19 +1,33 @@
 <div class="fade-in">
-  <div class="view-header">
-    <h2 style="margin:0; color: var(--text-dark);">Biblioteca de Constancias</h2>
-    <p style="margin:5px 0 0 0; color: var(--text-muted);">Gestión, búsqueda e impresión de documentos emitidos.</p>
-  </div>
+  
+  <!-- NOTA: El título "Biblioteca de Constancias" ya está en la Top Bar. -->
 
   <div class="card">
-    <!-- Barra de Herramientas -->
+    
+    <!-- Barra de Herramientas (Estilo inline idéntico al Historial) -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-      <h3 style="margin:0; font-size:1.1rem; color:var(--text-dark);"><i class="fa-solid fa-folder-open"></i> Constancias Emitidas</h3>
       
-      <!-- Buscador Global -->
+      <!-- TÍTULO Y DESCRIPCIÓN AGRUPADOS -->
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <h3 style="margin:0; font-size:1.1rem; color:var(--text-dark);">
+          <i class="fa-solid fa-folder-open"></i> Constancias Emitidas
+        </h3>
+        <!-- Descripción justo debajo del título -->
+        <p style="margin:0; font-size:0.9rem; color:var(--text-muted);">
+          Gestión, búsqueda e impresión de documentos emitidos.
+        </p>
+      </div>
+      <!-- FIN TÍTULO Y DESCRIPCIÓN -->
+
+      <!-- Buscador Global (Con estilos inline para la lupa) -->
       <div style="position:relative; width: 300px;">
         <i class="fa-solid fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
-        <input type="text" id="buscador-biblioteca" placeholder="Buscar por folio, docente o tipo..." 
-          style="width:100%; padding:10px 10px 10px 35px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);">
+        <input 
+          type="text" 
+          id="buscador-biblioteca" 
+          placeholder="Buscar por folio, docente o tipo..." 
+          style="width:100%; padding:10px 10px 10px 35px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-white); color:var(--text-dark);"
+        >
       </div>
     </div>
 
@@ -37,35 +51,19 @@
       </table>
     </div>
     
-    <div id="no-results" style="text-align:center; padding:40px; color:var(--text-muted); display:none;">
-      <i class="fa-regular fa-folder-open" style="font-size:2rem; margin-bottom:10px;"></i>
-      <p>No se encontraron constancias registradas.</p>
+        <!-- Estado Vacío (Corregido para centrado perfecto) -->
+    <div id="no-results" style="text-align:center; padding: 50px 20px; color:var(--text-muted); display:none; width: 100%;">
+      <!-- El icono ahora es display:block y margin:auto para asegurar centrado horizontal -->
+      <i class="fa-regular fa-folder-open" style="font-size: 2.5rem; margin: 0 auto 15px auto; display: block; opacity: 0.6;"></i>
+      <p style="margin: 0; font-size: 1rem;">No se encontraron constancias registradas.</p>
     </div>
   </div>
 </div>
 
-<style>
-  /* Estilos específicos si fueran necesarios, aunque usaremos clases globales */
-  .btn-action {
-    padding: 6px 12px;
-    font-size: 0.85rem;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
-  }
-  .btn-view { background: var(--primary-color); color: white; }
-  .btn-view:hover { background: #1a252f; }
-  
-  .btn-print { background: var(--success-color); color: white; }
-  .btn-print:hover { background: #219150; }
-</style>
-
 <script>
-  // Este script será reemplazado por la lógica en BibliotecaModule.js
-  // Solo dejamos esto como marcador de posición o para pruebas rápidas si fuera necesario.
-  // La lógica real irá en el módulo JS.
+  // La lógica completa está en BibliotecaModule.js
+  if (typeof BibliotecaModule !== 'undefined') {
+    const biblioteca = new BibliotecaModule();
+    biblioteca.init();
+  }
 </script>

@@ -62,7 +62,6 @@ body {
 }
 
 .logo-area h1 {
-  color: var(--primary-color);
   margin-bottom: 0.5rem;
   font-size: 2rem;
 }
@@ -81,7 +80,6 @@ body {
 .input-group label {
   display: block;
   margin-bottom: 0.5rem;
-  color: var(--primary-color);
   font-weight: 600;
 }
 

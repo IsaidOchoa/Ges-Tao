@@ -1,15 +1,24 @@
 <div class="fade-in">
-  <div class="view-header">
-    <h2 style="margin:0; color: var(--text-dark);">Historial y Auditoría</h2>
-    <p style="margin:5px 0 0 0; color: var(--text-muted);">Registro detallado de operaciones realizadas en el sistema.</p>
-  </div>
+  
+  <!-- ELIMINADO: <div class="view-header">... (Ya no es necesario porque el título está en la Top Bar) -->
 
   <div class="card">
     <!-- Barra de Herramientas -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-      <h3 style="margin:0; font-size:1.1rem; color:var(--text-dark);"><i class="fa-solid fa-clock-rotate-left"></i> Bitácora de Operaciones</h3>
       
-      <!-- Buscador Global -->
+      <!-- TÍTULO Y DESCRIPCIÓN AGRUPADOS -->
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <h3 style="margin:0; font-size:1.1rem; color:var(--text-dark);">
+          <i class="fa-solid fa-clock-rotate-left"></i> Bitácora de Operaciones
+        </h3>
+        <!-- La descripción se movió aquí, justo debajo del título -->
+        <p style="margin:0; font-size:0.9rem; color:var(--text-muted);">
+          Registro detallado de operaciones realizadas en el sistema.
+        </p>
+      </div>
+      <!-- FIN TÍTULO Y DESCRIPCIÓN -->
+      
+      <!-- Buscador Global (Intacto) -->
       <div style="position:relative; width: 300px;">
         <i class="fa-solid fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
         <input type="text" id="buscador-historial" placeholder="Buscar por folio, nombre, acción..." 
@@ -17,7 +26,7 @@
       </div>
     </div>
 
-    <!-- Tabla de Historial -->
+    <!-- Tabla de Historial (Intacta) -->
     <div class="table-responsive">
       <table class="data-table">
         <thead>
@@ -35,6 +44,7 @@
       </table>
     </div>
     
+    <!-- Estado Vacío (Intacto) -->
     <div id="no-results" style="text-align:center; padding:40px; color:var(--text-muted); display:none;">
       <i class="fa-regular fa-folder-open" style="font-size:2rem; margin-bottom:10px;"></i>
       <p>No se encontraron registros coincidentes.</p>
@@ -42,6 +52,7 @@
   </div>
 </div>
 
+<!-- Estilos (Intactos) -->
 <style>
   /* Estilos específicos para badges de auditoría */
   .badge-audit {
@@ -52,21 +63,13 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
-  .audit-emission { background: #e3f2fd; color: #1565c0; } /* Azul para emisiones */
-  .audit-login { background: #e8f5e9; color: #2e7d32; } /* Verde para logins */
-  .audit-delete { background: #ffebee; color: #c62828; } /* Rojo para eliminados */
-  .audit-edit { background: #fff3e0; color: #ef6c00; } /* Naranja para ediciones */
+  .audit-emission { background: #e3f2fd; color: #1565c0; }
+  .audit-login { background: #e8f5e9; color: #2e7d32; }
+  .audit-delete { background: #ffebee; color: #c62828; }
+  .audit-edit { background: #fff3e0; color: #ef6c00; }
   
-  .audit-details {
-    font-size: 0.9rem;
-    color: var(--text-dark);
-  }
-  .audit-meta {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 4px;
-    display: block;
-  }
+  .audit-details { font-size: 0.9rem; color: var(--text-dark); }
+  .audit-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; display: block; }
   
   body[data-theme="dark"] .audit-emission { background: #0d47a1; color: #bbdefb; }
   body[data-theme="dark"] .audit-login { background: #1b5e20; color: #c8e6c9; }
@@ -74,10 +77,10 @@
   body[data-theme="dark"] .audit-edit { background: #e65100; color: #ffe0b2; }
 </style>
 
+<!-- Script (Intacto) -->
 <script>
   let historialData = [];
 
-  // 1. Cargar Datos
   async function cargarHistorial() {
     const tbody = document.getElementById('tabla-historial-body');
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando bitácora...</td></tr>';
@@ -96,7 +99,6 @@
     }
   }
 
-  // 2. Renderizar Tabla
   function renderizarTabla(datos) {
     const tbody = document.getElementById('tabla-historial-body');
     const noResults = document.getElementById('no-results');
@@ -110,7 +112,6 @@
     }
 
     datos.forEach(row => {
-      // Determinar estilo según acción
       let badgeClass = 'audit-edit';
       let accionLabel = row.accion;
       
@@ -119,10 +120,8 @@
       else if (row.accion.includes('ELIMINAR')) { badgeClass = 'audit-delete'; accionLabel = 'Eliminación de Registro'; }
       else if (row.accion.includes('GUARDAR') || row.accion.includes('ACTUALIZAR')) { badgeClass = 'audit-edit'; accionLabel = 'Actualización de Datos'; }
 
-      // Construir detalles legibles
       let detallesHtml = `<span class="audit-details">${row.tabla_afectada || 'Sistema'}</span>`;
       
-      // Si hay datos de constancia, enriquecer la info
       if (row.folio) {
         const nombreDocente = row.nombres ? `${row.nombres} ${row.apellido_paterno || ''}` : 'Desconocido';
         detallesHtml += `<span class="audit-meta">Docente: <strong>${nombreDocente}</strong></span>`;
@@ -130,14 +129,12 @@
           detallesHtml += `<span class="audit-meta">Tipo: ${row.tipo_constancia.replace('_', ' ')}</span>`;
         }
       } else if (row.detalles) {
-        // Intentar mostrar JSON si no hay join
         try {
           const json = JSON.parse(row.detalles);
           if(json.nombre) detallesHtml += `<span class="audit-meta">Objeto: ${json.nombre}</span>`;
         } catch(e) {}
       }
 
-      // Formatear fecha
       const fecha = new Date(row.fecha_sistema).toLocaleString('es-MX', { 
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' 
       });
@@ -160,28 +157,22 @@
     });
   }
 
-  // 3. Buscador Global
   const buscador = document.getElementById('buscador-historial');
   if(buscador) {
     buscador.addEventListener('input', (e) => {
       const texto = e.target.value.toLowerCase();
-      
       const filtrados = historialData.filter(row => {
-        // Buscar en acción, tabla, folio, nombres, detalles
         const matchAccion = row.accion.toLowerCase().includes(texto);
         const matchTabla = (row.tabla_afectada || '').toLowerCase().includes(texto);
         const matchFolio = (row.folio || '').toLowerCase().includes(texto);
         const matchNombre = (row.nombres || '').toLowerCase().includes(texto) || 
                              (row.apellido_paterno || '').toLowerCase().includes(texto);
         const matchDetalles = (row.detalles || '').toLowerCase().includes(texto);
-
         return matchAccion || matchTabla || matchFolio || matchNombre || matchDetalles;
       });
-      
       renderizarTabla(filtrados);
     });
   }
 
-  // Iniciar
   cargarHistorial();
 </script>

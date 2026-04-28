@@ -8,7 +8,6 @@
 /* Títulos de Sección (Estilo Sidebar pero en horizontal) */
 .section-title {
   font-size: 1.1rem;
-  color: var(--primary-color);
   margin-bottom: 5px;
   display: flex;
   align-items: center;
@@ -50,4 +49,31 @@
   cursor: pointer;
   font-size: 0.95rem;
   color: var(--text-dark);
+}
+
+/* =======================================================
+   CORRECCIÓN ESPECÍFICA: BOTONES OUTLINE EN MODO OSCURO
+   (Solo para "Examinar" y "Contactar Soporte")
+   ======================================================= */
+
+/* 1. El Input de ruta (quitar el gris claro fijo) */
+body[data-theme="dark"] .settings-section input[readonly] {
+  background-color: #333 !important; /* Gris oscuro acorde al tema */
+  color: #ecf0f1 !important;         /* Texto claro */
+  border-color: #555 !important;
+}
+
+/* 2. Los Botones Outline (.btn-outline) */
+body[data-theme="dark"] .btn-outline {
+  /* Usamos un color claro para el borde y el texto */
+  border-color: var(--text-muted) !important; 
+  color: var(--text-muted) !important;
+  background-color: transparent !important;
+}
+
+/* Efecto Hover: Se vuelven blancos al pasar el mouse */
+body[data-theme="dark"] .btn-outline:hover {
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }

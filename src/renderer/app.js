@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- INICIALIZAR MÓDULO DE AUTH ---
   auth.init();
   
-  // Callback para cuando el login sea exitoso (definido en AuthModule)
+  // Callback para cuando el login sea exitoso
   window.onLoginSuccess = () => {
     navigate('home');
   };
@@ -134,10 +134,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Función global para cerrar sesión (usada en el HTML del dropdown)
+  // Función global para cerrar menú perfil
   window.toggleProfileMenu = () => {
     if(dropdown) dropdown.classList.add('hidden');
   };
+
+  // =======================================================
+  // 🛠️ SOLUCIÓN: Helpers Globales para Modales
+  // =======================================================
+  // Estas funciones deben estar AQUÍ para que el HTML (onclick) las encuentre
+  
+  window.abrirModal = (id) => {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.classList.remove('hidden');
+      const form = modal.querySelector('form');
+      if (form) form.reset();
+    }
+  };
+
+  window.cerrarModal = (id) => {
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.add('hidden');
+  };
+
+  // También exponemos doLogout por si el HTML lo usa directamente
+  window.doLogout = () => {
+    if (auth) auth.logout();
+  };
+  
+  // =======================================================
+
 });
 
 // =======================================================
@@ -178,7 +205,8 @@ async function navigate(viewName) {
       'perfil': 'Mi Perfil',
       'reportes': 'Reportes Estadísticos',
       'emision': 'Emisión de Constancias',
-      'historial': 'Historial y Búsqueda'
+      'historial': 'Historial y Búsqueda',
+      'biblioteca': 'Biblioteca de Constancias'
     };
     pageTitle.innerText = titles[viewName] || 'Ges-TAO';
 
@@ -197,7 +225,6 @@ async function navigate(viewName) {
         biblioteca.init();
         break;
       case 'configuracion':
-        // Lógica específica de configuración (modo oscuro)
         setTimeout(() => {
           const toggle = document.getElementById('toggle-dark-mode');
           if (toggle) {
@@ -207,7 +234,6 @@ async function navigate(viewName) {
         }, 10);
         break;
       default:
-        // Home, Reportes, Perfil (no requieren init complejo por ahora)
         break;
     }
 

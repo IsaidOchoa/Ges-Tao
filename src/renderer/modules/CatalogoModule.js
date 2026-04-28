@@ -27,6 +27,25 @@ export class CatalogoModule {
 
     // 2. Cargar todos los datos en paralelo
     await this.loadAllData();
+
+    this.setupModalDocente();
+    this.setupModalEE();
+    this.setupModalPeriodo();
+    this.setupModalPrograma();
+
+    window.abrirModal = (id) => {
+        const modal = document.getElementById(id);
+        if (modal) {
+        modal.classList.remove('hidden');
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+        }
+    };
+
+    window.cerrarModal = (id) => {
+        const modal = document.getElementById(id);
+        if (modal) modal.classList.add('hidden');
+    };
   }
 
   /**
@@ -254,6 +273,145 @@ export class CatalogoModule {
       alert('✅ Docente guardado correctamente');
       onSuccessCallback();
       this.loadAllData(); // Recargar todo
+    } else {
+      alert('❌ Error: ' + res.error);
+    }
+  }
+
+  // ... dentro de la clase CatalogoModule ...
+
+  // =======================================================
+  // LÓGICA DE MODALES ADICIONALES (EE, PERIODOS, PROGRAMAS)
+  // =======================================================
+
+  async init() {
+    console.log('🚀 [CatalogoModule] Iniciando...');
+    this.setupTabs();
+    await this.loadAllData();
+    
+    // Inicializar listeners de los nuevos modales
+    this.setupModalEE();
+    this.setupModalPeriodo();
+    this.setupModalPrograma();
+  }
+
+  // ... (métodos existentes loadAllData, renderTable, etc.) ...
+
+  // --- CONFIGURACIÓN MODAL EE ---
+  setupModalEE() {
+    const btn = document.getElementById('btn-nuevo-ee'); // Asegúrate que este ID exista en el HTML de la pestaña EE
+    const modal = document.getElementById('modal-ee');
+    if (!btn || !modal) return;
+
+    btn.onclick = () => { document.getElementById('form-ee')?.reset(); modal.classList.remove('hidden'); };
+    
+    const cerrar = () => modal.classList.add('hidden');
+    document.getElementById('modal-ee')?.querySelector('.btn-close')?.addEventListener('click', cerrar);
+    // Nota: Los botones de cancelar/cerrar en el HTML ya tienen onclick="cerrarModal(...)"
+
+    const btnSave = document.getElementById('modal-ee')?.querySelector('.btn-primary');
+    if(btnSave) {
+      const newBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newBtn, btnSave);
+      newBtn.addEventListener('click', () => this.handleGuardarEE(cerrar));
+    }
+  }
+
+  async handleGuardarEE(onSuccessCallback) {
+    const datos = {
+      clave_ee: document.getElementById('ee-clave')?.value,
+      nombre: document.getElementById('ee-nombre')?.value,
+      tipo: document.getElementById('ee-tipo')?.value,
+      creditos: document.getElementById('ee-creditos')?.value,
+      horas_teoria: document.getElementById('ee-h-teoria')?.value,
+      horas_practica: document.getElementById('ee-h-practica')?.value,
+      programa_academico: document.getElementById('ee-programa')?.value,
+      estado: document.getElementById('ee-estado')?.value
+    };
+
+    if (!datos.clave_ee || !datos.nombre) return alert('Faltan datos obligatorios (Clave, Nombre)');
+
+    const res = await window.electronAPI.guardarEE(datos);
+    if (res.success) {
+      alert('✅ EE guardada correctamente');
+      onSuccessCallback();
+      this.loadAllData(); // Recargar tabla
+    } else {
+      alert('❌ Error: ' + res.error);
+    }
+  }
+
+  // --- CONFIGURACIÓN MODAL PERIODO ---
+  setupModalPeriodo() {
+    const btn = document.getElementById('btn-nuevo-periodo'); 
+    const modal = document.getElementById('modal-periodo');
+    if (!btn || !modal) return;
+
+    btn.onclick = () => { document.getElementById('form-periodo')?.reset(); modal.classList.remove('hidden'); };
+    
+    const cerrar = () => modal.classList.add('hidden');
+    const btnSave = document.getElementById('modal-periodo')?.querySelector('.btn-primary');
+    if(btnSave) {
+      const newBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newBtn, btnSave);
+      newBtn.addEventListener('click', () => this.handleGuardarPeriodo(cerrar));
+    }
+  }
+
+  async handleGuardarPeriodo(onSuccessCallback) {
+    const datos = {
+      clave: document.getElementById('per-clave')?.value,
+      descripcion: document.getElementById('per-desc')?.value,
+      fecha_inicio: document.getElementById('per-inicio')?.value,
+      fecha_fin: document.getElementById('per-fin')?.value,
+      estado: document.getElementById('per-estado')?.value
+    };
+
+    if (!datos.clave || !datos.fecha_inicio) return alert('Faltan datos obligatorios');
+
+    const res = await window.electronAPI.guardarPeriodo(datos);
+    if (res.success) {
+      alert('✅ Periodo guardado correctamente');
+      onSuccessCallback();
+      this.loadAllData();
+    } else {
+      alert('❌ Error: ' + res.error);
+    }
+  }
+
+  // --- CONFIGURACIÓN MODAL PROGRAMA ---
+  setupModalPrograma() {
+    const btn = document.getElementById('btn-nuevo-programa'); 
+    const modal = document.getElementById('modal-programa');
+    if (!btn || !modal) return;
+
+    btn.onclick = () => { document.getElementById('form-programa')?.reset(); modal.classList.remove('hidden'); };
+    
+    const cerrar = () => modal.classList.add('hidden');
+    const btnSave = document.getElementById('modal-programa')?.querySelector('.btn-primary');
+    if(btnSave) {
+      const newBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newBtn, btnSave);
+      newBtn.addEventListener('click', () => this.handleGuardarPrograma(cerrar));
+    }
+  }
+
+  async handleGuardarPrograma(onSuccessCallback) {
+    const datos = {
+      nombre: document.getElementById('prog-nombre')?.value,
+      descripcion: document.getElementById('prog-desc')?.value,
+      responsable: document.getElementById('prog-resp')?.value,
+      fecha_registro: document.getElementById('prog-fecha')?.value || new Date().toISOString().split('T')[0],
+      estado: document.getElementById('prog-estado')?.value
+    };
+
+    if (!datos.nombre) return alert('Faltan datos obligatorios');
+
+    const res = await window.electronAPI.guardarPrograma(datos);
+    if (res.success) {
+      alert('✅ Programa guardado correctamente');
+      onSuccessCallback();
+      this.loadAllData();
     } else {
       alert('❌ Error: ' + res.error);
     }

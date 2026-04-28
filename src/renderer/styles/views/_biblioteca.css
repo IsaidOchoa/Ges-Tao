@@ -1,0 +1,116 @@
+/* =======================================================
+   BIBLIOTECA DE CONSTANCIAS
+   ======================================================= */
+
+/* Contenedor de la barra de herramientas (Buscador) */
+.toolbar {
+  display: flex;
+  justify-content: flex-end; /* Alineado a la derecha */
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Wrapper del buscador: CLAVE para posicionar la lupa */
+.search-wrapper {
+  position: relative; /* Esto hace que el absoluto de la lupa se refiera a este cuadro */
+  width: 100%;
+  max-width: 350px;
+}
+
+/* Icono de lupa: Posicionamiento Absoluto Correcto */
+.search-icon {
+  position: absolute;
+  left: 12px;       /* Distancia desde la izquierda del wrapper */
+  top: 50%;         /* Mitad de la altura */
+  transform: translateY(-50%); /* Subir la mitad de su propia altura para centrar perfecto */
+  color: var(--text-muted);
+  pointer-events: none; /* Click atraviesa el icono hacia el input */
+  z-index: 2;
+  font-size: 1rem;
+}
+
+/* Input de búsqueda estilizado */
+.search-input {
+  width: 100%;
+  padding: 10px 12px 10px 38px; /* Padding IZQUIERDO extra (38px) para que el texto no pise la lupa */
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box; /* Asegura que el padding no rompa el ancho */
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* =======================================================
+   ESTADO VACÍO (CUANDO NO HAY DATOS)
+   ======================================================= */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  display: none; /* Se activa con JS si no hay datos */
+  
+  /* Flexbox para centrar icono y texto verticalmente */
+  display: none; /* Por defecto oculto */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Clase utilitaria para mostrarlo cuando JS lo active */
+.empty-state.visible {
+  display: flex;
+}
+
+.empty-state i.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  opacity: 0.5;
+  display: block;
+  color: var(--text-muted); /* Asegurar color en modo oscuro */
+}
+
+.empty-state p {
+  font-size: 1rem;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* =======================================================
+   BOTONES DE ACCIÓN
+   ======================================================= */
+.btn-action {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.btn-view {
+  background-color: var(--primary-color);
+  color: #ffffff;
+}
+
+.btn-view:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+body[data-theme="dark"] .btn-view {
+  background-color: #3498db; 
+}

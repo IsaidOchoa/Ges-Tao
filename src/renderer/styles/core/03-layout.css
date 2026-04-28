@@ -207,30 +207,6 @@
 }
 
 
-
-/* --- INDICADOR DE CONEXIÓN (NUBE) EN SIDEBAR --- */
-/* Útil si decides poner la nube aquí al final del menú */
-.connection-indicator-sidebar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 15px 0;
-  color: #27ae60;
-  /* Verde por defecto */
-  transition: color 0.3s;
-  cursor: default;
-}
-
-.connection-indicator-sidebar.offline {
-  color: #e74c3c;
-  /* Rojo si está offline */
-}
-
-.connection-indicator-sidebar svg {
-  width: 24px;
-  height: 24px;
-}
-
 /* --- MAIN CONTENT & TOP BAR --- */
 .main-content {
   flex-grow: 1;
@@ -321,33 +297,48 @@
   color: var(--accent-color);
 }
 
-/* Dropdown Menu (Ahora colgado del Top Bar) */
+/* =======================================================
+   INDICADOR DE CONEXIÓN (NUBE + PUNTO) - LIMPIO
+   ======================================================= */
 
-/* --- INDICADOR DE CONEXIÓN (NUBE) EN TOP BAR --- */
+/* 1. El contenedor padre (La Nube) */
 .connection-indicator {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: default;
   transition: color 0.3s;
-  color: #27ae60;
-  /* Verde por defecto */
+  
+  /* Forzamos el color verde base */
+  color: #27ae60 !important; 
 }
 
 .connection-indicator.offline {
-  color: #e74c3c;
-  /* Rojo si está offline */
+  /* Forzamos rojo si está offline */
+  color: #e74c3c !important; 
 }
 
-.status-dot {
+/* Aseguramos que el SVG herede el color forzado del padre */
+.connection-indicator svg {
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+/* 2. El puntito (El Span) - UNIFICADO */
+span.status-dot {
+  display: inline-block; /* Necesario para dimensiones en spans */
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: currentColor;
-  box-shadow: 0 0 5px currentColor;
+  
+  /* Hereda el color del padre (.connection-indicator) que ya forzamos arriba */
+  background-color: currentColor !important;
+  box-shadow: 0 0 5px currentColor !important;
+  color: inherit !important; /* Por seguridad extra */
+  
+  /* Mantenemos la animación original */
   animation: pulse 2s infinite;
 }
-
 
 /* Contenido Principal */
 .content-area {

@@ -139,9 +139,58 @@ button:disabled {
 .btn-primary { background-color: var(--primary-color); color: white; }
 .btn-primary:hover { background-color: #1a252f; }
 
-.btn-secondary { background-color: var(--secondary-color); color: white; }
-.btn-secondary:hover { background-color: #7f8c8d; }
+/* =======================================================
+   BOTÓN SECUNDARIO (Estilo "Soft/Ghost" Moderno)
+   Ideal para acciones como "Limpiar", "Cancelar", "Volver"
+   ======================================================= */
 
+.btn-secondary {
+  /* Fondo transparente para no pesar visualmente */
+  background-color: transparent;
+  
+  /* Borde y texto usan el color secundario (gris) o muted */
+  border: 1px solid var(--secondary-color);
+  color: var(--secondary-color);
+  
+  /* Aseguramos que tenga buen padding y peso */
+  padding: 8px 16px;
+  font-weight: 600;
+  text-transform: uppercase; /* Opcional: le da seriedad a acciones de sistema */
+  font-size: 0.85rem; /* Ligeramente más pequeño que el primario */
+  letter-spacing: 0.5px;
+  
+  transition: all 0.2s ease;
+}
+
+/* Efecto Hover: Se llena suavemente */
+.btn-secondary:hover {
+  background-color: var(--secondary-color);
+  color: #ffffff; /* Texto blanco al hacer hover */
+  transform: translateY(-1px); /* Pequeño elevación */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Efecto Active (al hacer clic) */
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* =======================================================
+   AJUSTE ESPECÍFICO PARA MODO OSCURO
+   ======================================================= */
+
+body[data-theme="dark"] .btn-secondary {
+  /* En oscuro, usamos un gris más claro para el borde/texto para que se vea */
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .btn-secondary:hover {
+  /* Al pasar el mouse en oscuro, se llena de un gris medio */
+  background-color: var(--text-muted);
+  color: var(--bg-body); /* Texto oscuro sobre fondo gris claro */
+}
 .btn-success { background-color: var(--success-color); color: white; }
 .btn-success:hover { background-color: #219150; }
 

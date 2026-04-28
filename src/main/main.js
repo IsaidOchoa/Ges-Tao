@@ -18,7 +18,8 @@ const createWindow = () => {
     preloadPath = path.join(__dirname, '../renderer/main_window/preload.js');
     console.log('🔧 [DEV] Preload:', preloadPath);
   } else {
-    preloadPath = path.join(__dirname, 'preload.js');
+    preloadPath = path.join(__dirname, '../renderer/main_window/preload.js');
+    console.log('📦 [PROD] Preload ruta calculada:', preloadPath);
   }
 
   mainWindow = new BrowserWindow({

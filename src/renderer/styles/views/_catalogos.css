@@ -1,0 +1,252 @@
+/* src/renderer/styles/views/_catalogos.css */
+
+/* --- ENCABEZADO DE VISTA --- */
+.catalogos-header {
+  margin-bottom: 20px;
+}
+.catalogos-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-dark);
+}
+.catalogos-subtitle {
+  margin: 5px 0 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* --- PESTAÑAS (TABS) --- */
+.tabs-container {
+  display: flex;
+  gap: 5px;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 12px 20px;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-btn:hover {
+  color: var(--text-dark);
+}
+
+.tab-btn.active {
+  color: var(--accent-color) !important; 
+  border-bottom-color: var(--accent-color);
+  font-weight: 600;
+}
+
+.tab-content {
+  display: none;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* --- TARJETAS Y CABECERAS --- */
+.card-header-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.card-header-action h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+}
+
+/* --- BUSCADORES --- */
+.buscatdor-catalogos {
+  width: 100%;
+  padding: 10px;
+  margin: 15px 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-white);
+  color: var(--text-dark);
+  font-size: 1rem;
+}
+
+/* --- MODALES --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: var(--bg-white);
+  padding: 20px;
+  border-radius: var(--radius-md);
+  width: 90%;
+  max-width: 600px; /* Default, se puede sobrescribir */
+  box-shadow: var(--shadow-lg);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.modal-content.smaller {
+  max-width: 500px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text-dark);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  padding: 0 5px;
+}
+
+.btn-close:hover {
+  color: var(--text-dark);
+}
+
+/* --- FORMULARIOS DENTRO DE MODALES --- */
+.form-row-flex {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  flex: 1; /* Por defecto ocupa espacio flexible */
+}
+
+.form-group.full-width {
+  flex: 100%; /* Para forzar ancho completo si está dentro de un flex */
+  width: 100%;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-white);
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  box-sizing: border-box; /* Importante para que el padding no rompa el ancho */
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Utilidad para anchos específicos en filas flex */
+.flex-1 { flex: 1; margin-bottom: 0; }
+.flex-2 { flex: 2; margin-bottom: 0; }
+
+/* =======================================================
+   BADGES DE ESTADO (ESTILO SÓLIDO INSTITUCIONAL)
+   Usando las variables --success-color y --danger-color
+   ======================================================= */
+
+/* Base del Badge */
+.badge {
+  padding: 6px 12px;
+  border-radius: 6px; /* Bordes sutilmente redondeados */
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #ffffff; /* Texto siempre blanco para máximo contraste */
+  border: none;
+}
+
+/* --- ÉXITO / ACTIVO (Verde) --- */
+.badge-success {
+  /* Usamos la variable verde, pero un poco más oscura para el fondo */
+  background-color: #219150; /* Un tono más oscuro que #27ae60 */
+  color: #ffffff;
+}
+
+/* Ajuste fino para Modo Oscuro si se ve muy brillante */
+body[data-theme="dark"] .badge-success {
+  background-color: #27ae60; /* Usamos el color exacto de la variable en oscuro */
+}
+
+/* --- PELIGRO / INACTIVO (Rojo) --- */
+.badge-danger {
+  /* Usamos la variable roja, un poco más oscura para el fondo */
+  background-color: #c0392b; /* Un tono más oscuro que #e74c3c */
+  color: #ffffff;
+}
+
+/* Ajuste fino para Modo Oscuro */
+body[data-theme="dark"] .badge-danger {
+  background-color: #e74c3c; /* Color exacto de la variable en oscuro */
+}
+
+/* --- ADVERTENCIA (Naranja) - Opcional --- */
+.badge-warning {
+  background-color: #d35400;
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .badge-warning {
+  background-color: #e67e22;
+}
