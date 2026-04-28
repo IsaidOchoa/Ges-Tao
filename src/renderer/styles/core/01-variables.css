@@ -59,39 +59,6 @@ body[data-theme="dark"] {
   --shadow-md: 0 5px 15px rgba(0,0,0,0.4);
   --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
 
-  /* Ajustes específicos con !important para seguridad */
-  .top-bar {
-    background-color: #2c2c2c !important;
-    border-bottom: 1px solid #444 !important;
-    color: #ecf0f1 !important;
-  }
-  
-  input, select, textarea {
-    background-color: #333 !important;
-    border-color: #555 !important;
-    color: #ecf0f1 !important;
-  }
-  
-  .dropdown-menu {
-    background-color: #2c2c2c !important;
-    border-color: #444 !important;
-    color: #ecf0f1 !important;
-  }
-  .dropdown-item {
-    color: #ecf0f1 !important;
-  }
-  .dropdown-item:hover {
-    background-color: #444 !important;
-  }
-  .dropdown-header {
-    background-color: #333 !important;
-    border-bottom-color: #444 !important;
-    color: #ecf0f1 !important;
-  }
-  
-  .settings-divider {
-    background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0)) !important;
-  }
 }
 
 /* =======================================================

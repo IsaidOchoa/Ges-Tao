@@ -65,6 +65,7 @@
   transition: opacity 0.2s, transform 0.3s;
   white-space: nowrap;
   flex-grow: 1;
+  color: var(--text-light) !important;
 }
 
 .sidebar.collapsed .logo-text {

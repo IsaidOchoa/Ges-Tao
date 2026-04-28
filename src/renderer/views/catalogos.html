@@ -1,11 +1,8 @@
 <div class="fade-in">
-  <!-- ENCABEZADO -->
-  <div class="view-header catalogos-header">
-    <h2 class="catalogos-title">Gestión de Catálogos Académicos</h2>
-    <p class="catalogos-subtitle">Administre los datos maestros del sistema.</p>
-  </div>
+  
+  <!-- NOTA: El título "Gestión de Catálogos" ya está en la Top Bar. -->
 
-  <!-- PESTAÑAS -->
+  <!-- PESTAÑAS DE NAVEGACIÓN (Sin título grande arriba) -->
   <div class="tabs-container">
     <button class="tab-btn active" id="btn-tab-docentes">
       <i class="fa-solid fa-chalkboard-user"></i> Docentes
@@ -24,13 +21,26 @@
   <!-- CONTENIDO: DOCENTES -->
   <div id="tab-docentes" class="tab-content active">
     <div class="card">
+      <!-- Encabezado interno limpio: Solo subtítulo + acción -->
       <div class="card-header-action">
-        <h3>Directorio de Docentes</h3>
+        <div class="section-title-group">
+          <h3 class="section-title">Directorio de Docentes</h3>
+          <p class="section-desc">Gestione la información del personal académico.</p>
+        </div>
         <button class="btn btn-primary" id="btn-nuevo-docente">
           <i class="fa-solid fa-plus"></i> Nuevo Docente
         </button>
       </div>
-      <input type="text" id="buscador-docentes" class="buscador-catalogos" placeholder="Buscar docente...">
+      
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input 
+          type="text" 
+          id="buscador-docentes" 
+          class="buscador-catalogos" 
+          placeholder="Buscar docente..."
+        >
+      </div>
       <div class="table-responsive">
         <table class="data-table">
           <thead>
@@ -46,10 +56,23 @@
   <div id="tab-ee" class="tab-content">
     <div class="card">
       <div class="card-header-action">
-        <h3>Experiencias Educativas</h3>
+        <div class="section-title-group">
+          <h3 class="section-title">Experiencias Educativas</h3>
+          <p class="section-desc">Defina las materias y cursos disponibles.</p>
+        </div>
         <button class="btn btn-primary" id="btn-nuevo-ee"><i class="fa-solid fa-plus"></i> Nueva EE</button>
       </div>
-      <input type="text" id="buscador-ee" class="buscador-catalogos" placeholder="Buscar EE por nombre o clave...">
+
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input 
+          type="text" 
+          id="buscador-ee" 
+          class="buscador-catalogos" 
+          placeholder="Buscar EE por nombre o clave..."
+        >
+      </div>
+      
       <div class="table-responsive">
         <table class="data-table">
           <thead><tr><th>CLAVE</th><th>NOMBRE</th><th>TIPO</th><th>CRÉDITOS</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
@@ -63,10 +86,23 @@
   <div id="tab-periodos" class="tab-content">
     <div class="card">
       <div class="card-header-action">
-        <h3>Periodos Escolares</h3>
+        <div class="section-title-group">
+          <h3 class="section-title">Periodos Escolares</h3>
+          <p class="section-desc">Administre los ciclos académicos vigentes.</p>
+        </div>
         <button class="btn btn-primary" id="btn-nuevo-periodo"><i class="fa-solid fa-plus"></i> Nuevo Periodo</button>
       </div>
-      <input type="text" id="buscador-periodos" class="buscador-catalogos" placeholder="Buscar periodo...">
+      
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input 
+          type="text" 
+          id="buscador-periodos" 
+          class="buscador-catalogos" 
+          placeholder="Buscar periodo..."
+        >
+      </div>
+      
       <div class="table-responsive">
         <table class="data-table">
           <thead><tr><th>CLAVE</th><th>DESCRIPCIÓN</th><th>INICIO</th><th>FIN</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
@@ -80,10 +116,23 @@
   <div id="tab-programas" class="tab-content">
     <div class="card">
       <div class="card-header-action">
-        <h3>Programas Institucionales</h3>
+        <div class="section-title-group">
+          <h3 class="section-title">Programas Institucionales</h3>
+          <p class="section-desc">Registre los proyectos y programas especiales.</p>
+        </div>
         <button class="btn btn-primary" id="btn-nuevo-programa"><i class="fa-solid fa-plus"></i> Nuevo Programa</button>
       </div>
-      <input type="text" id="buscador-programas" class="buscador-catalogos" placeholder="Buscar programa...">
+      
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input 
+          type="text" 
+          id="buscador-programas" 
+          class="buscador-catalogos" 
+          placeholder="Buscar programa..."
+        >
+      </div>
+      
       <div class="table-responsive">
         <table class="data-table">
           <thead><tr><th>NOMBRE</th><th>RESPONSABLE</th><th>FECHA REGISTRO</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
@@ -93,6 +142,7 @@
     </div>
   </div>
 
+  <!-- MODALES (Sin cambios estructurales, solo se mantienen) -->
   <!-- MODAL EE -->
   <div id="modal-ee" class="modal-overlay hidden">
     <div class="modal-content">
@@ -233,7 +283,7 @@
     </div>
   </div>
 
-  <!-- MODAL DOCENTE (Limpio) -->
+  <!-- MODAL DOCENTE -->
   <div id="modal-docente" class="modal-overlay hidden">
     <div class="modal-content">
       <div class="modal-header">

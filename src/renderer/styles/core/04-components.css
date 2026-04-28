@@ -1,11 +1,14 @@
-/* --- TARJETAS --- */
+/* =========================================
+   1. TARJETAS (CARDS)
+   ========================================= */
 .card {
   background: var(--bg-white);
   padding: 20px;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   margin-bottom: 20px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s;
+  border: 1px solid transparent; /* Para evitar saltos si agregamos borde en oscuro */
 }
 
 .card:hover {
@@ -17,21 +20,24 @@
   margin-bottom: 15px;
   color: var(--text-dark);
   font-size: 1.1rem;
-  border-bottom: 1px solid var(--bg-light);
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 10px;
 }
 
+/* =========================================
+   2. DROPDOWNS (MENÚS DESPLEGABLES)
+   ========================================= */
 .dropdown-menu {
   position: absolute;
-  top: 100%; /* Debajo del trigger */
-  right: 0;  /* Alineado a la derecha del padre */
+  top: 100%;
+  right: 0;
   left: auto;
   margin-top: 10px;
   width: 220px;
-  background: white;
+  background: var(--bg-white); /* Variable dinámica */
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  border: 1px solid #eef2f7;
+  border: 1px solid var(--border-color); /* Variable dinámica */
   z-index: 1002;
   overflow: hidden;
   animation: fadeInDown 0.2s ease-out;
@@ -39,30 +45,49 @@
 
 .dropdown-header {
   padding: 10px 15px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #eee;
+  background: var(--bg-light); /* Variable dinámica */
+  border-bottom: 1px solid var(--border-color);
   text-align: center;
 }
-.dropdown-header strong { display: block; color: var(--text-dark); font-size: 1rem; }
-.dropdown-header small { color: var(--text-muted); font-size: 0.8rem; }
+
+.dropdown-header strong { 
+  display: block; 
+  color: var(--text-dark); 
+  font-size: 1rem; 
+}
+
+.dropdown-header small { 
+  color: var(--text-muted); 
+  font-size: 0.8rem; 
+}
 
 .dropdown-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 10px 15px;
   color: var(--text-dark);
   text-decoration: none;
   font-size: 0.9rem;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  transition: background 0.2s, color 0.2s;
 }
-.dropdown-item:hover { background: #f1f7ff; }
-.dropdown-item.text-danger { color: var(--danger-color); }
-.dropdown-item.text-danger:hover { background: #fadbd8; }
 
+.dropdown-item:hover { 
+  background: var(--bg-light); /* Variable dinámica */
+}
 
-/* --- FORMULARIOS --- */
+.dropdown-item.text-danger { 
+  color: var(--danger-color); 
+}
+
+.dropdown-item.text-danger:hover { 
+  background: var(--danger-color); 
+  color: #ffffff; /* Texto blanco al hover en rojo */
+}
+
+/* =========================================
+   3. FORMULARIOS E INPUTS (UNIFICADOS)
+   ========================================= */
 .form-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -83,21 +108,25 @@
   color: var(--text-dark);
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-select.form-control,
-textarea.form-control {
+/* Selector unificado para TODOS los inputs, selects y textareas */
+input, 
+select, 
+textarea {
   padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 1rem;
   width: 100%;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s, color 0.3s;
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+  box-sizing: border-box; /* Asegura que el padding no rompa el ancho */
 }
 
-input:focus, select:focus, textarea:focus {
+/* Estados de foco */
+input:focus, 
+select:focus, 
+textarea:focus {
   outline: none;
   border-color: var(--accent-color);
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
@@ -111,14 +140,16 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 15px;
 }
 
-/* --- BOTONES --- */
+/* =========================================
+   4. BOTONES
+   ========================================= */
 button, .btn {
   padding: 10px 20px;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 1rem;
   cursor: pointer;
-  transition: background 0.3s, transform 0.1s;
+  transition: all 0.2s ease;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
@@ -130,76 +161,79 @@ button:active, .btn:active {
   transform: scale(0.98);
 }
 
-button:disabled {
+button:disabled, .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
-.btn-primary { background-color: var(--primary-color); color: white; }
-.btn-primary:hover { background-color: #1a252f; }
-
-/* =======================================================
-   BOTÓN SECUNDARIO (Estilo "Soft/Ghost" Moderno)
-   Ideal para acciones como "Limpiar", "Cancelar", "Volver"
-   ======================================================= */
-
-.btn-secondary {
-  /* Fondo transparente para no pesar visualmente */
-  background-color: transparent;
-  
-  /* Borde y texto usan el color secundario (gris) o muted */
-  border: 1px solid var(--secondary-color);
-  color: var(--secondary-color);
-  
-  /* Aseguramos que tenga buen padding y peso */
-  padding: 8px 16px;
-  font-weight: 600;
-  text-transform: uppercase; /* Opcional: le da seriedad a acciones de sistema */
-  font-size: 0.85rem; /* Ligeramente más pequeño que el primario */
-  letter-spacing: 0.5px;
-  
-  transition: all 0.2s ease;
+/* Primario */
+.btn-primary { 
+  background-color: var(--primary-color); 
+  color: white; 
+}
+.btn-primary:hover { 
+  filter: brightness(1.1); 
 }
 
-/* Efecto Hover: Se llena suavemente */
+/* Secundario (Ghost/Outline) */
+.btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--secondary-color);
+  color: var(--secondary-color);
+  padding: 8px 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
 .btn-secondary:hover {
   background-color: var(--secondary-color);
-  color: #ffffff; /* Texto blanco al hacer hover */
-  transform: translateY(-1px); /* Pequeño elevación */
+  color: #ffffff;
+  transform: translateY(-1px);
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* Efecto Active (al hacer clic) */
 .btn-secondary:active {
   transform: translateY(0);
   box-shadow: none;
 }
 
-/* =======================================================
-   AJUSTE ESPECÍFICO PARA MODO OSCURO
-   ======================================================= */
-
-body[data-theme="dark"] .btn-secondary {
-  /* En oscuro, usamos un gris más claro para el borde/texto para que se vea */
-  border-color: var(--text-muted);
-  color: var(--text-muted);
-}
-
-body[data-theme="dark"] .btn-secondary:hover {
-  /* Al pasar el mouse en oscuro, se llena de un gris medio */
-  background-color: var(--text-muted);
-  color: var(--bg-body); /* Texto oscuro sobre fondo gris claro */
-}
+/* Colores de Estado */
 .btn-success { background-color: var(--success-color); color: white; }
-.btn-success:hover { background-color: #219150; }
+.btn-success:hover { filter: brightness(1.1); }
 
 .btn-danger { background-color: var(--danger-color); color: white; }
-.btn-danger:hover { background-color: #c0392b; }
+.btn-danger:hover { filter: brightness(1.1); }
 
 .btn-warning { background-color: var(--warning-color); color: white; }
-.btn-warning:hover { background-color: #d35400; }
+.btn-warning:hover { filter: brightness(1.1); }
 
+.btn-info { 
+  background-color: var(--info-color); 
+  color: white; 
+}
+.btn-info:hover { filter: brightness(1.1); }
+
+/* Outline Personalizado */
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 8px 15px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-outline:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* Tamaños */
 .btn-sm { padding: 5px 10px; font-size: 0.85rem; }
 .btn-lg { padding: 12px 24px; font-size: 1.1rem; width: 100%; }
 .btn-block { width: 100%; }
@@ -212,7 +246,9 @@ body[data-theme="dark"] .btn-secondary:hover {
   gap: 10px;
 }
 
-/* --- TABLAS --- */
+/* =========================================
+   5. TABLAS DE DATOS
+   ========================================= */
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -224,6 +260,7 @@ body[data-theme="dark"] .btn-secondary:hover {
   text-align: left;
   padding: 12px 15px;
   border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark); /* Asegurar color de texto */
 }
 
 .data-table th {
@@ -236,14 +273,16 @@ body[data-theme="dark"] .btn-secondary:hover {
 }
 
 .data-table tr:hover {
-  background-color: #f1f7ff;
+  background-color: var(--bg-light); /* Variable dinámica para hover */
 }
 
 .data-table tr:last-child td {
   border-bottom: none;
 }
 
-/* --- LISTAS DE ASIGNACIONES --- */
+/* =========================================
+   6. LISTAS DE ASIGNACIONES
+   ========================================= */
 .assignments-list {
   display: flex;
   flex-direction: column;
@@ -257,7 +296,7 @@ body[data-theme="dark"] .btn-secondary:hover {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: var(--bg-light);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background-color 0.3s;
 }
 
 .assignment-item:hover {
@@ -289,7 +328,71 @@ body[data-theme="dark"] .btn-secondary:hover {
   font-size: 0.9rem;
 }
 
-/* --- UTILIDADES DE VISTAS --- */
+/* =========================================
+   7. TOGGLE SWITCH (INTERRUPTOR)
+   ========================================= */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--secondary-color); /* Variable dinámica (gris) */
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .slider {
+  background-color: var(--success-color); /* Verde éxito */
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--success-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  margin-bottom: 15px;
+}
+
+/* =========================================
+   8. UTILIDADES Y LAYOUT
+   ========================================= */
 .view-header {
   display: flex;
   justify-content: space-between;
@@ -317,14 +420,15 @@ body[data-theme="dark"] .btn-secondary:hover {
 .mt-2 { margin-top: 1rem; }
 .mb-2 { margin-bottom: 1rem; }
 
-/* --- LOADER GLOBAL (NUEVO) --- */
+/* Loader Global */
 .loading-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.85);
+  /* Usamos una capa semi-transparente que funciona en ambos modos */
+  background: rgba(255, 255, 255, 0.8); 
   backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;
@@ -332,6 +436,11 @@ body[data-theme="dark"] .btn-secondary:hover {
   align-items: center;
   z-index: 9999;
   transition: opacity 0.3s ease;
+}
+
+/* Ajuste del loader para modo oscuro */
+body[data-theme="dark"] .loading-overlay {
+  background: rgba(26, 26, 26, 0.85); /* Fondo oscuro translúcido */
 }
 
 .loading-overlay.hidden {
@@ -342,7 +451,7 @@ body[data-theme="dark"] .btn-secondary:hover {
 .spinner {
   width: 50px;
   height: 50px;
-  border: 5px solid #f3f3f3;
+  border: 5px solid var(--bg-light); /* Borde gris suave */
   border-top: 5px solid var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -369,98 +478,116 @@ body[data-theme="dark"] .btn-secondary:hover {
   animation: fadeInUp 0.4s ease-out forwards;
 }
 
+/* =========================================
+   9. UTILIDADES DE ACCESIBILIDAD Y VISIBILIDAD
+   ========================================= */
 
-/* Botón Outline (Secundario) */
-.btn-outline {
-  background: transparent;
-  border: 1px solid var(--primary-color);
-  color: var(--primary-color);
-  padding: 8px 15px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.2s;
+/* Colores de texto utilitarios (Forzados) */
+.text-error { color: var(--danger-color) !important; }
+.text-success { color: var(--success-color) !important; }
+.text-warning { color: var(--warning-color) !important; }
+.text-info { color: var(--info-color) !important; }
+
+/* Screen Reader Only (Solo para lectores de pantalla)
+   Oculta el elemento visualmente pero lo mantiene disponible para tecnologías de asistencia.
+   Útil para etiquetas de iconos o botones que solo tienen íconos. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
   white-space: nowrap;
-}
-.btn-outline:hover {
-  background: var(--primary-color);
-  color: white;
+  border: 0;
 }
 
-.btn-info {
-  background-color: var(--info-color);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.btn-info:hover { background-color: #2980b9; }
-
-
-/* --- TOGGLE SWITCH (INTERRUPTOR DESLIZANTE) --- */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 26px;
+/* Cursor de no permitido para elementos deshabilitados */
+[disabled] {
+  cursor: not-allowed !important;
+  opacity: 0.6;
 }
 
-/* Ocultar el checkbox HTML default */
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+/* =========================================
+   10. MODO OSCURO (SOBRESCRITURAS GLOBALES)
+   Aquí centralizamos todos los ajustes específicos para el tema oscuro.
+   ========================================= */
+
+body[data-theme="dark"] {
+  /* Ajustes generales de sombra más intensas para contraste */
+  --shadow-sm: 0 2px 5px rgba(0,0,0,0.3);
+  --shadow-md: 0 5px 15px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
 }
 
-/* La corredera (slider) */
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc; /* Gris cuando está apagado */
-  transition: .4s;
-  border-radius: 34px;
+/* Botones Secundarios en Oscuro */
+body[data-theme="dark"] .btn-secondary {
+  border-color: var(--text-muted);
+  color: var(--text-muted);
 }
 
-/* El círculo interior */
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: .4s;
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+body[data-theme="dark"] .btn-secondary:hover {
+  background-color: var(--text-muted);
+  color: var(--bg-body); /* Texto oscuro sobre fondo claro */
 }
 
-/* Cuando está CHECKED (Activado) */
-input:checked + .slider {
-  background-color: #27ae60; /* VERDE ÉXITO */
+/* Barra Superior */
+body[data-theme="dark"] .top-bar {
+  background-color: var(--bg-light) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-dark) !important;
 }
 
-input:focus + .slider {
-  box-shadow: 0 0 1px #27ae60;
+/* Dropdowns en Oscuro */
+body[data-theme="dark"] .dropdown-menu {
+  background-color: var(--bg-light) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-dark) !important;
 }
 
-input:checked + .slider:before {
-  transform: translateX(24px); /* Mueve el círculo a la derecha */
+body[data-theme="dark"] .dropdown-item {
+  color: var(--text-dark) !important;
 }
 
-/* Contenedor del label para alinear texto e interruptor */
-.toggle-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.95rem;
-  color: var(--text-dark);
-  margin-bottom: 15px;
+body[data-theme="dark"] .dropdown-item:hover {
+  background-color: var(--border-color) !important; /* Un poco más claro al hover */
+  color: #ffffff !important;
+}
+
+body[data-theme="dark"] .dropdown-header {
+  background-color: #333 !important; /* Un tono distinto para el header */
+  border-bottom-color: var(--border-color) !important;
+  color: var(--text-dark) !important;
+}
+
+/* Divisores de configuración */
+body[data-theme="dark"] .settings-divider {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0)) !important;
+}
+
+/* CORRECCIÓN CRÍTICA: Opciones de Select (Hover) 
+   Esto asegura que el texto sea blanco sobre fondo azul al pasar el mouse en modo oscuro */
+body[data-theme="dark"] select option:hover,
+body[data-theme="dark"] select option:checked,
+body[data-theme="dark"] select option:focus {
+  background-color: var(--accent-color) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* Animaciones (Si no estaban en otro lado) */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }

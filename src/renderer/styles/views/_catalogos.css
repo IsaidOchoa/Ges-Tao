@@ -1,21 +1,11 @@
-/* src/renderer/styles/views/_catalogos.css */
+/* =======================================================
+   CATÁLOGOS ACADÉMICOS
+   Estilos específicos para la vista de gestión de catálogos.
+   ======================================================= */
 
-/* --- ENCABEZADO DE VISTA --- */
-.catalogos-header {
-  margin-bottom: 20px;
-}
-.catalogos-title {
-  margin: 0;
-  font-size: 1.5rem;
-  color: var(--text-dark);
-}
-.catalogos-subtitle {
-  margin: 5px 0 0 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-/* --- PESTAÑAS (TABS) --- */
+/* =========================================
+   1. PESTAÑAS (TABS)
+   ========================================= */
 .tabs-container {
   display: flex;
   gap: 5px;
@@ -36,6 +26,7 @@
   align-items: center;
   gap: 8px;
   transition: color 0.2s, border-color 0.2s;
+  font-weight: 500;
 }
 
 .tab-btn:hover {
@@ -43,47 +34,102 @@
 }
 
 .tab-btn.active {
-  color: var(--accent-color) !important; 
+  color: var(--accent-color) !important;
   border-bottom-color: var(--accent-color);
   font-weight: 600;
 }
 
 .tab-content {
   display: none;
-  animation: fadeIn 0.3s ease-in-out;
+  /* La animación fadeIn ahora viene del archivo global core */
 }
 
 .tab-content.active {
   display: block;
 }
 
-/* --- TARJETAS Y CABECERAS --- */
+/* =========================================
+   2. TARJETAS Y CABECERAS DE ACCIÓN
+   ========================================= */
 .card-header-action {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+  gap: 15px;
+  flex-wrap: wrap;
 }
 
-.card-header-action h3 {
+.section-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.section-title {
   margin: 0;
   font-size: 1.1rem;
   color: var(--text-dark);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* --- BUSCADORES --- */
-.buscatdor-catalogos {
+.section-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* =========================================
+   3. BUSCADORES CON LUPA (NUEVO)
+   ========================================= */
+/* Contenedor relativo para posicionar la lupa */
+.search-wrapper {
+  position: relative;
   width: 100%;
-  padding: 10px;
+  max-width: 100%; /* Se ajusta al padre */
   margin: 15px 0;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: var(--bg-white);
-  color: var(--text-dark);
+}
+
+/* Icono de lupa absoluto */
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  z-index: 2;
   font-size: 1rem;
 }
 
-/* --- MODALES --- */
+/* Input ajustado para dejar espacio a la lupa */
+.buscador-catalogos {
+  width: 100%;
+  padding: 10px 12px 10px 38px; /* Padding izquierdo extra (38px) */
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.buscador-catalogos:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* =========================================
+   4. MODALES
+   ========================================= */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -95,6 +141,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  backdrop-filter: blur(2px);
 }
 
 .modal-content {
@@ -102,9 +149,10 @@
   padding: 20px;
   border-radius: var(--radius-md);
   width: 90%;
-  max-width: 600px; /* Default, se puede sobrescribir */
+  max-width: 600px;
   box-shadow: var(--shadow-lg);
-  animation: fadeInUp 0.3s ease-out;
+  /* Animación fadeInUp viene del global */
+  border: 1px solid var(--border-color);
 }
 
 .modal-content.smaller {
@@ -143,26 +191,31 @@
   color: var(--text-muted);
   line-height: 1;
   padding: 0 5px;
+  transition: color 0.2s;
 }
 
 .btn-close:hover {
-  color: var(--text-dark);
+  color: var(--danger-color);
 }
 
-/* --- FORMULARIOS DENTRO DE MODALES --- */
+/* =========================================
+   5. FORMULARIOS DENTRO DE MODALES
+   ========================================= */
 .form-row-flex {
   display: flex;
   gap: 15px;
   margin-bottom: 15px;
+  flex-wrap: wrap;
 }
 
 .form-group {
   margin-bottom: 15px;
-  flex: 1; /* Por defecto ocupa espacio flexible */
+  flex: 1;
+  min-width: 0;
 }
 
 .form-group.full-width {
-  flex: 100%; /* Para forzar ancho completo si está dentro de un flex */
+  flex: 100%;
   width: 100%;
 }
 
@@ -180,73 +233,46 @@
   width: 100%;
   padding: 8px;
   border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: var(--bg-white);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-white);
   color: var(--text-dark);
   font-size: 0.95rem;
-  box-sizing: border-box; /* Importante para que el padding no rompa el ancho */
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
-/* Utilidad para anchos específicos en filas flex */
-.flex-1 { flex: 1; margin-bottom: 0; }
-.flex-2 { flex: 2; margin-bottom: 0; }
+.flex-1 { flex: 1; margin-bottom: 0; min-width: 0; }
+.flex-2 { flex: 2; margin-bottom: 0; min-width: 0; }
 
-/* =======================================================
-   BADGES DE ESTADO (ESTILO SÓLIDO INSTITUCIONAL)
-   Usando las variables --success-color y --danger-color
-   ======================================================= */
-
-/* Base del Badge */
+/* =========================================
+   6. BADGES DE ESTADO
+   ========================================= */
 .badge {
   padding: 6px 12px;
-  border-radius: 6px; /* Bordes sutilmente redondeados */
+  border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
   display: inline-block;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #ffffff; /* Texto siempre blanco para máximo contraste */
+  color: #ffffff;
   border: none;
+  white-space: nowrap;
 }
 
-/* --- ÉXITO / ACTIVO (Verde) --- */
-.badge-success {
-  /* Usamos la variable verde, pero un poco más oscura para el fondo */
-  background-color: #219150; /* Un tono más oscuro que #27ae60 */
-  color: #ffffff;
-}
+.badge-success { background-color: #219150; }
+body[data-theme="dark"] .badge-success { background-color: #27ae60; }
 
-/* Ajuste fino para Modo Oscuro si se ve muy brillante */
-body[data-theme="dark"] .badge-success {
-  background-color: #27ae60; /* Usamos el color exacto de la variable en oscuro */
-}
+.badge-danger { background-color: #c0392b; }
+body[data-theme="dark"] .badge-danger { background-color: #e74c3c; }
 
-/* --- PELIGRO / INACTIVO (Rojo) --- */
-.badge-danger {
-  /* Usamos la variable roja, un poco más oscura para el fondo */
-  background-color: #c0392b; /* Un tono más oscuro que #e74c3c */
-  color: #ffffff;
-}
-
-/* Ajuste fino para Modo Oscuro */
-body[data-theme="dark"] .badge-danger {
-  background-color: #e74c3c; /* Color exacto de la variable en oscuro */
-}
-
-/* --- ADVERTENCIA (Naranja) - Opcional --- */
-.badge-warning {
-  background-color: #d35400;
-  color: #ffffff;
-}
-
-body[data-theme="dark"] .badge-warning {
-  background-color: #e67e22;
-}
+.badge-warning { background-color: #d35400; }
+body[data-theme="dark"] .badge-warning { background-color: #e67e22; }

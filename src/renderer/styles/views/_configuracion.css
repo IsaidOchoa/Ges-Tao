@@ -38,7 +38,9 @@
   padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  background: white;
+  background-color: var(--bg-white); 
+  color: var(--text-dark);
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
 /* Switch Label simple */
@@ -58,6 +60,7 @@
 
 /* 1. El Input de ruta (quitar el gris claro fijo) */
 body[data-theme="dark"] .settings-section input[readonly] {
+
   background-color: #333 !important; /* Gris oscuro acorde al tema */
   color: #ecf0f1 !important;         /* Texto claro */
   border-color: #555 !important;
