@@ -276,3 +276,187 @@ body[data-theme="dark"] .badge-danger { background-color: #e74c3c; }
 
 .badge-warning { background-color: #d35400; }
 body[data-theme="dark"] .badge-warning { background-color: #e67e22; }
+
+/* =======================================================
+   FILA SELECCIONADA Y ICONO DE ACCIÓN (APARICIÓN SUAVE)
+   ======================================================= */
+
+/* Estado: Fila Seleccionada */
+.data-row.selected {
+  background-color: var(--bg-light) !important; /* Fondo más marcado que el hover */
+  border-left: 4px solid var(--accent-color);   /* Borde izquierdo de acento para destacar */
+}
+
+/* El Contenedor del Icono (Siempre existe, pero invisible por defecto) */
+.action-icon-container {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  opacity: 0;           /* Invisible */
+  visibility: hidden;   /* No interactuable */
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Botón de los 3 puntos */
+.btn-action-menu {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s;
+}
+
+.btn-action-menu:hover {
+  background-color: rgba(0,0,0,0.05);
+  color: var(--text-dark);
+}
+
+/* --- MAGIA: Mostrar icono cuando la fila está seleccionada --- */
+.data-row.selected .action-icon-container {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Menú Contextual (Igual que antes) */
+.context-menu {
+  position: absolute;
+  top: 100%; /* Debajo del icono */
+  right: 0;
+  margin-top: 5px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 180px;
+  z-index: 1000;
+  padding: 5px 0;
+  animation: fadeInDown 0.15s ease-out;
+}
+
+.context-menu.hidden {
+  display: none;
+}
+/* =======================================================
+   DOTS DE ESTADO (SOMBRA DE COLOR EXPLÍCITA - TIPO WIFI)
+   ======================================================= */
+
+/* Contenedor */
+.data-row .status-dot-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Dot Base: Solo forma, sin colores ni sombras */
+.data-row .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  /* Sin background-color ni box-shadow aquí */
+}
+
+/* =========================================
+   ESTADO ACTIVO (VERDE) 
+   Núcleo verde + Halo verde claro
+   ========================================= */
+.data-row .status-active {
+  /* Núcleo: Verde intenso */
+  background-color: #27ae60 !important;
+  
+  /* Halo/Sombra: Verde claro brillante */
+  box-shadow: 0 0 5px rgba(39, 174, 96, 0.5) !important;
+}
+
+/* =========================================
+   ESTADO INACTIVO (ROJO)
+   Núcleo rojo + Halo rojo claro
+   ========================================= */
+.data-row .status-inactive {
+  /* Núcleo: Rojo intenso */
+  background-color: #e74c3c !important;
+  
+  /* Halo/Sombra: Rojo claro brillante */
+  box-shadow: 0 0 5px rgba(231, 76, 60, 0.5) !important;
+}
+
+/* =========================================
+   MODO OSCURO (Más brillo para contraste)
+   ========================================= */
+body[data-theme="dark"] .data-row .status-active {
+  background-color: #2ecc71 !important; /* Verde más brillante */
+  box-shadow: 0 0 8px rgba(46, 204, 113, 0.7) !important; /* Halo más grande e intenso */
+}
+
+body[data-theme="dark"] .data-row .status-inactive {
+  background-color: #ff6b6b !important; /* Rojo más brillante */
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.7) !important; /* Halo más grande e intenso */
+}
+
+/* El Menú Contextual (Oculto por defecto) */
+.context-menu {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 180px;
+  z-index: 1000;
+  padding: 5px 0;
+  animation: fadeInDown 0.15s ease-out;
+  user-select: none;
+}
+
+.context-menu.hidden {
+  display: none;
+}
+
+/* Items del menú */
+.context-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 15px;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.context-item:hover {
+  background-color: var(--bg-light);
+}
+
+.context-item i {
+  width: 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Colores específicos de acciones */
+.context-item.text-warning { color: var(--warning-color); }
+.context-item.text-warning i { color: var(--warning-color); }
+.context-item.text-warning:hover { background-color: #fff3e0; }
+
+.context-item.text-success { color: var(--success-color); }
+.context-item.text-success i { color: var(--success-color); }
+.context-item.text-success:hover { background-color: #d1fae5; }
+
+/* Ajustes Dark Mode para hovers de menú */
+body[data-theme="dark"] .context-item.text-warning:hover { background-color: rgba(230, 126, 34, 0.15); }
+body[data-theme="dark"] .context-item.text-success:hover { background-color: rgba(39, 174, 96, 0.15); }
