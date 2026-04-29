@@ -52,7 +52,7 @@ try {
     },
 
     // ==========================================
-    // 4. BIBLIOTECA DE CONSTANCIAS (NUEVO)
+    // 4. BIBLIOTECA DE CONSTANCIAS
     // ==========================================
     obtenerBibliotecaConstancias: () => {
       console.log('📡 [PRELOAD] Solicitando biblioteca de constancias...');
@@ -75,14 +75,48 @@ try {
     // ==========================================
     // 6. CATÁLOGOS ADICIONALES (EE, PERIODOS, PROGRAMAS)
     // ==========================================
-    listarEE: () => ipcRenderer.invoke('obtener-ee'),
-    guardarEE: (datos) => ipcRenderer.invoke('guardar-ee', datos),
+    listarEE: () => {
+      console.log('📡 [PRELOAD] Obteniendo lista de EE...');
+      return ipcRenderer.invoke('obtener-ee');
+    },
+    guardarEE: (datos) => {
+      console.log('📡 [PRELOAD] Guardando EE:', datos.nombre);
+      return ipcRenderer.invoke('guardar-ee', datos);
+    },
     
-    listarPeriodos: () => ipcRenderer.invoke('obtener-periodos'),
-    guardarPeriodo: (datos) => ipcRenderer.invoke('guardar-periodo', datos),
+    listarPeriodos: () => {
+      console.log('📡 [PRELOAD] Obteniendo lista de periodos...');
+      return ipcRenderer.invoke('obtener-periodos');
+    },
+    guardarPeriodo: (datos) => {
+      console.log('📡 [PRELOAD] Guardando periodo:', datos.clave);
+      return ipcRenderer.invoke('guardar-periodo', datos);
+    },
     
-    listarProgramas: () => ipcRenderer.invoke('obtener-programas'),
-    guardarPrograma: (datos) => ipcRenderer.invoke('guardar-programa', datos),
+    listarProgramas: () => {
+      console.log('📡 [PRELOAD] Obteniendo lista de programas...');
+      return ipcRenderer.invoke('obtener-programas');
+    },
+    guardarPrograma: (datos) => {
+      console.log('📡 [PRELOAD] Guardando programa:', datos.nombre);
+      return ipcRenderer.invoke('guardar-programa', datos);
+    },
+
+    // ==========================================
+    // 7. 🆕 TIPOS DE CONSTANCIA (NUEVO)
+    // ==========================================
+    listarTiposConstancia: () => {
+      console.log('📡 [PRELOAD] Obteniendo lista de tipos de constancia...');
+      return ipcRenderer.invoke('listar-tipos-constancia');
+    },
+    guardarTipoConstancia: (datos) => {
+      console.log('📡 [PRELOAD] Guardando tipo de constancia:', datos.nombre);
+      return ipcRenderer.invoke('guardar-tipo-constancia', datos);
+    },
+    eliminarTipoConstancia: (id) => {
+      console.log('📡 [PRELOAD] Eliminando tipo de constancia ID:', id);
+      return ipcRenderer.invoke('eliminar-tipo-constancia', id);
+    },
   });
   
   console.log('✅ [PRELOAD] electronAPI expuesto correctamente con todos los módulos.');

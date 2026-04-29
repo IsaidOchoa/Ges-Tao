@@ -15,18 +15,11 @@ module.exports = [
       },
     },
   },
-  // CORRECCIÓN AQUÍ:
-  // Opción A: Elimina la línea que excluye app.html si quieres procesarlo como texto
-  // Opción B: Si solo quieres excluir otros HTMLs pero permitir app.html, sé más específico
-  
-  // CAMBIA ESTO:
-  
+
   {
     test: /\.html$/,
-    exclude: [/app\.html$/], // <--- ¡ESTO ESTÁ BLOQUEANDO TU ARCHIVO!
+    exclude: [/app\.html$/],
     type: 'asset/source',
   },
-
-  // POR ESTO (Permitir todos los HTMLs como texto/raw):
   
 ];

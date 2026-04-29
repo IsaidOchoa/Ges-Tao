@@ -1,0 +1,42 @@
+<!-- MODAL PERIODO -->
+<div id="modal-periodo" class="modal-overlay hidden">
+  <div class="modal-content smaller">
+    <div class="modal-header">
+      <h3>Nuevo Periodo Escolar</h3>
+      <button class="btn-close" onclick="cerrarModal('modal-periodo')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-periodo">
+        <input type="hidden" id="per-id">
+        <div class="form-group">
+          <label>Clave *</label>
+          <input type="text" id="per-clave" required placeholder="Ej. 2024-A">
+        </div>
+        <div class="form-group">
+          <label>Descripción *</label>
+          <input type="text" id="per-desc" required placeholder="Ej. Agosto-Diciembre 2024">
+        </div>
+        <div class="form-row-flex">
+          <div class="form-group flex-1">
+            <label>Inicio *</label>
+            <input type="date" id="per-inicio" required>
+          </div>
+          <div class="form-group flex-1">
+            <label>Fin *</label>
+            <input type="date" id="per-fin" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="per-estado">
+            <option value="abierto">Abierto</option><option value="cerrado">Cerrado</option><option value="en_proceso">En Proceso</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-periodo')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-periodo">Guardar</button>
+    </div>
+  </div>
+</div>

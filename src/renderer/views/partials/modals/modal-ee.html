@@ -1,0 +1,58 @@
+<!-- MODAL EXPERIENCIA EDUCATIVA -->
+<div id="modal-ee" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-titulo-ee">Nueva Experiencia Educativa</h3>
+      <button class="btn-close" onclick="cerrarModal('modal-ee')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-ee">
+        <input type="hidden" id="ee-id">
+        <div class="form-row-flex">
+          <div class="form-group flex-1">
+            <label>Clave EE *</label>
+            <input type="text" id="ee-clave" required placeholder="Ej. MSC-101">
+          </div>
+          <div class="form-group flex-1">
+            <label>Tipo</label>
+            <select id="ee-tipo">
+              <option>Obligatoria</option><option>Optativa</option><option>Taller</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nombre *</label>
+          <input type="text" id="ee-nombre" required>
+        </div>
+        <div class="form-row-flex">
+          <div class="form-group flex-1">
+            <label>Créditos</label>
+            <input type="number" id="ee-creditos" value="0">
+          </div>
+          <div class="form-group flex-1">
+            <label>Hrs Teoría</label>
+            <input type="number" id="ee-h-teoria" value="0">
+          </div>
+          <div class="form-group flex-1">
+            <label>Hrs Práctica</label>
+            <input type="number" id="ee-h-practica" value="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Programa Académico</label>
+          <input type="text" id="ee-programa" placeholder="Ej. Maestría">
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="ee-estado">
+            <option value="activa">Activa</option><option value="inactiva">Inactiva</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-ee')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-ee">Guardar</button>
+    </div>
+  </div>
+</div>

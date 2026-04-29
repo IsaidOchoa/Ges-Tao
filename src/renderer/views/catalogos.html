@@ -1,14 +1,15 @@
 <div class="fade-in">
   
-  <!-- NOTA: El título "Gestión de Catálogos" ya está en la Top Bar. -->
-
-  <!-- PESTAÑAS DE NAVEGACIÓN (Sin título grande arriba) -->
+  <!-- PESTAÑAS DE NAVEGACIÓN -->
   <div class="tabs-container">
     <button class="tab-btn active" id="btn-tab-docentes">
       <i class="fa-solid fa-chalkboard-user"></i> Docentes
     </button>
     <button class="tab-btn" id="btn-tab-ee">
       <i class="fa-solid fa-book-open"></i> Experiencias (EE)
+    </button>
+    <button class="tab-btn" id="btn-tab-tipos-constancia">
+      <i class="fa-solid fa-certificate"></i> Tipos de Constancia
     </button>
     <button class="tab-btn" id="btn-tab-periodos">
       <i class="fa-regular fa-calendar-days"></i> Periodos
@@ -21,7 +22,6 @@
   <!-- CONTENIDO: DOCENTES -->
   <div id="tab-docentes" class="tab-content active">
     <div class="card">
-      <!-- Encabezado interno limpio: Solo subtítulo + acción -->
       <div class="card-header-action">
         <div class="section-title-group">
           <h3 class="section-title">Directorio de Docentes</h3>
@@ -34,13 +34,9 @@
       
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input 
-          type="text" 
-          id="buscador-docentes" 
-          class="buscador-catalogos" 
-          placeholder="Buscar docente..."
-        >
+        <input type="text" id="buscador-docentes" class="buscador-catalogos" placeholder="Buscar docente...">
       </div>
+      
       <div class="table-responsive">
         <table class="data-table">
           <thead>
@@ -65,18 +61,51 @@
 
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input 
-          type="text" 
-          id="buscador-ee" 
-          class="buscador-catalogos" 
-          placeholder="Buscar EE por nombre o clave..."
-        >
+        <input type="text" id="buscador-ee" class="buscador-catalogos" placeholder="Buscar EE por nombre o clave...">
       </div>
       
       <div class="table-responsive">
         <table class="data-table">
           <thead><tr><th>CLAVE</th><th>NOMBRE</th><th>TIPO</th><th>CRÉDITOS</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
           <tbody id="tabla-ee-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENIDO: TIPOS DE CONSTANCIA -->
+  <div id="tab-tipos-constancia" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <div class="section-title-group">
+          <h3 class="section-title">
+            <i class="fa-solid fa-certificate"></i> Tipos de Constancia
+          </h3>
+          <p class="section-desc">Defina los modelos de documentos disponibles para emisión.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-nuevo-tipo-constancia">
+          <i class="fa-solid fa-plus"></i> Nuevo Tipo
+        </button>
+      </div>
+      
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input type="text" id="buscador-tipos-constancia" class="buscador-catalogos" placeholder="Buscar por nombre o clave...">
+      </div>
+      
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:100px;">CLAVE</th>
+              <th>NOMBRE</th>
+              <th style="width:80px; text-align:center;">REQ. EE</th>
+              <th style="width:80px; text-align:center;">REQ. PERIODO</th>
+              <th style="width:100px;">ESTADO</th>
+              <th style="text-align:right; width:40px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tabla-tipos-constancia-body"></tbody>
         </table>
       </div>
     </div>
@@ -95,12 +124,7 @@
       
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input 
-          type="text" 
-          id="buscador-periodos" 
-          class="buscador-catalogos" 
-          placeholder="Buscar periodo..."
-        >
+        <input type="text" id="buscador-periodos" class="buscador-catalogos" placeholder="Buscar periodo...">
       </div>
       
       <div class="table-responsive">
@@ -125,12 +149,7 @@
       
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input 
-          type="text" 
-          id="buscador-programas" 
-          class="buscador-catalogos" 
-          placeholder="Buscar programa..."
-        >
+        <input type="text" id="buscador-programas" class="buscador-catalogos" placeholder="Buscar programa...">
       </div>
       
       <div class="table-responsive">
@@ -142,208 +161,13 @@
     </div>
   </div>
 
-  <!-- MODALES (Sin cambios estructurales, solo se mantienen) -->
-  <!-- MODAL EE -->
-  <div id="modal-ee" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Nueva Experiencia Educativa</h3>
-        <button class="btn-close" onclick="cerrarModal('modal-ee')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="form-ee">
-          <div class="form-row-flex">
-            <div class="form-group flex-1">
-              <label>Clave EE *</label>
-              <input type="text" id="ee-clave" required placeholder="Ej. MSC-101">
-            </div>
-            <div class="form-group flex-1">
-              <label>Tipo</label>
-              <select id="ee-tipo">
-                <option>Obligatoria</option><option>Optativa</option><option>Taller</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Nombre *</label>
-            <input type="text" id="ee-nombre" required>
-          </div>
-          <div class="form-row-flex">
-            <div class="form-group flex-1">
-              <label>Créditos</label>
-              <input type="number" id="ee-creditos" value="0">
-            </div>
-            <div class="form-group flex-1">
-              <label>Hrs Teoría</label>
-              <input type="number" id="ee-h-teoria" value="0">
-            </div>
-            <div class="form-group flex-1">
-              <label>Hrs Práctica</label>
-              <input type="number" id="ee-h-practica" value="0">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Programa Académico</label>
-            <input type="text" id="ee-programa" placeholder="Ej. Maestría">
-          </div>
-          <div class="form-group">
-            <label>Estado</label>
-            <select id="ee-estado">
-              <option value="activa">Activa</option><option value="inactiva">Inactiva</option>
-            </select>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="cerrarModal('modal-ee')">Cancelar</button>
-        <button class="btn btn-primary" onclick="guardarEE()">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL PERIODO -->
-  <div id="modal-periodo" class="modal-overlay hidden">
-    <div class="modal-content smaller">
-      <div class="modal-header">
-        <h3>Nuevo Periodo Escolar</h3>
-        <button class="btn-close" onclick="cerrarModal('modal-periodo')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="form-periodo">
-          <div class="form-group">
-            <label>Clave *</label>
-            <input type="text" id="per-clave" required placeholder="Ej. 2024-A">
-          </div>
-          <div class="form-group">
-            <label>Descripción *</label>
-            <input type="text" id="per-desc" required placeholder="Ej. Agosto-Diciembre 2024">
-          </div>
-          <div class="form-row-flex">
-            <div class="form-group flex-1">
-              <label>Inicio *</label>
-              <input type="date" id="per-inicio" required>
-            </div>
-            <div class="form-group flex-1">
-              <label>Fin *</label>
-              <input type="date" id="per-fin" required>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Estado</label>
-            <select id="per-estado">
-              <option value="abierto">Abierto</option><option value="cerrado">Cerrado</option><option value="en_proceso">En Proceso</option>
-            </select>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="cerrarModal('modal-periodo')">Cancelar</button>
-        <button class="btn btn-primary" onclick="guardarPeriodo()">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL PROGRAMA -->
-  <div id="modal-programa" class="modal-overlay hidden">
-    <div class="modal-content smaller">
-      <div class="modal-header">
-        <h3>Nuevo Programa Institucional</h3>
-        <button class="btn-close" onclick="cerrarModal('modal-programa')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="form-programa">
-          <div class="form-group">
-            <label>Nombre *</label>
-            <input type="text" id="prog-nombre" required placeholder="Ej. PRODEP">
-          </div>
-          <div class="form-group">
-            <label>Descripción</label>
-            <textarea id="prog-desc" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Responsable</label>
-            <input type="text" id="prog-resp" placeholder="Nombre del responsable">
-          </div>
-          <div class="form-group">
-            <label>Fecha Registro</label>
-            <input type="date" id="prog-fecha">
-          </div>
-          <div class="form-group">
-            <label>Estado</label>
-            <select id="prog-estado">
-              <option value="vigente">Vigente</option><option value="finalizado">Finalizado</option>
-            </select>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="cerrarModal('modal-programa')">Cancelar</button>
-        <button class="btn btn-primary" onclick="guardarPrograma()">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL DOCENTE -->
-  <div id="modal-docente" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Nuevo Docente</h3>
-        <button class="btn-close" id="btn-cerrar-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="form-docente">
-          <div class="form-row-flex">
-            <div class="form-group flex-1">
-              <label>Código Único *</label>
-              <input type="text" id="doc-codigo" required placeholder="Ej. DOC-001">
-            </div>
-            <div class="form-group flex-1">
-              <label>Nivel Académico</label>
-              <select id="doc-nivel">
-                <option value="">Seleccione...</option>
-                <option value="Tiempo Completo">Tiempo Completo</option>
-                <option value="Profesor de Asignatura">Profesor de Asignatura</option>
-                <option value="Investigador">Investigador</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row-flex">
-            <div class="form-group flex-2">
-              <label>Apellido Paterno *</label>
-              <input type="text" id="doc-ap-paterno" required placeholder="Pérez">
-            </div>
-            <div class="form-group flex-2">
-              <label>Apellido Materno</label>
-              <input type="text" id="doc-ap-materno" placeholder="Hernández">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Nombres *</label>
-            <input type="text" id="doc-nombres" required placeholder="Juan Carlos">
-          </div>
-          <div class="form-row-flex">
-            <div class="form-group flex-2">
-              <label>Correo de Contacto</label>
-              <input type="email" id="doc-correo" placeholder="juan@uv.mx">
-            </div>
-            <div class="form-group flex-2">
-              <label>Teléfono</label>
-              <input type="tel" id="doc-telefono" placeholder="(228) ...">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Estado</label>
-            <select id="doc-estado">
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </select>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="btn-cancelar-modal">Cancelar</button>
-        <button class="btn btn-primary" id="btn-guardar-docente">Guardar</button>
-      </div>
-    </div>
-  </div>
 </div>
+
+<script type="module">
+  import { CatalogoModule } from '../modules/CatalogoModule.js';
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    const catalogo = new CatalogoModule();
+    catalogo.init();
+  });
+</script>

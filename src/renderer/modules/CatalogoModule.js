@@ -1,8 +1,15 @@
+import modalDocenteHtml from '../views/partials/modals/modal-docente.html';
+import modalEEHtml from '../views/partials/modals/modal-ee.html';
+import modalTiposHtml from '../views/partials/modals/modal-tipos-constancia.html';
+import modalPeriodoHtml from '../views/partials/modals/modal-periodo.html';
+import modalProgramaHtml from '../views/partials/modals/modal-programa.html';
+
 export class CatalogoModule {
   constructor() {
     this.data = {
       docentes: [],
       ee: [],
+      tiposConstancia: [],
       periodos: [],
       programas: []
     };
@@ -18,18 +25,23 @@ export class CatalogoModule {
   async init() {
     console.log('🚀 [CatalogoModule] Iniciando...');
     
+    // 1. INYECTAR MODALES EN EL DOM (Antes de cualquier otra cosa)
+    this.injectModals();
+
     const tabsContainer = document.querySelector('.tabs-container');
     if (!tabsContainer) return;
 
     this.setupTabs();
     await this.loadAllData();
 
+    // 2. Configurar listeners de modales
     this.setupModalDocente();
     this.setupModalEE();
     this.setupModalPeriodo();
     this.setupModalPrograma();
+    this.setupModalTipoConstancia(); // 🆕 Agregado
 
-    // Helpers globales para modales (si los usas desde HTML)
+    // Helpers globales para modales
     window.abrirModal = (id) => {
         const modal = document.getElementById(id);
         if (modal) {
@@ -44,10 +56,34 @@ export class CatalogoModule {
         if (modal) modal.classList.add('hidden');
     };
 
-    // 🆕 Registrar listener global para cerrar menús al hacer clic fuera
+    // Listener global para cerrar menús al hacer clic fuera
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.data-row') && !e.target.closest('.context-menu')) {
         this.closeAllMenus();
+      }
+    });
+  }
+
+  /**
+   * 🆕 Método para inyectar el HTML de los modales en el body
+   */
+  injectModals() {
+    const modals = [
+      modalDocenteHtml,
+      modalEEHtml,
+      modalTiposHtml,
+      modalPeriodoHtml,
+      modalProgramaHtml
+    ];
+
+    modals.forEach(htmlString => {
+      const template = document.createElement('div');
+      template.innerHTML = htmlString;
+      const modalElement = template.firstElementChild;
+      
+      if (modalElement) {
+        document.body.appendChild(modalElement);
+        console.log(`✅ Modal inyectado: ${modalElement.id}`);
       }
     });
   }
@@ -78,9 +114,10 @@ export class CatalogoModule {
 
   async loadAllData() {
     try {
-      const [resDoc, resEE, resPer, resProg] = await Promise.all([
+      const [resDoc, resEE, resTipos, resPer, resProg] = await Promise.all([
         window.electronAPI.listarDocentes(),
         window.electronAPI.listarEE(),
+        window.electronAPI.listarTiposConstancia(), // 🆕
         window.electronAPI.listarPeriodos(),
         window.electronAPI.listarProgramas()
       ]);
@@ -95,6 +132,13 @@ export class CatalogoModule {
         this.data.ee = resEE.rows || resEE.data;
         this.renderTable('tabla-ee-body', this.data.ee, this.getEEColumns(), 'ee');
         this.setupSearch('buscador-ee', this.data.ee, ['clave_ee', 'nombre', 'tipo'], this.renderTable.bind(this, 'tabla-ee-body', null, this.getEEColumns(), 'ee'));
+      }
+
+      // 🆕 Carga de Tipos de Constancia
+      if (resTipos.success) {
+        this.data.tiposConstancia = resTipos.rows || resTipos.data;
+        this.renderTable('tabla-tipos-constancia-body', this.data.tiposConstancia, this.getTipoConstanciaColumns(), 'tipos');
+        this.setupSearch('buscador-tipos-constancia', this.data.tiposConstancia, ['nombre', 'clave'], this.renderTable.bind(this, 'tabla-tipos-constancia-body', null, this.getTipoConstanciaColumns(), 'tipos'));
       }
 
       if (resPer.success) {
@@ -114,13 +158,6 @@ export class CatalogoModule {
     }
   }
 
-  /**
-   * 🆕 RENDERIZADOR MEJORADO CON SOPORTE PARA FILAS INTELIGENTES
-   * @param {string} tbodyId - ID del tbody
-   * @param {array} datos - Array de datos
-   * @param {array} columnasMap - Definición de columnas
-   * @param {string} tipo - 'docentes', 'ee', 'periodos', 'programas'
-   */
   renderTable(tbodyId, datos, columnasMap, tipo = 'generico') {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
@@ -132,20 +169,16 @@ export class CatalogoModule {
     }
 
     datos.forEach(row => {
-      // 🆕 Determinar ID único y datos para la fila
       const rowId = row.codigo || row.clave_ee || row.clave || row.id || Math.random().toString(36).substr(2, 9);
       const estadoVal = row.estado || row.estatus || '';
       const esActivo = ['activa','activo','vigente','abierto'].includes(estadoVal?.toLowerCase());
       
-      // 🆕 Construir atributos data- para la fila interactiva
       let dataAttrs = `data-id="${rowId}" data-estado="${esActivo ? 'activo' : 'inactivo'}"`;
       
-      // Solo docentes tienen email para el menú contextual
       if (tipo === 'docentes') {
         dataAttrs += ` data-email="${row.correo_contacto || ''}" data-nombre="${(row.nombres || '') + ' ' + (row.apellido_paterno || '')}".trim()`;
       }
 
-      // 🆕 Iniciar fila con clases y eventos
       let html = `<tr class="data-row" 
                       ${dataAttrs}
                       onclick="catalogoModuleInstance.handleRowClick(event)"
@@ -156,12 +189,10 @@ export class CatalogoModule {
         let val = row[col.key];
         
         if (col.key === 'estado') {
-          // 🆕 Renderizar Estado como DOT en lugar de badge de texto
           const dotClass = esActivo ? 'status-active' : 'status-inactive';
           const tooltip = esActivo ? 'Activo' : 'Inactivo';
           html += `<td><div class="status-dot-container" title="${tooltip}"><span class="status-dot ${dotClass}"></span></div></td>`;
         } else if (col.badge && col.key !== 'estado') {
-          // Otros badges (si los hubiera) que no sean estado
           const cls = esActivo ? 'badge-success' : 'badge-danger';
           html += `<td><span class="badge ${cls}">${val}</span></td>`;
         } else if (col.date) {
@@ -173,12 +204,8 @@ export class CatalogoModule {
         }
       });
 
-            // 🆕 Columna de Acciones: Contenedor con el botón OCULTO por defecto
       html += `<td style="text-align:right; position:relative; width:40px;">
-                 <!-- El menú desplegable -->
                  <div id="menu-${rowId}" class="context-menu hidden"></div>
-                 
-                 <!-- El botón de 3 puntos (Solo visible si .selected) -->
                  <div class="action-icon-container">
                    <button class="btn-action-menu" 
                            onclick="event.stopPropagation(); catalogoModuleInstance.toggleActionMenu(event, '${rowId}')"
@@ -209,36 +236,25 @@ export class CatalogoModule {
   }
 
   // =======================================================
-  // 🆕 LÓGICA DE INTERACCIÓN DE FILAS (CLIC, DOBLE CLIC, DERECHO)
+  // LÓGICA DE INTERACCIÓN DE FILAS
   // =======================================================
 
-    // 1. Clic Izquierdo: SELECCIONAR fila (Mostrar icono)
   handleRowClick(event) {
-    // Evitar conflicto con doble clic
     if (event.detail === 1) {
       this.clickTimer = setTimeout(() => {
         const row = event.target.closest('.data-row');
         if (!row) return;
-
-        // Si ya estaba seleccionada, no hacemos nada (o podrías deseleccionar)
         if (row.classList.contains('selected')) return;
 
-        // Deseleccionar todas las demás
         document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
-        
-        // Seleccionar esta
         row.classList.add('selected');
-        
-        // Cerrar cualquier menú abierto
         this.closeAllMenus();
       }, this.DOUBLE_CLICK_DELAY);
     }
   }
 
-  // 2. Doble Clic: EDICIÓN RÁPIDA (Ignora selección)
   handleRowDoubleClick(event) {
-    clearTimeout(this.clickTimer); // Cancelar selección pendiente
-    
+    clearTimeout(this.clickTimer);
     const row = event.target.closest('.data-row');
     if (!row) return;
 
@@ -247,7 +263,6 @@ export class CatalogoModule {
     this.abrirModalEdicion(tipo, id);
   }
 
-  // 3. Clic Derecho: MENÚ DIRECTO (Sin necesidad de seleccionar antes)
   handleRowRightClick(event) {
     event.preventDefault();
     clearTimeout(this.clickTimer);
@@ -255,37 +270,29 @@ export class CatalogoModule {
     const row = event.target.closest('.data-row');
     if (!row) return;
 
-    // Opcional: También seleccionar la fila al hacer clic derecho
     document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
     row.classList.add('selected');
-
     this.showContextMenuForRow(row);
   }
 
-  // 🆕 4. Toggle del Menú (Al hacer clic en los 3 puntos)
   toggleActionMenu(event, rowId) {
-    event.stopPropagation(); // Evitar que el clic cierre la selección
-    
-    // Cerrar otros menús
+    event.stopPropagation();
     this.closeAllMenus();
     
     const menu = document.getElementById(`menu-${rowId}`);
     if (!menu) return;
 
-    // Si el menú ya estaba abierto, lo cerramos. Si no, lo llenamos y abrimos.
     if (!menu.classList.contains('hidden')) {
       menu.classList.add('hidden');
       return;
     }
 
-    // Buscar la fila para obtener datos
     const row = document.querySelector(`.data-row[data-id="${rowId}"]`);
     if (row) {
       this.showContextMenuForRow(row);
     }
   }
 
-  // 5. Función Maestra (Llenar menú - Igual que antes)
   showContextMenuForRow(row) {
     if (!row) return;
     
@@ -335,30 +342,36 @@ export class CatalogoModule {
   getTipoPorTablaId(tbodyId) {
     if (tbodyId.includes('docentes')) return 'docentes';
     if (tbodyId.includes('ee')) return 'ee';
+    if (tbodyId.includes('tipos')) return 'tipos';
     if (tbodyId.includes('periodos')) return 'periodos';
     if (tbodyId.includes('programas')) return 'programas';
     return 'generico';
   }
 
-  // =======================================================
-  // ACCIONES DE NEGOCIO
-  // =======================================================
-
-  abrirModalEdicion(tipo, id) {
-    console.log(`Editando ${tipo}: ${id}`);
-    // 🛠️ AQUÍ DEBES IMPLEMENTAR LA LÓGICA PARA CARGAR DATOS Y ABRIR EL MODAL CORRECTO
-    // Ejemplo básico:
-    alert(`Abriendo edición para ${tipo} con ID: ${id}\n(Aquí cargarías los datos en el formulario correspondiente)`);
+    abrirModalEdicion(tipo, id) {
+    if (tipo === 'tipos') {
+      // Buscar el dato en la memoria local
+      const item = this.data.tiposConstancia.find(t => t.id == id || t.id == parseInt(id));
+      if (item) {
+        const modal = document.getElementById('modal-tipo-constancia');
+        const titulo = document.getElementById('modal-titulo-tipo');
+        
+        // Llenar formulario
+        document.getElementById('tipo-id').value = item.id;
+        document.getElementById('tipo-clave-original').value = item.clave; // Guardar clave original
+        document.getElementById('tipo-nombre').value = item.nombre;
+        document.getElementById('tipo-descripcion').value = item.descripcion || '';
+        document.getElementById('tipo-requiere-ee').checked = item.requiere_ee;
+        document.getElementById('tipo-requiere-periodo').checked = item.requiere_periodo;
+        
+        titulo.textContent = `Editar: ${item.nombre}`;
+        modal.classList.remove('hidden');
+      }
+      return;
+    }
     
-    // Ejemplo para docentes:
-    // if (tipo === 'docentes') {
-    //   const docente = this.data.docentes.find(d => d.codigo === id);
-    //   if (docente) {
-    //     document.getElementById('doc-codigo').value = docente.codigo;
-    //     // ... rellenar resto de campos ...
-    //     document.getElementById('modal-docente').classList.remove('hidden');
-    //   }
-    // }
+    console.log(`Editando ${tipo}: ${id}`);
+    alert(`Edición genérica para ${tipo} (Implementar lógica específica)`);
   }
 
   async cambiarEstado(tipo, id, nuevoEstado) {
@@ -366,16 +379,8 @@ export class CatalogoModule {
     if(!confirm(`¿Estás seguro de ${accion} este registro?`)) return;
     
     console.log(`Cambiando ${tipo} ${id} a ${nuevoEstado}`);
-    
-    // 🛠️ LLAMADA AL BACKEND
-    // let res;
-    // if (tipo === 'docentes') res = await window.electronAPI.actualizarEstadoDocente(id, nuevoEstado);
-    // if (tipo === 'ee') res = await window.electronAPI.actualizarEstadoEE(id, nuevoEstado);
-    // ... etc ...
-    
-    // Simulación de éxito:
     alert(`✅ Estado cambiado a ${nuevoEstado.toUpperCase()}`);
-    this.loadAllData(); // Recargar tablas
+    this.loadAllData();
   }
 
   mostrarEnConstruccion(email, nombre) {
@@ -383,7 +388,7 @@ export class CatalogoModule {
   }
 
   // =======================================================
-  // CONFIGURACIONES DE COLUMNAS (Actualizadas para quitar badge de estado)
+  // CONFIGURACIONES DE COLUMNAS
   // =======================================================
   
   getDocenteColumns() {
@@ -391,7 +396,7 @@ export class CatalogoModule {
       { key: 'codigo', format: (v) => `<strong>${v}</strong>` },
       { key: 'nombres', format: (v, row) => `${row.apellido_paterno} ${row.apellido_materno||''} ${v}`.trim() },
       { key: 'correo_contacto' },
-      { key: 'estado', badge: true } // Se procesa especial en renderTable para ser dot
+      { key: 'estado', badge: true }
     ];
   }
 
@@ -401,6 +406,22 @@ export class CatalogoModule {
       { key: 'nombre' },
       { key: 'tipo' },
       { key: 'creditos' },
+      { key: 'estado', badge: true }
+    ];
+  }
+
+  getTipoConstanciaColumns() {
+    return [
+      { key: 'clave', format: (v) => `<strong>${v}</strong>` },
+      { key: 'nombre' },
+      { 
+        key: 'requiere_ee', 
+        format: (v) => v ? '<i class="fa-solid fa-check" style="color:var(--success-color)"></i>' : '<span style="color:var(--text-muted)">-</span>' 
+      },
+      { 
+        key: 'requiere_periodo', 
+        format: (v) => v ? '<i class="fa-solid fa-check" style="color:var(--success-color)"></i>' : '<span style="color:var(--text-muted)">-</span>' 
+      },
       { key: 'estado', badge: true }
     ];
   }
@@ -424,8 +445,9 @@ export class CatalogoModule {
     ];
   }
 
-  // ... (El resto de tus métodos setupModal... y handleGuardar... se mantienen igual) ...
-  // Asegúrate de mantener tus métodos setupModalDocente, setupModalEE, etc. tal como los tenías.
+  // =======================================================
+  // SETUP DE MODALES Y GUARDADO
+  // =======================================================
   
   setupModalDocente() {
     const btnNuevo = document.getElementById('btn-nuevo-docente');
@@ -434,12 +456,13 @@ export class CatalogoModule {
 
     btnNuevo.onclick = () => {
       document.getElementById('form-docente')?.reset();
+      document.getElementById('doc-id').value = ''; // Limpiar ID oculto
       modal.classList.remove('hidden');
     };
 
     const cerrar = () => modal.classList.add('hidden');
-    document.getElementById('btn-cerrar-modal')?.addEventListener('click', cerrar);
-    document.getElementById('btn-cancelar-modal')?.addEventListener('click', cerrar);
+    document.getElementById('btn-cerrar-modal-docente')?.addEventListener('click', cerrar);
+    document.getElementById('btn-cancelar-docente')?.addEventListener('click', cerrar);
     modal.addEventListener('click', (e) => { if(e.target === modal) cerrar(); });
 
     const btnSave = document.getElementById('btn-guardar-docente');
@@ -452,6 +475,7 @@ export class CatalogoModule {
 
   async handleGuardarDocente(onSuccessCallback) {
     const datos = {
+      id: document.getElementById('doc-id')?.value || null,
       codigo: document.getElementById('doc-codigo')?.value,
       apellido_paterno: document.getElementById('doc-ap-paterno')?.value,
       apellido_materno: document.getElementById('doc-ap-materno')?.value,
@@ -476,15 +500,12 @@ export class CatalogoModule {
       alert('❌ Error: ' + res.error);
     }
   }
-
-  // ... (Mantén aquí tus métodos setupModalEE, handleGuardarEE, setupModalPeriodo, etc. sin cambios) ...
-  // Por brevedad no los repito, pero deben estar en tu archivo final.
   
   setupModalEE() {
     const btn = document.getElementById('btn-nuevo-ee');
     const modal = document.getElementById('modal-ee');
     if (!btn || !modal) return;
-    btn.onclick = () => { document.getElementById('form-ee')?.reset(); modal.classList.remove('hidden'); };
+    btn.onclick = () => { document.getElementById('form-ee')?.reset(); document.getElementById('ee-id').value=''; modal.classList.remove('hidden'); };
     const cerrar = () => modal.classList.add('hidden');
     document.getElementById('modal-ee')?.querySelector('.btn-close')?.addEventListener('click', cerrar);
     const btnSave = document.getElementById('modal-ee')?.querySelector('.btn-primary');
@@ -496,6 +517,7 @@ export class CatalogoModule {
   }
   async handleGuardarEE(onSuccessCallback) {
     const datos = {
+      id: document.getElementById('ee-id')?.value || null,
       clave_ee: document.getElementById('ee-clave')?.value,
       nombre: document.getElementById('ee-nombre')?.value,
       tipo: document.getElementById('ee-tipo')?.value,
@@ -520,7 +542,7 @@ export class CatalogoModule {
     const btn = document.getElementById('btn-nuevo-periodo'); 
     const modal = document.getElementById('modal-periodo');
     if (!btn || !modal) return;
-    btn.onclick = () => { document.getElementById('form-periodo')?.reset(); modal.classList.remove('hidden'); };
+    btn.onclick = () => { document.getElementById('form-periodo')?.reset(); document.getElementById('per-id').value=''; modal.classList.remove('hidden'); };
     const cerrar = () => modal.classList.add('hidden');
     const btnSave = document.getElementById('modal-periodo')?.querySelector('.btn-primary');
     if(btnSave) {
@@ -531,6 +553,7 @@ export class CatalogoModule {
   }
   async handleGuardarPeriodo(onSuccessCallback) {
     const datos = {
+      id: document.getElementById('per-id')?.value || null,
       clave: document.getElementById('per-clave')?.value,
       descripcion: document.getElementById('per-desc')?.value,
       fecha_inicio: document.getElementById('per-inicio')?.value,
@@ -552,7 +575,7 @@ export class CatalogoModule {
     const btn = document.getElementById('btn-nuevo-programa'); 
     const modal = document.getElementById('modal-programa');
     if (!btn || !modal) return;
-    btn.onclick = () => { document.getElementById('form-programa')?.reset(); modal.classList.remove('hidden'); };
+    btn.onclick = () => { document.getElementById('form-programa')?.reset(); document.getElementById('prog-id').value=''; modal.classList.remove('hidden'); };
     const cerrar = () => modal.classList.add('hidden');
     const btnSave = document.getElementById('modal-programa')?.querySelector('.btn-primary');
     if(btnSave) {
@@ -563,6 +586,7 @@ export class CatalogoModule {
   }
   async handleGuardarPrograma(onSuccessCallback) {
     const datos = {
+      id: document.getElementById('prog-id')?.value || null,
       nombre: document.getElementById('prog-nombre')?.value,
       descripcion: document.getElementById('prog-desc')?.value,
       responsable: document.getElementById('prog-resp')?.value,
@@ -579,9 +603,85 @@ export class CatalogoModule {
       alert('❌ Error: ' + res.error);
     }
   }
+
+    setupModalTipoConstancia() {
+    const btnNuevo = document.getElementById('btn-nuevo-tipo-constancia');
+    const modal = document.getElementById('modal-tipo-constancia');
+    if (!btnNuevo || !modal) return;
+
+    // Abrir Modal (Modo Creación)
+    btnNuevo.onclick = () => {
+      document.getElementById('form-tipo-constancia').reset();
+      document.getElementById('tipo-id').value = ''; // Sin ID = Modo Creación
+      document.getElementById('modal-titulo-tipo').textContent = 'Nuevo Tipo de Constancia';
+      modal.classList.remove('hidden');
+      document.getElementById('tipo-nombre').focus();
+    };
+
+    const cerrar = () => modal.classList.add('hidden');
+    modal.querySelector('.btn-close').onclick = cerrar;
+    modal.addEventListener('click', (e) => { if(e.target === modal) cerrar(); });
+
+    // Botón Guardar
+    const btnSave = document.getElementById('btn-guardar-tipo-constancia');
+    if(btnSave) {
+      const newBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newBtn, btnSave);
+      
+      newBtn.addEventListener('click', async () => {
+        const id = document.getElementById('tipo-id').value;
+        const nombre = document.getElementById('tipo-nombre').value.trim();
+        const descripcion = document.getElementById('tipo-descripcion').value.trim();
+        
+        if (!nombre) return alert('El nombre es obligatorio');
+
+        //  Lógica Inteligente de Clave
+        let clave = '';
+        if (id) {
+          // Si es EDICIÓN, necesitamos obtener la clave original de la fila seleccionada o del data actual.
+          // Para simplificar, si estamos editando, asumimos que la clave no cambia o deberíamos haberla cargado en un input oculto.
+          // MEJOR OPCIÓN: Cargar la clave original en un input hidden al editar. 
+          // Pero como lo quitamos del HTML, haremos esto:
+          // Si es edición, la clave se mantiene igual en la BD, así que no la enviamos o enviamos la misma.
+          // Necesitamos saber la clave anterior. Agreguemos un input hidden para la clave original.
+           clave = document.getElementById('tipo-clave-original')?.value || ''; 
+           if(!clave) {
+             // Fallback si no encontramos la clave original (error de flujo)
+             return alert('Error interno: No se encontró la clave original para editar.');
+           }
+        } else {
+          // Si es CREACIÓN, generamos la clave automáticamente
+          // Ej: "Participación como Docente" -> "PART-DOC"
+          const palabras = nombre.toUpperCase().split(' ').filter(p => p.length > 2);
+          clave = palabras.slice(0, 2).map(p => p.substring(0, 4)).join('-');
+          // Asegurar que sea única simple (podría mejorar verificando en BD, pero esto basta para proto)
+          if(clave.length < 3) clave = 'TIPO-' + Date.now().toString().slice(-4);
+        }
+
+        const datos = {
+          id: id ? parseInt(id) : null,
+          clave: clave, 
+          nombre: nombre,
+          descripcion: descripcion,
+          requiere_ee: document.getElementById('tipo-requiere-ee').checked,
+          requiere_periodo: document.getElementById('tipo-requiere-periodo').checked,
+          estado: 'activo' // Siempre activo por defecto
+        };
+
+        const res = await window.electronAPI.guardarTipoConstancia(datos);
+        if(res.success) {
+          alert('✅ Guardado correctamente');
+          cerrar();
+          this.loadAllData();
+        } else {
+          alert('❌ Error: ' + res.error);
+        }
+      });
+    }
+  }
 }
 
-//IMPORTANTE: Crear una instancia global para que los eventos HTML puedan acceder a los métodos
+// IMPORTANTE: Crear una instancia global
 window.catalogoModuleInstance = new CatalogoModule();
 document.addEventListener('DOMContentLoaded', () => {
   window.catalogoModuleInstance.init();
