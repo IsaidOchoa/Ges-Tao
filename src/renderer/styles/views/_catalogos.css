@@ -460,3 +460,129 @@ body[data-theme="dark"] .data-row .status-inactive {
 /* Ajustes Dark Mode para hovers de menú */
 body[data-theme="dark"] .context-item.text-warning:hover { background-color: rgba(230, 126, 34, 0.15); }
 body[data-theme="dark"] .context-item.text-success:hover { background-color: rgba(39, 174, 96, 0.15); }
+
+/* =======================================================
+   PANEL INFERIOR DE DETALLES (EE)
+   ======================================================= */
+.ee-details-panel {
+  margin-top: 20px;
+  background: var(--bg-white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  max-height: 60vh; /* Limitar altura */
+}
+
+.ee-details-panel.hidden {
+  display: none;
+}
+
+/* Cabecera del Panel */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.panel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title-group h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+}
+
+/* Pestañas Internas del Panel */
+.panel-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border-color);
+  background: var(--bg-body);
+}
+
+.panel-tab-btn {
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-tab-btn:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--text-dark);
+}
+
+.panel-tab-btn.active {
+  border-bottom-color: var(--accent-color);
+  color: var(--accent-color);
+  background: var(--bg-white);
+}
+
+/* Contenido de las Pestañas */
+.panel-tab-content {
+  display: none;
+  padding: 20px;
+  overflow-y: auto; /* Scroll interno si hay muchos items */
+  flex-grow: 1;
+}
+
+.panel-tab-content.active {
+  display: block;
+}
+
+/* Toolbar dentro de las pestañas */
+.panel-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Lista de Items (Temas o Docentes) */
+.panel-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: var(--bg-light);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s;
+}
+
+.item-row:hover {
+  transform: translateX(5px);
+  border-color: var(--accent-color);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px;
+  font-style: italic;
+}

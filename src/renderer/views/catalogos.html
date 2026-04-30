@@ -71,6 +71,56 @@
         </table>
       </div>
     </div>
+     <!-- 🆕 NUEVO: PANEL INFERIOR DE DETALLES (Oculto por defecto) -->
+    <div id="panel-detalles-ee" class="ee-details-panel hidden">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <h3 id="panel-ee-titulo">Detalles de la EE</h3>
+          <span id="panel-ee-clave" class="badge badge-secondary">CLAVE</span>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="catalogoModuleInstance.cerrarPanelEE()">
+          <i class="fa-solid fa-times"></i> Cerrar
+        </button>
+      </div>
+
+      <!-- Pestañas de Navegación del Panel -->
+      <div class="panel-tabs">
+        <button class="panel-tab-btn active" data-target="tab-contenidos">
+          <i class="fa-solid fa-book-open"></i> Contenidos Temáticos
+        </button>
+        <button class="panel-tab-btn" data-target="tab-docentes">
+          <i class="fa-solid fa-chalkboard-user"></i> Docentes Asignados
+        </button>
+      </div>
+
+      <!-- Contenido Pestaña 1: Contenidos -->
+      <div id="tab-contenidos" class="panel-tab-content active">
+        <div class="panel-toolbar">
+          <p class="text-muted small">Gestione los temas curriculares de esta materia.</p>
+          <button class="btn btn-primary btn-sm" onclick="alert('Función: Agregar Tema (Próximamente)')">
+            <i class="fa-solid fa-plus"></i> Agregar Tema
+          </button>
+        </div>
+        <div class="panel-list-container" id="lista-contenidos-ee">
+          <!-- Se llenará dinámicamente -->
+          <div class="empty-state">Seleccione una EE para ver sus contenidos.</div>
+        </div>
+      </div>
+
+      <!-- Contenido Pestaña 2: Docentes -->
+      <div id="tab-docentes" class="panel-tab-content">
+        <div class="panel-toolbar">
+          <p class="text-muted small">Asigne docentes a esta materia por periodo.</p>
+          <button class="btn btn-primary btn-sm" onclick="alert('Función: Asignar Docente (Próximamente)')">
+            <i class="fa-solid fa-user-plus"></i> Asignar Docente
+          </button>
+        </div>
+        <div class="panel-list-container" id="lista-docentes-ee">
+          <!-- Se llenará dinámicamente -->
+          <div class="empty-state">Seleccione una EE para ver los docentes asignados.</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- CONTENIDO: TIPOS DE CONSTANCIA -->

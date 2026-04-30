@@ -1,3 +1,6 @@
+// =======================================================
+// IMPORTS DE MODALES (Webpack los cargará como texto)
+// =======================================================
 import modalDocenteHtml from '../views/partials/modals/modal-docente.html';
 import modalEEHtml from '../views/partials/modals/modal-ee.html';
 import modalTiposHtml from '../views/partials/modals/modal-tipos-constancia.html';
@@ -17,7 +20,7 @@ export class CatalogoModule {
     this.tabButtons = [];
     this.tabContents = [];
     
-    // 🆕 Timer para distinguir clic simple de doble clic
+    // Timer para distinguir clic simple de doble clic
     this.clickTimer = null;
     this.DOUBLE_CLICK_DELAY = 250;
   }
@@ -25,7 +28,7 @@ export class CatalogoModule {
   async init() {
     console.log('🚀 [CatalogoModule] Iniciando...');
     
-    // 1. INYECTAR MODALES EN EL DOM (Antes de cualquier otra cosa)
+    // 1. INYECTAR MODALES EN EL DOM
     this.injectModals();
 
     const tabsContainer = document.querySelector('.tabs-container');
@@ -39,9 +42,12 @@ export class CatalogoModule {
     this.setupModalEE();
     this.setupModalPeriodo();
     this.setupModalPrograma();
-    this.setupModalTipoConstancia(); // 🆕 Agregado
+    this.setupModalTipoConstancia();
 
-    // Helpers globales para modales
+    // 🆕 3. Configurar Panel Inferior de EE
+    this.setupPanelTabs();
+
+    // Helpers globales
     window.abrirModal = (id) => {
         const modal = document.getElementById(id);
         if (modal) {
@@ -56,7 +62,7 @@ export class CatalogoModule {
         if (modal) modal.classList.add('hidden');
     };
 
-    // Listener global para cerrar menús al hacer clic fuera
+    // Listener global para cerrar menús
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.data-row') && !e.target.closest('.context-menu')) {
         this.closeAllMenus();
@@ -64,9 +70,6 @@ export class CatalogoModule {
     });
   }
 
-  /**
-   * 🆕 Método para inyectar el HTML de los modales en el body
-   */
   injectModals() {
     const modals = [
       modalDocenteHtml,
@@ -117,7 +120,7 @@ export class CatalogoModule {
       const [resDoc, resEE, resTipos, resPer, resProg] = await Promise.all([
         window.electronAPI.listarDocentes(),
         window.electronAPI.listarEE(),
-        window.electronAPI.listarTiposConstancia(), // 🆕
+        window.electronAPI.listarTiposConstancia(),
         window.electronAPI.listarPeriodos(),
         window.electronAPI.listarProgramas()
       ]);
@@ -134,7 +137,6 @@ export class CatalogoModule {
         this.setupSearch('buscador-ee', this.data.ee, ['clave_ee', 'nombre', 'tipo'], this.renderTable.bind(this, 'tabla-ee-body', null, this.getEEColumns(), 'ee'));
       }
 
-      // 🆕 Carga de Tipos de Constancia
       if (resTipos.success) {
         this.data.tiposConstancia = resTipos.rows || resTipos.data;
         this.renderTable('tabla-tipos-constancia-body', this.data.tiposConstancia, this.getTipoConstanciaColumns(), 'tipos');
@@ -239,28 +241,60 @@ export class CatalogoModule {
   // LÓGICA DE INTERACCIÓN DE FILAS
   // =======================================================
 
+    // 1. Clic Izquierdo: AHORA ABRE EL PANEL DIRECTAMENTE SI ES EE
   handleRowClick(event) {
+    // Si es un clic simple (detalle 1)
     if (event.detail === 1) {
-      this.clickTimer = setTimeout(() => {
-        const row = event.target.closest('.data-row');
-        if (!row) return;
-        if (row.classList.contains('selected')) return;
+      const row = event.target.closest('.data-row');
+      if (!row) return;
 
+      // Obtener el tipo de tabla
+      const tbodyId = row.closest('table').querySelector('tbody').id;
+      const tipo = this.getTipoPorTablaId(tbodyId);
+      const id = row.dataset.id;
+
+      // 🆕 LÓGICA ESPECIAL PARA EE: Abrir panel inmediatamente con 1 clic
+      if (tipo === 'ee') {
+        // Cancelar cualquier timer pendiente de doble clic
+        clearTimeout(this.clickTimer);
+        
+        // Seleccionar visualmente la fila
+        document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
+        row.classList.add('selected');
+        
+        // Abrir el panel
+        this.abrirPanelEE(id);
+        this.closeAllMenus();
+        return; // Salir aquí, no hacer nada más
+      }
+
+      // LÓGICA PARA OTROS (Docentes, Periodos, etc.): Mantener comportamiento de selección
+      // Usamos un pequeño delay solo para no interferir si el usuario hace doble clic muy rápido en otros módulos
+      this.clickTimer = setTimeout(() => {
+        if (row.classList.contains('selected')) return;
         document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
         row.classList.add('selected');
         this.closeAllMenus();
-      }, this.DOUBLE_CLICK_DELAY);
+      }, 150); // Reducimos el delay a 150ms para que se sienta más rápido
     }
   }
 
+  // 2. Doble Clic: Solo actúa si NO es EE (ya que EE se abre con 1 clic)
   handleRowDoubleClick(event) {
-    clearTimeout(this.clickTimer);
     const row = event.target.closest('.data-row');
     if (!row) return;
 
-    const id = row.dataset.id;
     const tipo = this.getTipoPorTablaId(row.closest('table').querySelector('tbody').id);
-    this.abrirModalEdicion(tipo, id);
+    
+    // Si es EE, ignoramos el doble clic porque ya se abrió con el simple
+    if (tipo === 'ee') {
+      return; 
+    }
+
+    // Para otros módulos (si quisieras implementar edición rápida con doble clic en el futuro)
+    const id = row.dataset.id;
+    console.log(`Doble clic detectado en ${tipo}: ${id}`);
+    // this.abrirModalEdicion(tipo, id); // Descomentar si quieres editar otros con doble clic
   }
 
   handleRowRightClick(event) {
@@ -348,17 +382,22 @@ export class CatalogoModule {
     return 'generico';
   }
 
-    abrirModalEdicion(tipo, id) {
+  abrirModalEdicion(tipo, id) {
+    // 🆕 Lógica especial para EE: Abrir Panel Inferior
+    if (tipo === 'ee') {
+      this.abrirPanelEE(id);
+      return;
+    }
+
+    // Lógica para Tipos de Constancia
     if (tipo === 'tipos') {
-      // Buscar el dato en la memoria local
       const item = this.data.tiposConstancia.find(t => t.id == id || t.id == parseInt(id));
       if (item) {
         const modal = document.getElementById('modal-tipo-constancia');
         const titulo = document.getElementById('modal-titulo-tipo');
         
-        // Llenar formulario
         document.getElementById('tipo-id').value = item.id;
-        document.getElementById('tipo-clave-original').value = item.clave; // Guardar clave original
+        document.getElementById('tipo-clave-original').value = item.clave;
         document.getElementById('tipo-nombre').value = item.nombre;
         document.getElementById('tipo-descripcion').value = item.descripcion || '';
         document.getElementById('tipo-requiere-ee').checked = item.requiere_ee;
@@ -370,8 +409,9 @@ export class CatalogoModule {
       return;
     }
     
+    // Default para otros (puedes expandir luego)
     console.log(`Editando ${tipo}: ${id}`);
-    alert(`Edición genérica para ${tipo} (Implementar lógica específica)`);
+    alert(`Función de edición para ${tipo} en desarrollo.`);
   }
 
   async cambiarEstado(tipo, id, nuevoEstado) {
@@ -379,12 +419,122 @@ export class CatalogoModule {
     if(!confirm(`¿Estás seguro de ${accion} este registro?`)) return;
     
     console.log(`Cambiando ${tipo} ${id} a ${nuevoEstado}`);
-    alert(`✅ Estado cambiado a ${nuevoEstado.toUpperCase()}`);
+    // Aquí iría la llamada real al backend
+    alert(`✅ Estado cambiado a ${nuevoEstado.toUpperCase()} (Simulado)`);
     this.loadAllData();
   }
 
   mostrarEnConstruccion(email, nombre) {
     alert(`🚧 Función en construcción.\n\nPróximamente podrás enviar un correo a:\n${nombre} <${email}>`);
+  }
+
+  // =======================================================
+  // 🆕 PANEL INFERIOR DE DETALLES (EE)
+  // =======================================================
+
+  abrirPanelEE(eeId) {
+    const ee = this.data.ee.find(e => e.id == eeId || e.clave_ee == eeId);
+    if (!ee) return;
+
+    const panel = document.getElementById('panel-detalles-ee');
+    const titulo = document.getElementById('panel-ee-titulo');
+    const clave = document.getElementById('panel-ee-clave');
+
+    if (!panel) {
+      console.warn('⚠️ El panel de detalles no existe en el DOM. Asegúrate de agregar el HTML en catalogos.html');
+      return;
+    }
+
+    titulo.innerText = ee.nombre;
+    clave.innerText = ee.clave_ee;
+
+    panel.classList.remove('hidden');
+
+    // Cargar contenido
+    this.cargarContenidosEE(ee);
+    this.cargarDocentesEE(ee);
+    
+    // Scroll suave
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  cerrarPanelEE() {
+    const panel = document.getElementById('panel-detalles-ee');
+    if(panel) panel.classList.add('hidden');
+    document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
+  }
+
+  setupPanelTabs() {
+    const tabs = document.querySelectorAll('.panel-tab-btn');
+    tabs.forEach(btn => {
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      
+      newBtn.addEventListener('click', () => {
+        document.querySelectorAll('.panel-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel-tab-content').forEach(c => c.classList.remove('active'));
+        
+        newBtn.classList.add('active');
+        const targetId = newBtn.dataset.target;
+        document.getElementById(targetId).classList.add('active');
+      });
+    });
+  }
+
+  cargarContenidosEE(ee) {
+    const container = document.getElementById('lista-contenidos-ee');
+    if (!container) return;
+
+    // DATOS MOCK (Reemplazar con fetch real cuando exista la tabla)
+    const temasMock = [
+      { id: 1, descripcion: 'Introducción y fundamentos', orden: 1 },
+      { id: 2, descripcion: 'Desarrollo de temas avanzados', orden: 2 },
+      { id: 3, descripcion: 'Proyecto final', orden: 3 }
+    ];
+
+    if (temasMock.length === 0) {
+      container.innerHTML = '<div class="empty-state">No hay contenidos registrados.</div>';
+      return;
+    }
+
+    container.innerHTML = temasMock.map(tema => `
+      <div class="item-row">
+        <div>
+          <strong>Tema ${tema.orden}:</strong> ${tema.descripcion}
+        </div>
+        <div class="actions">
+          <button class="btn btn-sm btn-outline text-danger" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  cargarDocentesEE(ee) {
+    const container = document.getElementById('lista-docentes-ee');
+    if (!container) return;
+
+    // DATOS MOCK
+    const docentesMock = [
+      { id: 1, nombre: 'Juan Pérez', periodo: '2024-A' },
+      { id: 2, nombre: 'María López', periodo: '2024-B' }
+    ];
+
+    if (docentesMock.length === 0) {
+      container.innerHTML = '<div class="empty-state">No hay docentes asignados.</div>';
+      return;
+    }
+
+    container.innerHTML = docentesMock.map(doc => `
+      <div class="item-row">
+        <div>
+          <strong>${doc.nombre}</strong>
+          <small class="text-muted ml-2">Periodo: ${doc.periodo}</small>
+        </div>
+        <div class="actions">
+          <button class="btn btn-sm btn-outline text-danger" title="Quitar asignación"><i class="fa-solid fa-user-slash"></i></button>
+        </div>
+      </div>
+    `).join('');
   }
 
   // =======================================================
@@ -456,7 +606,7 @@ export class CatalogoModule {
 
     btnNuevo.onclick = () => {
       document.getElementById('form-docente')?.reset();
-      document.getElementById('doc-id').value = ''; // Limpiar ID oculto
+      document.getElementById('doc-id').value = '';
       modal.classList.remove('hidden');
     };
 
@@ -515,6 +665,7 @@ export class CatalogoModule {
       newBtn.addEventListener('click', () => this.handleGuardarEE(cerrar));
     }
   }
+
   async handleGuardarEE(onSuccessCallback) {
     const datos = {
       id: document.getElementById('ee-id')?.value || null,
@@ -551,6 +702,7 @@ export class CatalogoModule {
       newBtn.addEventListener('click', () => this.handleGuardarPeriodo(cerrar));
     }
   }
+
   async handleGuardarPeriodo(onSuccessCallback) {
     const datos = {
       id: document.getElementById('per-id')?.value || null,
@@ -584,6 +736,7 @@ export class CatalogoModule {
       newBtn.addEventListener('click', () => this.handleGuardarPrograma(cerrar));
     }
   }
+
   async handleGuardarPrograma(onSuccessCallback) {
     const datos = {
       id: document.getElementById('prog-id')?.value || null,
@@ -604,15 +757,14 @@ export class CatalogoModule {
     }
   }
 
-    setupModalTipoConstancia() {
+  setupModalTipoConstancia() {
     const btnNuevo = document.getElementById('btn-nuevo-tipo-constancia');
     const modal = document.getElementById('modal-tipo-constancia');
     if (!btnNuevo || !modal) return;
 
-    // Abrir Modal (Modo Creación)
     btnNuevo.onclick = () => {
       document.getElementById('form-tipo-constancia').reset();
-      document.getElementById('tipo-id').value = ''; // Sin ID = Modo Creación
+      document.getElementById('tipo-id').value = '';
       document.getElementById('modal-titulo-tipo').textContent = 'Nuevo Tipo de Constancia';
       modal.classList.remove('hidden');
       document.getElementById('tipo-nombre').focus();
@@ -622,7 +774,6 @@ export class CatalogoModule {
     modal.querySelector('.btn-close').onclick = cerrar;
     modal.addEventListener('click', (e) => { if(e.target === modal) cerrar(); });
 
-    // Botón Guardar
     const btnSave = document.getElementById('btn-guardar-tipo-constancia');
     if(btnSave) {
       const newBtn = btnSave.cloneNode(true);
@@ -635,26 +786,13 @@ export class CatalogoModule {
         
         if (!nombre) return alert('El nombre es obligatorio');
 
-        //  Lógica Inteligente de Clave
         let clave = '';
         if (id) {
-          // Si es EDICIÓN, necesitamos obtener la clave original de la fila seleccionada o del data actual.
-          // Para simplificar, si estamos editando, asumimos que la clave no cambia o deberíamos haberla cargado en un input oculto.
-          // MEJOR OPCIÓN: Cargar la clave original en un input hidden al editar. 
-          // Pero como lo quitamos del HTML, haremos esto:
-          // Si es edición, la clave se mantiene igual en la BD, así que no la enviamos o enviamos la misma.
-          // Necesitamos saber la clave anterior. Agreguemos un input hidden para la clave original.
            clave = document.getElementById('tipo-clave-original')?.value || ''; 
-           if(!clave) {
-             // Fallback si no encontramos la clave original (error de flujo)
-             return alert('Error interno: No se encontró la clave original para editar.');
-           }
+           if(!clave) return alert('Error interno: No se encontró la clave original.');
         } else {
-          // Si es CREACIÓN, generamos la clave automáticamente
-          // Ej: "Participación como Docente" -> "PART-DOC"
           const palabras = nombre.toUpperCase().split(' ').filter(p => p.length > 2);
           clave = palabras.slice(0, 2).map(p => p.substring(0, 4)).join('-');
-          // Asegurar que sea única simple (podría mejorar verificando en BD, pero esto basta para proto)
           if(clave.length < 3) clave = 'TIPO-' + Date.now().toString().slice(-4);
         }
 
@@ -665,7 +803,7 @@ export class CatalogoModule {
           descripcion: descripcion,
           requiere_ee: document.getElementById('tipo-requiere-ee').checked,
           requiere_periodo: document.getElementById('tipo-requiere-periodo').checked,
-          estado: 'activo' // Siempre activo por defecto
+          estado: 'activo'
         };
 
         const res = await window.electronAPI.guardarTipoConstancia(datos);
@@ -681,7 +819,7 @@ export class CatalogoModule {
   }
 }
 
-// IMPORTANTE: Crear una instancia global
+// Instancia Global
 window.catalogoModuleInstance = new CatalogoModule();
 document.addEventListener('DOMContentLoaded', () => {
   window.catalogoModuleInstance.init();
