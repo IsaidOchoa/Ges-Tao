@@ -25,8 +25,8 @@
   --text-light: #ecf0f1;
 
   /* Dimensiones del Layout */
-  --sidebar-width: 260px;
-  --sidebar-width-collapsed: 65px;
+  --sidebar-width: 230px;
+  --sidebar-width-collapsed: 50px;
   --header-height: 70px;
   --transition-speed: 0.3s;
   

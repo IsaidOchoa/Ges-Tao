@@ -1,18 +1,17 @@
-import './styles/main.css';
-
 // =======================================================
 // 1. IMPORTS DE VISTAS Y MÓDULOS
 // =======================================================
-
-// Vistas (HTML)
-import homeHtml from './views/home.html';
-import catalogosHtml from './views/catalogos.html';
-import emisionHtml from './views/emision.html';
-import historialHtml from './views/historial.html';
-import configuracionHtml from './views/configuracion.html';
-import reportesHtml from './views/reportes.html';
-import perfilHtml from './views/perfil.html';
-import bibliotecaHtml from './views/biblioteca.html';
+import './styles/main.css';
+// Vistas (HTML) - Importadas como strings gracias a webpack raw-loader
+import homeHtml from './views/pages/home.html';
+import catalogosHtml from './views/pages/catalogos.html';
+import emisionHtml from './views/pages/emision.html';
+import historialHtml from './views/pages/historial.html';
+import configuracionHtml from './views/pages/configuracion.html';
+import reportesHtml from './views/pages/reportes.html';
+import perfilHtml from './views/pages/perfil.html';
+import bibliotecaHtml from './views/pages/biblioteca.html';
+// import alumnosHtml from './views/alumnos.html'; // 🆕 Descomentar cuando crees la vista
 
 // Módulos (Lógica POO)
 import { AuthModule } from './modules/AuthModule.js';
@@ -20,6 +19,7 @@ import { CatalogoModule } from './modules/CatalogoModule.js';
 import { EmisionModule } from './modules/EmisionModule.js';
 import { HistorialModule } from './modules/HistorialModule.js';
 import { BibliotecaModule } from './modules/BibliotecaModule.js';
+// import { AlumnoModule } from './modules/AlumnoModule.js'; // 🆕 Descomentar cuando lo crees
 
 // Mapa de vistas HTML
 const views = {
@@ -31,6 +31,7 @@ const views = {
   'emision': emisionHtml,
   'historial': historialHtml,
   'biblioteca': bibliotecaHtml,
+  // 'alumnos': alumnosHtml, // 🆕 Agregar cuando exista
 };
 
 // =======================================================
@@ -42,6 +43,7 @@ const catalogos = new CatalogoModule();
 const emision = new EmisionModule();
 const historial = new HistorialModule();
 const biblioteca = new BibliotecaModule();
+// const alumnos = new AlumnoModule(); // 🆕 Instancia para módulo de alumnos
 
 // Variables de estado global mínimo
 let currentUser = null;
@@ -140,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // =======================================================
-  // 🛠️ SOLUCIÓN: Helpers Globales para Modales
+  // HELPERS GLOBALES PARA MODALES
   // =======================================================
   // Estas funciones deben estar AQUÍ para que el HTML (onclick) las encuentre
   
@@ -163,8 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (auth) auth.logout();
   };
   
-  // =======================================================
-
 });
 
 // =======================================================
@@ -206,7 +206,8 @@ async function navigate(viewName) {
       'reportes': 'Reportes Estadísticos',
       'emision': 'Emisión de Constancias',
       'historial': 'Historial y Búsqueda',
-      'biblioteca': 'Biblioteca de Constancias'
+      'biblioteca': 'Biblioteca de Constancias',
+      'alumnos': 'Gestión de Alumnos' // 🆕 Título para nueva vista
     };
     pageTitle.innerText = titles[viewName] || 'Ges-TAO';
 
@@ -224,6 +225,9 @@ async function navigate(viewName) {
       case 'biblioteca':
         biblioteca.init();
         break;
+      // case 'alumnos':
+      //   alumnos.init(); // 🆕 Inicializar módulo de alumnos
+      //   break;
       case 'configuracion':
         setTimeout(() => {
           const toggle = document.getElementById('toggle-dark-mode');
