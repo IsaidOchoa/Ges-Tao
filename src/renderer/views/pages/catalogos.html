@@ -1,12 +1,17 @@
 <div class="fade-in">
   
-  <!-- PESTAÑAS DE NAVEGACIÓN -->
+  <!-- =========================================
+       PESTAÑAS DE NAVEGACIÓN
+       ========================================= -->
   <div class="tabs-container">
     <button class="tab-btn active" id="btn-tab-docentes">
       <i class="fa-solid fa-chalkboard-user"></i> Docentes
     </button>
     <button class="tab-btn" id="btn-tab-ee">
       <i class="fa-solid fa-book-open"></i> Experiencias (EE)
+    </button>
+    <button class="tab-btn" id="btn-tab-alumnos">
+      <i class="fa-solid fa-graduation-cap"></i> Alumnos
     </button>
     <button class="tab-btn" id="btn-tab-tipos-constancia">
       <i class="fa-solid fa-certificate"></i> Tipos de Constancia
@@ -19,7 +24,9 @@
     </button>
   </div>
 
-  <!-- CONTENIDO: DOCENTES -->
+  <!-- =========================================
+       SECCIÓN 1: DOCENTES
+       ========================================= -->
   <div id="tab-docentes" class="tab-content active">
     <div class="card">
       <div class="card-header-action">
@@ -48,7 +55,9 @@
     </div>
   </div>
 
-  <!-- CONTENIDO: EE -->
+  <!-- =========================================
+       SECCIÓN 2: EXPERIENCIAS EDUCATIVAS (EE)
+       ========================================= -->
   <div id="tab-ee" class="tab-content">
     <div class="card">
       <div class="card-header-action">
@@ -71,7 +80,8 @@
         </table>
       </div>
     </div>
-     <!-- 🆕 NUEVO: PANEL INFERIOR DE DETALLES (Oculto por defecto) -->
+
+    <!-- 🆕 PANEL INFERIOR DE DETALLES (Oculto por defecto) -->
     <div id="panel-detalles-ee" class="ee-details-panel hidden">
       <div class="panel-header">
         <div class="panel-title-group">
@@ -88,7 +98,7 @@
         <button class="panel-tab-btn active" data-target="tab-contenidos">
           <i class="fa-solid fa-book-open"></i> Contenidos Temáticos
         </button>
-        <button class="panel-tab-btn" data-target="tab-docentes">
+        <button class="panel-tab-btn" data-target="tab-docentes-ee">
           <i class="fa-solid fa-chalkboard-user"></i> Docentes Asignados
         </button>
       </div>
@@ -102,13 +112,12 @@
           </button>
         </div>
         <div class="panel-list-container" id="lista-contenidos-ee">
-          <!-- Se llenará dinámicamente -->
           <div class="empty-state">Seleccione una EE para ver sus contenidos.</div>
         </div>
       </div>
 
       <!-- Contenido Pestaña 2: Docentes -->
-      <div id="tab-docentes" class="panel-tab-content">
+      <div id="tab-docentes-ee" class="panel-tab-content">
         <div class="panel-toolbar">
           <p class="text-muted small">Asigne docentes a esta materia por periodo.</p>
           <button class="btn btn-primary btn-sm" onclick="alert('Función: Asignar Docente (Próximamente)')">
@@ -116,14 +125,55 @@
           </button>
         </div>
         <div class="panel-list-container" id="lista-docentes-ee">
-          <!-- Se llenará dinámicamente -->
           <div class="empty-state">Seleccione una EE para ver los docentes asignados.</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- CONTENIDO: TIPOS DE CONSTANCIA -->
+  <!-- =========================================
+       SECCIÓN 3: ALUMNOS (NUEVO)
+       ========================================= -->
+  <div id="tab-alumnos" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <div class="section-title-group">
+          <h3 class="section-title">Registro de Alumnos</h3>
+          <p class="section-desc">Administre matrículas, tutores y asignaciones académicas.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-nuevo-alumno">
+          <i class="fa-solid fa-plus"></i> Nuevo Alumno
+        </button>
+      </div>
+      
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input type="text" id="buscador-alumnos" class="buscador-catalogos" placeholder="Buscar por matrícula o nombre...">
+      </div>
+      
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>MATRÍCULA</th>
+              <th>NOMBRE COMPLETO</th>
+              <th>CORREO INSTITUCIONAL</th>
+              <th>TUTOR</th>
+              <th>ESTADO</th>
+              <th style="text-align:right">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-alumnos-body">
+            <!-- Se llenará dinámicamente desde AlumnoModule.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       SECCIÓN 4: TIPOS DE CONSTANCIA
+       ========================================= -->
   <div id="tab-tipos-constancia" class="tab-content">
     <div class="card">
       <div class="card-header-action">
@@ -161,7 +211,9 @@
     </div>
   </div>
 
-  <!-- CONTENIDO: PERIODOS -->
+  <!-- =========================================
+       SECCIÓN 5: PERIODOS
+       ========================================= -->
   <div id="tab-periodos" class="tab-content">
     <div class="card">
       <div class="card-header-action">
@@ -186,7 +238,9 @@
     </div>
   </div>
 
-  <!-- CONTENIDO: PROGRAMAS -->
+  <!-- =========================================
+       SECCIÓN 6: PROGRAMAS INSTITUCIONALES
+       ========================================= -->
   <div id="tab-programas" class="tab-content">
     <div class="card">
       <div class="card-header-action">
@@ -219,5 +273,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     const catalogo = new CatalogoModule();
     catalogo.init();
+    // Exponer instancia global para el botón de cerrar panel
+    window.catalogoModuleInstance = catalogo;
   });
 </script>

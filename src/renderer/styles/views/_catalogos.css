@@ -1,36 +1,48 @@
 /* =======================================================
    CATÁLOGOS ACADÉMICOS
-   Estilos específicos para la vista de gestión de catálogos.
+   Estilos completos reorganizados por bloques funcionales.
    ======================================================= */
 
 /* =========================================
-   1. PESTAÑAS (TABS)
+   1. NAVEGACIÓN (TABS) - Scroll Horizontal
    ========================================= */
 .tabs-container {
   display: flex;
-  gap: 5px;
-  border-bottom: 2px solid var(--border-color);
+  gap: 4px;
+  overflow-x: auto;          /* Scroll lateral funcional */
+  overflow-y: hidden;
+  white-space: nowrap;       /* Evita cortes de texto */
+  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;  /* IE/Edge */
+  border-bottom: 1px solid var(--border-color);
   margin-bottom: 20px;
+  padding-bottom: 1px;
+}
+
+.tabs-container::-webkit-scrollbar {
+  display: none;             /* Chrome/Safari/Electron */
 }
 
 .tab-btn {
+  flex-shrink: 0;            /* ⚠️ CRÍTICO: Botones inmutables */
   background: transparent;
   border: none;
-  padding: 12px 20px;
+  padding: 12px 18px;
   cursor: pointer;
   color: var(--text-muted);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: color 0.2s, border-color 0.2s;
-  font-weight: 500;
+  transition: color 0.2s, background 0.2s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
 }
 
 .tab-btn:hover {
   color: var(--text-dark);
+  background-color: rgba(0,0,0,0.03);
 }
 
 .tab-btn.active {
@@ -41,7 +53,7 @@
 
 .tab-content {
   display: none;
-  /* La animación fadeIn ahora viene del archivo global core */
+  animation: fadeIn 0.3s ease-in-out;
 }
 
 .tab-content.active {
@@ -49,13 +61,13 @@
 }
 
 /* =========================================
-   2. TARJETAS Y CABECERAS DE ACCIÓN
+   2. LAYOUT DE TARJETAS Y CABECERAS
    ========================================= */
 .card-header-action {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   gap: 15px;
   flex-wrap: wrap;
 }
@@ -70,7 +82,7 @@
 
 .section-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--text-dark);
   font-weight: 700;
   display: flex;
@@ -86,17 +98,15 @@
 }
 
 /* =========================================
-   3. BUSCADORES CON LUPA (NUEVO)
+   3. BUSCADORES (INPUT + ICONO)
    ========================================= */
-/* Contenedor relativo para posicionar la lupa */
 .search-wrapper {
   position: relative;
   width: 100%;
-  max-width: 100%; /* Se ajusta al padre */
-  margin: 15px 0;
+  max-width: 100%;
+  margin-bottom: 20px;
 }
 
-/* Icono de lupa absoluto */
 .search-icon {
   position: absolute;
   left: 12px;
@@ -104,14 +114,12 @@
   transform: translateY(-50%);
   color: var(--text-muted);
   pointer-events: none;
-  z-index: 2;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
-/* Input ajustado para dejar espacio a la lupa */
 .buscador-catalogos {
   width: 100%;
-  padding: 10px 12px 10px 38px; /* Padding izquierdo extra (38px) */
+  padding: 10px 12px 10px 38px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background-color: var(--bg-white);
@@ -124,18 +132,167 @@
 .buscador-catalogos:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 /* =========================================
-   4. MODALES
+   4. TABLAS DE DATOS (GENÉRICA)
+   ========================================= */
+.table-responsive {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table thead {
+  background-color: var(--bg-light);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.data-table th {
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+.data-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(0,0,0,0.02);
+}
+
+.data-row.selected {
+  background-color: var(--bg-light) !important;
+  border-left: 4px solid var(--accent-color);
+}
+
+/* =========================================
+   5. INDICADORES DE ESTADO (DOTS CON HALO) ✅ CORREGIDO
+   ========================================= */
+.data-row .status-dot-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.data-row .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Activo (Verde + Halo) */
+.data-row .status-active {
+  background-color: #27ae60 !important;
+  box-shadow: 0 0 5px rgba(39, 174, 96, 0.5) !important;
+}
+
+/* Inactivo (Rojo + Halo) */
+.data-row .status-inactive {
+  background-color: #e74c3c !important;
+  box-shadow: 0 0 5px rgba(231, 76, 60, 0.5) !important;
+}
+
+/* Dark Mode: Halos más brillantes para contraste */
+body[data-theme="dark"] .data-row .status-active {
+  background-color: #2ecc71 !important;
+  box-shadow: 0 0 8px rgba(46, 204, 113, 0.7) !important;
+}
+
+body[data-theme="dark"] .data-row .status-inactive {
+  background-color: #ff6b6b !important;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.7) !important;
+}
+
+/* =========================================
+   6. BOTONES DE ACCIÓN Y MENÚ CONTEXTUAL
+   ========================================= */
+.action-icon-container {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.data-row:hover .action-icon-container,
+.data-row.selected .action-icon-container {
+  opacity: 1;
+}
+
+.btn-action-menu {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+}
+
+.btn-action-menu:hover {
+  background: var(--bg-light);
+  color: var(--text-dark);
+}
+
+.context-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 5px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 180px;
+  z-index: 1000;
+  padding: 5px 0;
+}
+
+.context-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.context-item:hover {
+  background-color: var(--bg-light);
+}
+
+/* =========================================
+   7. MODALES Y FORMULARIOS
    ========================================= */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 2000;
   display: flex;
@@ -146,42 +303,24 @@
 
 .modal-content {
   background: var(--bg-white);
-  padding: 20px;
+  padding: 25px;
   border-radius: var(--radius-md);
   width: 90%;
   max-width: 600px;
   box-shadow: var(--shadow-lg);
-  /* Animación fadeInUp viene del global */
   border: 1px solid var(--border-color);
-}
-
-.modal-content.smaller {
-  max-width: 500px;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
   border-bottom: 1px solid var(--border-color);
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: var(--text-dark);
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px solid var(--border-color);
-}
+.modal-header h3 { margin: 0; font-size: 1.3rem; }
 
 .btn-close {
   background: none;
@@ -189,325 +328,63 @@
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-muted);
-  line-height: 1;
-  padding: 0 5px;
-  transition: color 0.2s;
 }
 
-.btn-close:hover {
-  color: var(--danger-color);
-}
-
-/* =========================================
-   5. FORMULARIOS DENTRO DE MODALES
-   ========================================= */
-.form-row-flex {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-}
-
-.form-group {
-  margin-bottom: 15px;
-  flex: 1;
-  min-width: 0;
-}
-
-.form-group.full-width {
-  flex: 100%;
-  width: 100%;
-}
+.form-group { margin-bottom: 15px; }
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--text-dark);
 }
 
 .form-group input,
-.form-group select,
-.form-group textarea {
+.form-group select {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  background-color: var(--bg-white);
-  color: var(--text-dark);
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-}
-
-.flex-1 { flex: 1; margin-bottom: 0; min-width: 0; }
-.flex-2 { flex: 2; margin-bottom: 0; min-width: 0; }
-
-/* =========================================
-   6. BADGES DE ESTADO
-   ========================================= */
-.badge {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  display: inline-block;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #ffffff;
-  border: none;
-  white-space: nowrap;
-}
-
-.badge-success { background-color: #219150; }
-body[data-theme="dark"] .badge-success { background-color: #27ae60; }
-
-.badge-danger { background-color: #c0392b; }
-body[data-theme="dark"] .badge-danger { background-color: #e74c3c; }
-
-.badge-warning { background-color: #d35400; }
-body[data-theme="dark"] .badge-warning { background-color: #e67e22; }
-
-/* =======================================================
-   FILA SELECCIONADA Y ICONO DE ACCIÓN (APARICIÓN SUAVE)
-   ======================================================= */
-
-/* Estado: Fila Seleccionada */
-.data-row.selected {
-  background-color: var(--bg-light) !important; /* Fondo más marcado que el hover */
-  border-left: 4px solid var(--accent-color);   /* Borde izquierdo de acento para destacar */
-}
-
-/* El Contenedor del Icono (Siempre existe, pero invisible por defecto) */
-.action-icon-container {
-  position: absolute;
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%);
-  opacity: 0;           /* Invisible */
-  visibility: hidden;   /* No interactuable */
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Botón de los 3 puntos */
-.btn-action-menu {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s, background 0.2s;
-}
-
-.btn-action-menu:hover {
-  background-color: rgba(0,0,0,0.05);
-  color: var(--text-dark);
-}
-
-/* --- MAGIA: Mostrar icono cuando la fila está seleccionada --- */
-.data-row.selected .action-icon-container {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Menú Contextual (Igual que antes) */
-.context-menu {
-  position: absolute;
-  top: 100%; /* Debajo del icono */
-  right: 0;
-  margin-top: 5px;
   background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  min-width: 180px;
-  z-index: 1000;
-  padding: 5px 0;
-  animation: fadeInDown 0.15s ease-out;
-}
-
-.context-menu.hidden {
-  display: none;
-}
-/* =======================================================
-   DOTS DE ESTADO (SOMBRA DE COLOR EXPLÍCITA - TIPO WIFI)
-   ======================================================= */
-
-/* Contenedor */
-.data-row .status-dot-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-/* Dot Base: Solo forma, sin colores ni sombras */
-.data-row .status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  /* Sin background-color ni box-shadow aquí */
-}
-
-/* =========================================
-   ESTADO ACTIVO (VERDE) 
-   Núcleo verde + Halo verde claro
-   ========================================= */
-.data-row .status-active {
-  /* Núcleo: Verde intenso */
-  background-color: #27ae60 !important;
-  
-  /* Halo/Sombra: Verde claro brillante */
-  box-shadow: 0 0 5px rgba(39, 174, 96, 0.5) !important;
-}
-
-/* =========================================
-   ESTADO INACTIVO (ROJO)
-   Núcleo rojo + Halo rojo claro
-   ========================================= */
-.data-row .status-inactive {
-  /* Núcleo: Rojo intenso */
-  background-color: #e74c3c !important;
-  
-  /* Halo/Sombra: Rojo claro brillante */
-  box-shadow: 0 0 5px rgba(231, 76, 60, 0.5) !important;
-}
-
-/* =========================================
-   MODO OSCURO (Más brillo para contraste)
-   ========================================= */
-body[data-theme="dark"] .data-row .status-active {
-  background-color: #2ecc71 !important; /* Verde más brillante */
-  box-shadow: 0 0 8px rgba(46, 204, 113, 0.7) !important; /* Halo más grande e intenso */
-}
-
-body[data-theme="dark"] .data-row .status-inactive {
-  background-color: #ff6b6b !important; /* Rojo más brillante */
-  box-shadow: 0 0 8px rgba(255, 107, 107, 0.7) !important; /* Halo más grande e intenso */
-}
-
-/* El Menú Contextual (Oculto por defecto) */
-.context-menu {
-  position: absolute;
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%);
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  min-width: 180px;
-  z-index: 1000;
-  padding: 5px 0;
-  animation: fadeInDown 0.15s ease-out;
-  user-select: none;
-}
-
-.context-menu.hidden {
-  display: none;
-}
-
-/* Items del menú */
-.context-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 15px;
   color: var(--text-dark);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  white-space: nowrap;
 }
 
-.context-item:hover {
-  background-color: var(--bg-light);
+.form-row-flex {
+  display: flex;
+  gap: 15px;
 }
+.flex-1 { flex: 1; }
+.flex-2 { flex: 2; }
 
-.context-item i {
-  width: 16px;
-  text-align: center;
-  color: var(--text-muted);
-}
-
-/* Colores específicos de acciones */
-.context-item.text-warning { color: var(--warning-color); }
-.context-item.text-warning i { color: var(--warning-color); }
-.context-item.text-warning:hover { background-color: #fff3e0; }
-
-.context-item.text-success { color: var(--success-color); }
-.context-item.text-success i { color: var(--success-color); }
-.context-item.text-success:hover { background-color: #d1fae5; }
-
-/* Ajustes Dark Mode para hovers de menú */
-body[data-theme="dark"] .context-item.text-warning:hover { background-color: rgba(230, 126, 34, 0.15); }
-body[data-theme="dark"] .context-item.text-success:hover { background-color: rgba(39, 174, 96, 0.15); }
-
-/* =======================================================
-   PANEL INFERIOR DE DETALLES (EE)
-   ======================================================= */
+/* =========================================
+   8. PANEL DE DETALLES (EE ESPECÍFICO)
+   ========================================= */
 .ee-details-panel {
-  margin-top: 20px;
+  margin-top: 25px;
   background: var(--bg-white);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
   overflow: hidden;
-  animation: slideUp 0.3s ease-out;
   display: flex;
   flex-direction: column;
-  max-height: 60vh; /* Limitar altura */
 }
 
-.ee-details-panel.hidden {
-  display: none;
-}
+.ee-details-panel.hidden { display: none; }
 
-/* Cabecera del Panel */
 .panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 15px 20px;
   background: var(--bg-light);
   border-bottom: 1px solid var(--border-color);
-}
-
-.panel-title-group {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
 }
 
-.panel-title-group h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: var(--text-dark);
-}
-
-/* Pestañas Internas del Panel */
 .panel-tabs {
   display: flex;
-  border-bottom: 2px solid var(--border-color);
-  background: var(--bg-body);
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .panel-tab-btn {
@@ -518,15 +395,9 @@ body[data-theme="dark"] .context-item.text-success:hover { background-color: rgb
   color: var(--text-muted);
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.panel-tab-btn:hover {
-  background: rgba(0,0,0,0.05);
-  color: var(--text-dark);
 }
 
 .panel-tab-btn.active {
@@ -535,54 +406,18 @@ body[data-theme="dark"] .context-item.text-success:hover { background-color: rgb
   background: var(--bg-white);
 }
 
-/* Contenido de las Pestañas */
 .panel-tab-content {
   display: none;
   padding: 20px;
-  overflow-y: auto; /* Scroll interno si hay muchos items */
-  flex-grow: 1;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
-.panel-tab-content.active {
-  display: block;
-}
-
-/* Toolbar dentro de las pestañas */
-.panel-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-/* Lista de Items (Temas o Docentes) */
-.panel-list-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.item-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-  background: var(--bg-light);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
-  transition: transform 0.2s;
-}
-
-.item-row:hover {
-  transform: translateX(5px);
-  border-color: var(--accent-color);
-}
+.panel-tab-content.active { display: block; }
 
 .empty-state {
   text-align: center;
-  color: var(--text-muted);
   padding: 40px;
+  color: var(--text-muted);
   font-style: italic;
 }
