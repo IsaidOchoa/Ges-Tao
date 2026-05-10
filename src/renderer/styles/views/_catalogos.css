@@ -186,6 +186,38 @@
 }
 
 /* =========================================
+   COLUMNA DE CONTROL (Expansión)
+   ========================================= */
+.col-expand {
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Flecha dentro de la columna de control */
+.col-expand .row-arrow {
+  display: inline-block;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s;
+  cursor: pointer;
+}
+
+/* Rotación al expandir */
+.data-row.expanded .col-expand .row-arrow {
+  transform: rotate(90deg);
+  color: var(--accent-color);
+}
+
+/* Hover en la fila: resalta la flecha */
+.data-row:hover .col-expand .row-arrow {
+  color: var(--text-dark);
+}
+
+/* =========================================
    5. INDICADORES DE ESTADO (DOTS CON HALO) ✅ CORREGIDO
    ========================================= */
 .data-row .status-dot-container {
@@ -420,4 +452,112 @@ body[data-theme="dark"] .data-row .status-inactive {
   padding: 40px;
   color: var(--text-muted);
   font-style: italic;
+}
+
+/* =========================================
+   9. FILAS EXPANDIBLES (ACORDEÓN)
+   ========================================= */
+
+/* Cursor para indicar que es expandible */
+.data-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* Rotación de la flecha al expandir */
+.data-row.expanded .row-arrow {
+  transform: rotate(90deg);
+  color: var(--accent-color);
+}
+
+/* La fila de detalles oculta */
+.sub-row-details.hidden {
+  display: none;
+}
+
+/* Celda contenedora del contenido expandido */
+.expansion-cell {
+  padding: 0;
+  background-color: var(--bg-light);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: inset 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+/* Contenido interno */
+.expansion-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  gap: 20px;
+  animation: slideDown 0.2s ease-out;
+}
+
+/* Panel de Resumen (Izquierda) */
+.info-panel {
+  flex: 1;
+}
+
+.info-panel h5 {
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+/* Chips de resumen */
+.summary-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.chip.accent {
+  border-color: var(--accent-color);
+  background: rgba(52, 152, 219, 0.1);
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+/* Panel de Acción (Derecha) */
+.action-panel {
+  text-align: right;
+  min-width: 200px;
+}
+
+.btn-manage {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 5px auto;
+  transition: transform 0.2s;
+}
+
+.btn-manage:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
 }

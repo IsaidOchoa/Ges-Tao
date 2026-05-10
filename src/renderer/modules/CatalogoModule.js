@@ -14,7 +14,8 @@ export class CatalogoModule {
       ee: [],
       tiposConstancia: [],
       periodos: [],
-      programas: []
+      programas: [],
+      alumnos: [] // 🆕 Preparado para la nueva sección
     };
     
     this.tabButtons = [];
@@ -25,14 +26,13 @@ export class CatalogoModule {
     this.DOUBLE_CLICK_DELAY = 250;
   }
 
-  async init() {
+  async init(defaultTab = null) {
     console.log('🚀 [CatalogoModule] Iniciando...');
     
     // 1. INYECTAR MODALES EN EL DOM
     this.injectModals();
-
     const tabsContainer = document.querySelector('.tabs-container');
-    if (!tabsContainer) return;
+    if (!tabsContainer) return true;
 
     this.setupTabs();
     await this.loadAllData();
@@ -68,6 +68,20 @@ export class CatalogoModule {
         this.closeAllMenus();
       }
     });
+
+    if (defaultTab) {
+    setTimeout(() => {
+      const btn = document.getElementById(defaultTab);
+      if (btn) {
+        // Simular clic para usar la lógica existente de setupTabs
+        btn.click();
+        // Scroll suave hacia la tabla
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }, 150); // Delay para asegurar que todo está renderizado
+  }
+
+    return true;
   }
 
   injectModals() {
@@ -160,7 +174,12 @@ export class CatalogoModule {
     }
   }
 
+  // =======================================================
+  // 🆕 RENDER TABLE MEJORADO: Filas Expandibles
+  // =======================================================
   renderTable(tbodyId, datos, columnasMap, tipo = 'generico') {
+    console.log(`📊 Renderizando tabla: ${tbodyId} con ${datos?.length || 0} registros`);
+  
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
     
@@ -171,51 +190,81 @@ export class CatalogoModule {
     }
 
     datos.forEach(row => {
-      const rowId = row.codigo || row.clave_ee || row.clave || row.id || Math.random().toString(36).substr(2, 9);
+      const rowId = row.codigo || row.clave_ee || row.clave || row.id || row.matricula || Math.random().toString(36).substr(2, 9);
       const estadoVal = row.estado || row.estatus || '';
       const esActivo = ['activa','activo','vigente','abierto'].includes(estadoVal?.toLowerCase());
       
       let dataAttrs = `data-id="${rowId}" data-estado="${esActivo ? 'activo' : 'inactivo'}"`;
       
       if (tipo === 'docentes') {
-        dataAttrs += ` data-email="${row.correo_contacto || ''}" data-nombre="${(row.nombres || '') + ' ' + (row.apellido_paterno || '')}".trim()`;
+        dataAttrs += ` data-email="${row.correo_contacto || ''}" data-nombre="${((row.nombres || '') + ' ' + (row.apellido_paterno || '')).trim()}"`;
       }
 
-      let html = `<tr class="data-row" 
-                      ${dataAttrs}
-                      onclick="catalogoModuleInstance.handleRowClick(event)"
-                      oncontextmenu="catalogoModuleInstance.handleRowRightClick(event)"
-                      ondblclick="catalogoModuleInstance.handleRowDoubleClick(event)">`;
-      
-      columnasMap.forEach(col => {
-        let val = row[col.key];
-        
-        if (col.key === 'estado') {
-          const dotClass = esActivo ? 'status-active' : 'status-inactive';
-          const tooltip = esActivo ? 'Activo' : 'Inactivo';
-          html += `<td><div class="status-dot-container" title="${tooltip}"><span class="status-dot ${dotClass}"></span></div></td>`;
-        } else if (col.badge && col.key !== 'estado') {
-          const cls = esActivo ? 'badge-success' : 'badge-danger';
-          html += `<td><span class="badge ${cls}">${val}</span></td>`;
-        } else if (col.date) {
-          html += `<td>${val ? new Date(val).toLocaleDateString('es-MX') : '-'}</td>`;
-        } else if (col.format) {
-          html += `<td>${col.format(val, row)}</td>`;
-        } else {
-          html += `<td>${val || '-'}</td>`;
-        }
-      });
+    // === FILA PRINCIPAL ===
+    let html = `<tr class="data-row" 
+                    ${dataAttrs}
+                    onclick="catalogoModuleInstance.handleRowClick(event)"
+                    oncontextmenu="catalogoModuleInstance.handleRowRightClick(event)"
+                    ondblclick="catalogoModuleInstance.handleRowDoubleClick(event)">`;
 
-      html += `<td style="text-align:right; position:relative; width:40px;">
-                 <div id="menu-${rowId}" class="context-menu hidden"></div>
-                 <div class="action-icon-container">
-                   <button class="btn-action-menu" 
-                           onclick="event.stopPropagation(); catalogoModuleInstance.toggleActionMenu(event, '${rowId}')"
-                           title="Opciones">
-                     <i class="fa-solid fa-ellipsis-vertical"></i>
-                   </button>
-                 </div>
-               </td></tr>`;
+    // ✅ PRIMERA CELDA: Columna de control (flecha)
+    html += `<td class="col-expand">
+              <i class="fa-solid fa-chevron-right row-arrow"></i>
+            </td>`;
+
+    // Columnas de datos dinámicas
+    columnasMap.forEach(col => {
+      let val = row[col.key];
+      
+      if (col.key === 'estado') {
+        const dotClass = esActivo ? 'status-active' : 'status-inactive';
+        const tooltip = esActivo ? 'Activo' : 'Inactivo';
+        html += `<td><div class="status-dot-container" title="${tooltip}"><span class="status-dot ${dotClass}"></span></div></td>`;
+      } else if (col.badge && col.key !== 'estado') {
+        const cls = esActivo ? 'badge-success' : 'badge-danger';
+        html += `<td><span class="badge ${cls}">${val}</span></td>`;
+      } else if (col.date) {
+        html += `<td>${val ? new Date(val).toLocaleDateString('es-MX') : '-'}</td>`;
+      } else if (col.format) {
+        html += `<td>${col.format(val, row)}</td>`;
+      } else {
+        html += `<td>${val || '-'}</td>`;
+      }
+    });
+
+    // ✅ ÚLTIMA CELDA: Acciones (3 puntos) - SIN CAMBIOS
+    html += `<td style="text-align:right; position:relative; width:50px;">
+              <div id="menu-${rowId}" class="context-menu hidden"></div>
+              <div class="action-icon-container">
+                <button class="btn-action-menu" 
+                        onclick="event.stopPropagation(); catalogoModuleInstance.toggleActionMenu(event, '${rowId}')"
+                        title="Opciones">
+                  <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+              </div>
+            </td></tr>`;
+      
+      // === FILA EXPANDIBLE (Oculta por defecto) ===
+      html += `<tr class="sub-row-details hidden" id="details-${rowId}">
+                 <td colspan="100%" class="expansion-cell">
+                   <div class="expansion-content">
+                     <!-- Panel Izquierdo: Resumen -->
+                     <div class="info-panel">
+                       <h5>Resumen de Asignaciones</h5>
+                       <div class="summary-chips" id="summary-${rowId}">
+                         <span class="chip">⏳ Cargando...</span>
+                       </div>
+                     </div>
+                     <!-- Panel Derecho: Acción al Mega Modal -->
+                     <div class="action-panel">
+                       <button class="btn-manage" onclick="event.stopPropagation(); window.openAssignmentModal('${rowId}', '${tipo}')">
+                         <i class="fa-solid fa-diagram-project"></i> Gestionar Asignaciones
+                       </button>
+                       <p class="hint">Abre el panel completo para editar relaciones.</p>
+                     </div>
+                   </div>
+                 </td>
+               </tr>`;
       
       tbody.innerHTML += html;
     });
@@ -238,48 +287,123 @@ export class CatalogoModule {
   }
 
   // =======================================================
-  // LÓGICA DE INTERACCIÓN DE FILAS
+  // 🆕 FUNCIONES GLOBALES PARA EXPANSIÓN DE FILAS
   // =======================================================
 
-    // 1. Clic Izquierdo: AHORA ABRE EL PANEL DIRECTAMENTE SI ES EE
+  // Función para alternar la visibilidad de la fila (expuesta globalmente)
+  toggleRowExpansion(rowElement) {
+    if (!rowElement) return;
+    
+    // Toggle de clase para rotar flecha
+    rowElement.classList.toggle('expanded');
+    
+    // Buscar la fila siguiente (la de detalles)
+    const detailsRow = rowElement.nextElementSibling;
+    
+    if (detailsRow && detailsRow.classList.contains('sub-row-details')) {
+      // Mostrar/Ocultar
+      detailsRow.classList.toggle('hidden');
+      
+      // Si se está abriendo, cargar la info "Extra"
+      if (!detailsRow.classList.contains('hidden')) {
+        const rowId = rowElement.dataset.id;
+        const tipo = this.getTipoPorTablaId(rowElement.closest('table').querySelector('tbody').id);
+        this.loadRowSummary(rowId, tipo, detailsRow);
+      }
+    }
+  }
+
+  // Carga dinámica del resumen para la fila expandida
+  async loadRowSummary(rowId, tipo, container) {
+    const chipsContainer = container.querySelector('.summary-chips');
+    if (!chipsContainer) return;
+    
+    chipsContainer.innerHTML = '<span class="chip">⏳ Cargando...</span>';
+    
+    try {
+      // Aquí irían las llamadas reales a tus servicios/IPC
+      // Simulamos datos según el tipo de entidad
+      let summary = [];
+      
+      if (tipo === 'docentes') {
+        summary = [
+          { label: '📚 3 EE', class: 'accent' },
+          { label: '👥 12 Alumnos', class: '' },
+          { label: '📅 2024-A', class: '' }
+        ];
+      } else if (tipo === 'ee') {
+        summary = [
+          { label: '👨‍🏫 2 Docentes', class: 'accent' },
+          { label: '📅 Vigente', class: '' }
+        ];
+      } else if (tipo === 'alumnos') {
+        summary = [
+          { label: '👨‍🏫 Tutor: Dr. Pérez', class: 'accent' },
+          { label: '📚 5 EE Cursadas', class: '' }
+        ];
+      } else {
+        summary = [{ label: 'Sin asignaciones', class: '' }];
+      }
+      
+      // Renderizar chips
+      chipsContainer.innerHTML = summary.map(item => 
+        `<span class="chip ${item.class || ''}">${item.label}</span>`
+      ).join('');
+      
+    } catch (error) {
+      console.error('Error cargando resumen:', error);
+      chipsContainer.innerHTML = '<span class="chip" style="color:var(--danger-color)">Error al cargar</span>';
+    }
+  }
+
+  // =======================================================
+  // LÓGICA DE INTERACCIÓN DE FILAS (Actualizada)
+  // =======================================================
+
   handleRowClick(event) {
-    // Si es un clic simple (detalle 1)
+    // Si es un clic simple
     if (event.detail === 1) {
       const row = event.target.closest('.data-row');
       if (!row) return;
+
+      // Ignorar si se hizo clic en botones de acción o menú
+      if (event.target.closest('.btn-action-menu') || event.target.closest('.context-menu') || event.target.closest('.btn-manage')) {
+        return;
+      }
 
       // Obtener el tipo de tabla
       const tbodyId = row.closest('table').querySelector('tbody').id;
       const tipo = this.getTipoPorTablaId(tbodyId);
       const id = row.dataset.id;
 
-      // 🆕 LÓGICA ESPECIAL PARA EE: Abrir panel inmediatamente con 1 clic
+      // 🆕 LÓGICA ESPECIAL PARA EE: Abrir panel inferior inmediatamente con 1 clic
       if (tipo === 'ee') {
-        // Cancelar cualquier timer pendiente de doble clic
         clearTimeout(this.clickTimer);
-        
-        // Seleccionar visualmente la fila
         document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
         row.classList.add('selected');
-        
-        // Abrir el panel
         this.abrirPanelEE(id);
         this.closeAllMenus();
-        return; // Salir aquí, no hacer nada más
+        return;
       }
 
-      // LÓGICA PARA OTROS (Docentes, Periodos, etc.): Mantener comportamiento de selección
-      // Usamos un pequeño delay solo para no interferir si el usuario hace doble clic muy rápido en otros módulos
-      this.clickTimer = setTimeout(() => {
-        if (row.classList.contains('selected')) return;
+      // 🆕 LÓGICA PARA OTROS: Alternar expansión de fila (Accordion)
+      // Cancelar timer previo
+      clearTimeout(this.clickTimer);
+      
+      // Toggle visual de selección
+      if (row.classList.contains('selected')) {
+        row.classList.remove('selected');
+      } else {
         document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
         row.classList.add('selected');
-        this.closeAllMenus();
-      }, 150); // Reducimos el delay a 150ms para que se sienta más rápido
+      }
+      
+      // Ejecutar expansión
+      this.toggleRowExpansion(row);
+      this.closeAllMenus();
     }
   }
 
-  // 2. Doble Clic: Solo actúa si NO es EE (ya que EE se abre con 1 clic)
   handleRowDoubleClick(event) {
     const row = event.target.closest('.data-row');
     if (!row) return;
@@ -287,11 +411,8 @@ export class CatalogoModule {
     const tipo = this.getTipoPorTablaId(row.closest('table').querySelector('tbody').id);
     
     // Si es EE, ignoramos el doble clic porque ya se abrió con el simple
-    if (tipo === 'ee') {
-      return; 
-    }
+    if (tipo === 'ee') return;
 
-    // Para otros módulos (si quisieras implementar edición rápida con doble clic en el futuro)
     const id = row.dataset.id;
     console.log(`Doble clic detectado en ${tipo}: ${id}`);
     // this.abrirModalEdicion(tipo, id); // Descomentar si quieres editar otros con doble clic
@@ -303,6 +424,11 @@ export class CatalogoModule {
     
     const row = event.target.closest('.data-row');
     if (!row) return;
+
+    // Si la fila está expandida, colapsarla antes de mostrar menú
+    if (row.classList.contains('expanded')) {
+      this.toggleRowExpansion(row);
+    }
 
     document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
     row.classList.add('selected');
@@ -379,6 +505,7 @@ export class CatalogoModule {
     if (tbodyId.includes('tipos')) return 'tipos';
     if (tbodyId.includes('periodos')) return 'periodos';
     if (tbodyId.includes('programas')) return 'programas';
+    if (tbodyId.includes('alumnos')) return 'alumnos'; // 🆕 Nuevo
     return 'generico';
   }
 
@@ -409,7 +536,7 @@ export class CatalogoModule {
       return;
     }
     
-    // Default para otros (puedes expandir luego)
+    // Default para otros
     console.log(`Editando ${tipo}: ${id}`);
     alert(`Función de edición para ${tipo} en desarrollo.`);
   }
@@ -419,7 +546,6 @@ export class CatalogoModule {
     if(!confirm(`¿Estás seguro de ${accion} este registro?`)) return;
     
     console.log(`Cambiando ${tipo} ${id} a ${nuevoEstado}`);
-    // Aquí iría la llamada real al backend
     alert(`✅ Estado cambiado a ${nuevoEstado.toUpperCase()} (Simulado)`);
     this.loadAllData();
   }
@@ -441,20 +567,17 @@ export class CatalogoModule {
     const clave = document.getElementById('panel-ee-clave');
 
     if (!panel) {
-      console.warn('⚠️ El panel de detalles no existe en el DOM. Asegúrate de agregar el HTML en catalogos.html');
+      console.warn('⚠️ El panel de detalles no existe en el DOM.');
       return;
     }
 
     titulo.innerText = ee.nombre;
     clave.innerText = ee.clave_ee;
-
     panel.classList.remove('hidden');
 
-    // Cargar contenido
     this.cargarContenidosEE(ee);
     this.cargarDocentesEE(ee);
     
-    // Scroll suave
     panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -485,7 +608,6 @@ export class CatalogoModule {
     const container = document.getElementById('lista-contenidos-ee');
     if (!container) return;
 
-    // DATOS MOCK (Reemplazar con fetch real cuando exista la tabla)
     const temasMock = [
       { id: 1, descripcion: 'Introducción y fundamentos', orden: 1 },
       { id: 2, descripcion: 'Desarrollo de temas avanzados', orden: 2 },
@@ -513,7 +635,6 @@ export class CatalogoModule {
     const container = document.getElementById('lista-docentes-ee');
     if (!container) return;
 
-    // DATOS MOCK
     const docentesMock = [
       { id: 1, nombre: 'Juan Pérez', periodo: '2024-A' },
       { id: 2, nombre: 'María López', periodo: '2024-B' }

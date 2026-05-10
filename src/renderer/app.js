@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // 5. NAVEGACIÓN Y ORQUESTACIÓN DE VISTAS
 // =======================================================
 
-async function navigate(viewName) {
+async function navigate(viewName, targetTab = null) {
   const contentDiv = document.getElementById('content-area');
   const pageTitle = document.getElementById('pageTitle');
   
@@ -209,25 +209,29 @@ async function navigate(viewName) {
       'biblioteca': 'Biblioteca de Constancias',
       'alumnos': 'Gestión de Alumnos'
     };
+    if (viewName === 'home') {
+      setTimeout(() => cargarPeriodoActual(), 100);
+    }
+    
     pageTitle.innerText = titles[viewName] || 'Ges-TAO';
 
-    // --- ORQUESTACIÓN: Llamar al módulo correspondiente ---
+     // --- ORQUESTACIÓN: Llamar al módulo correspondiente ---
     switch (viewName) {
       case 'catalogos':
-        catalogos.init();
+        await catalogos.init(targetTab);
         break;
       case 'emision':
-        emision.init();
+        await emision.init();
         break;
       case 'historial':
-        historial.init();
+        await historial.init();
         break;
       case 'biblioteca':
-        biblioteca.init();
+        await biblioteca.init();
         break;
-      // case 'alumnos':
-      //   alumnos.init(); // 🆕 Inicializar módulo de alumnos
-      //   break;
+      case 'alumnos':
+        await alumnos.init();
+        break;
       case 'configuracion':
         setTimeout(() => {
           const toggle = document.getElementById('toggle-dark-mode');
@@ -247,6 +251,38 @@ async function navigate(viewName) {
   } finally {
     contentDiv.style.opacity = '1';
     contentDiv.style.pointerEvents = 'auto';
+  }
+}
+
+// 🆕 Función para cargar el periodo actual en el dashboard
+async function cargarPeriodoActual() {
+  try {
+    // Intentar obtener el periodo activo/vigente
+    const res = await window.electronAPI.listarPeriodos();
+    
+    if (res.success) {
+      const periodos = res.rows || res.data;
+      
+      // Buscar el periodo activo o vigente
+      const periodoActivo = periodos.find(p => 
+        p.estado?.toLowerCase() === 'activo' || 
+        p.estado?.toLowerCase() === 'vigente' ||
+        p.estatus?.toLowerCase() === 'activo'
+      );
+      
+      // Si no hay activo, tomar el último registrado
+      const periodoMostrar = periodoActivo || periodos[periodos.length - 1];
+      
+      if (periodoMostrar) {
+        const elemento = document.getElementById('periodo-actual-valor');
+        if (elemento) {
+          // Mostrar clave o descripción (ajusta según tu BD)
+          elemento.textContent = periodoMostrar.clave || periodoMostrar.descripcion || 'No definido';
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error cargando periodo actual:', error);
   }
 }
 
