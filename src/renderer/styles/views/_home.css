@@ -1,0 +1,91 @@
+/* =========================================
+   ACCESOS RÁPIDOS - Jerarquía Visual
+   ========================================= */
+
+   /* 1. Espaciado del título de sección */
+
+   /* 1. Espaciado del título de sección */
+.fade-in h3 {
+  margin-bottom: 16px; /* ← Ajusta este valor (12px, 20px, etc.) */
+}
+
+.fade-in h4 {
+  margin-bottom: 16px; /* ← Ajusta este valor (12px, 20px, etc.) */
+}
+/* Estructura base de la tarjeta */
+.actions-grid .card.action {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.actions-grid .card.action:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-color);
+}
+
+/* Header: Icono + Título vs Flecha */
+.action-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.action-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Icono de acción (izquierda) */
+.action-icon {
+  font-size: 1.1rem;
+  color: var(--accent-color); /* Usa tu color de acento institucional */
+  opacity: 0.9;
+}
+
+/* Título: ALTO CONTRASTE (Corrección de saturación) */
+/* =========================================
+   CORRECCIÓN: Eliminar borde heredado en H4
+   ========================================= */
+.actions-grid .card.action h4 {
+  border-bottom: none !important; /* Elimina la línea amarilla */
+  padding-bottom: 0 !important;   /* Elimina el espacio extra que suele acompañar al borde */
+  margin-bottom: 0;
+}
+
+/* Flecha indicadora (derecha) */
+.arrow-icon {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  opacity: 0.4;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Línea divisoria sutil */
+.action-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 8px 0 10px 0;
+  opacity: 0.6;
+}
+
+/* Descripción: MENOR SATURACIÓN */
+.actions-grid .card.action p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 1.4;
+  opacity: 0.8; /* Reduce ligeramente para jerarquía visual */
+}
+
+/* =========================================
+   ANIMACIÓN DE FLECHA (Opcional solicitado)
+   ========================================= */
+.actions-grid .card.action:hover .arrow-icon {
+  transform: translateX(5px);
+  opacity: 1;
+  color: var(--accent-color);
+}

@@ -200,14 +200,14 @@ async function navigate(viewName) {
     // Actualizar título
     const titles = {
       'home': 'Panel Principal',
-      'catalogos': 'Gestión de Catálogos',
+      'catalogos': 'Gestión de Datos',
       'configuracion': 'Configuración del Sistema',
       'perfil': 'Mi Perfil',
       'reportes': 'Reportes Estadísticos',
       'emision': 'Emisión de Constancias',
       'historial': 'Historial y Búsqueda',
       'biblioteca': 'Biblioteca de Constancias',
-      'alumnos': 'Gestión de Alumnos' // 🆕 Título para nueva vista
+      'alumnos': 'Gestión de Alumnos'
     };
     pageTitle.innerText = titles[viewName] || 'Ges-TAO';
 

@@ -1,7 +1,7 @@
 <div class="fade-in">
   <h3>Panel de Control</h3>
   
-  <!-- KPIs -->
+  <!-- KPIs (Se mantienen igual) -->
   <div class="kpi-grid">
     <div class="card kpi warning">
       <h3>5</h3>
@@ -17,23 +17,48 @@
     </div>
   </div>
 
-  <!-- Accesos Rápidos -->
+    <!-- Accesos Rápidos -->
   <h4>Accesos Rápidos</h4>
   <div class="actions-grid">
+    
+    <!-- Tarjeta 1: Nuevo Docente -->
     <div class="card action" onclick="navigate('docentes')">
-      <div class="icon-big">👥</div>
-      <h4>Nuevo Docente</h4>
+      <div class="action-header">
+        <div class="action-title">
+          <i class="fa-solid fa-user-plus action-icon"></i>
+          <h4>Nuevo Docente</h4>
+        </div>
+        <i class="fa-solid fa-chevron-right arrow-icon"></i>
+      </div>
+      <div class="action-divider"></div>
       <p>Registrar o editar información académica</p>
     </div>
-    <div class="card action" onclick="navigate('constancias')">
-      <div class="icon-big">📄</div>
-      <h4>Generar Constancia</h4>
-      <p>Emitir documentos oficiales blindados</p>
+
+    <!-- Tarjeta 2: Generar Constancia -->
+    <div class="card action" onclick="navigate('emision')">
+      <div class="action-header">
+        <div class="action-title">
+          <i class="fa-solid fa-file-circle-plus action-icon"></i>
+          <h4>Generar Constancia</h4>
+        </div>
+        <i class="fa-solid fa-chevron-right arrow-icon"></i>
+      </div>
+      <div class="action-divider"></div>
+      <p>Emitir documentos académicos para docentes</p>
     </div>
-    <div class="card action" onclick="navigate('reportes')">
-      <div class="icon-big">📊</div>
-      <h4>Reportes PRODEP</h4>
-      <p>Estadísticas de productividad</p>
+
+    <!-- Tarjeta 3: Explorar Biblioteca -->
+    <div class="card action" onclick="navigate('biblioteca')">
+      <div class="action-header">
+        <div class="action-title">
+          <i class="fa-solid fa-magnifying-glass action-icon"></i>
+          <h4>Explorar Biblioteca</h4>
+        </div>
+        <i class="fa-solid fa-chevron-right arrow-icon"></i>
+      </div>
+      <div class="action-divider"></div>
+      <p>Consultar y gestionar constancias emitidas</p>
     </div>
+
   </div>
 </div>
