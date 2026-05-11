@@ -3,25 +3,40 @@
   <!-- =========================================
        PESTAÑAS DE NAVEGACIÓN
        ========================================= -->
-  <div class="tabs-container">
-    <button class="tab-btn active" id="btn-tab-docentes">
-      <i class="fa-solid fa-chalkboard-user"></i> Docentes
+  <div class="tabs-wrapper" id="tabs-wrapper">
+    
+    <!-- Flecha Izquierda -->
+    <button class="tab-nav-arrow left" id="tab-arrow-left" onclick="catalogoModuleInstance.scrollTabs('left')" title="Ver pestañas anteriores">
+      <i class="fa-solid fa-chevron-left"></i>
     </button>
-    <button class="tab-btn" id="btn-tab-ee">
-      <i class="fa-solid fa-book-open"></i> Experiencias (EE)
+    
+    <!-- Contenedor de Pestañas -->
+    <div class="tabs-container" id="tabs-container">
+      <button class="tab-btn active" id="btn-tab-docentes">
+        <i class="fa-solid fa-chalkboard-user"></i> Docentes
+      </button>
+      <button class="tab-btn" id="btn-tab-alumnos">
+        <i class="fa-solid fa-graduation-cap"></i> Alumnos
+      </button>
+      <button class="tab-btn" id="btn-tab-ee">
+        <i class="fa-solid fa-book-open"></i> Experiencias (EE)
+      </button> 
+      <button class="tab-btn" id="btn-tab-tipos-constancia">
+        <i class="fa-solid fa-certificate"></i> Tipos de Constancia
+      </button>
+      <button class="tab-btn" id="btn-tab-periodos">
+        <i class="fa-regular fa-calendar-days"></i> Periodos
+      </button>
+      <button class="tab-btn" id="btn-tab-programas">
+        <i class="fa-solid fa-trophy"></i> Programas de Estímulo
+      </button>
+    </div>
+    
+    <!-- Flecha Derecha -->
+    <button class="tab-nav-arrow right" id="tab-arrow-right" onclick="catalogoModuleInstance.scrollTabs('right')" title="Ver más pestañas">
+      <i class="fa-solid fa-chevron-right"></i>
     </button>
-    <button class="tab-btn" id="btn-tab-alumnos">
-      <i class="fa-solid fa-graduation-cap"></i> Alumnos
-    </button>
-    <button class="tab-btn" id="btn-tab-tipos-constancia">
-      <i class="fa-solid fa-certificate"></i> Tipos de Constancia
-    </button>
-    <button class="tab-btn" id="btn-tab-periodos">
-      <i class="fa-regular fa-calendar-days"></i> Periodos
-    </button>
-    <button class="tab-btn" id="btn-tab-programas">
-      <i class="fa-solid fa-trophy"></i> Programas Inst.
-    </button>
+    
   </div>
 
   <!-- =========================================

@@ -6,6 +6,7 @@ const programaHandlers = require('./programaHandlers');
 const tipoConstanciaHandlers = require('./tipoConstanciaHandlers');
 const constanciaHandlers = require('./constanciaHandlers');
 const historialHandlers = require('./historialHandlers');
+const alumnoHandlers = require('./alumnoHandlers');
 
 module.exports = () => {
   authHandlers();
@@ -16,6 +17,7 @@ module.exports = () => {
   tipoConstanciaHandlers();
   constanciaHandlers();
   historialHandlers();
+  alumnoHandlers();
   
   console.log('[HANDLERS] Todos los handlers IPC registrados correctamente.');
 };

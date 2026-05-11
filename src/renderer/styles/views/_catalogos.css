@@ -561,3 +561,160 @@ body[data-theme="dark"] .data-row .status-inactive {
   color: var(--text-muted);
   margin: 0;
 }
+
+/* =========================================
+   NAVEGACIÓN POR FLECHAS EN PESTAÑAS
+   ========================================= */
+
+/* Contenedor principal con posición relativa para las flechas */
+.tabs-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 20px;
+  padding: 0 40px; /* Espacio para las flechas */
+}
+
+/* Las flechas de navegación */
+.tab-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  color: var(--text-dark);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-nav-arrow.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tab-nav-arrow:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.tab-nav-arrow:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.tab-nav-arrow.left {
+  left: 0;
+}
+
+.tab-nav-arrow.right {
+  right: 0;
+}
+
+.tab-nav-arrow i {
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+/* Gradientes de fade en los extremos cuando hay overflow */
+.tabs-wrapper::before,
+.tabs-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tabs-wrapper.overflow-left::before {
+  left: 40px;
+  background: linear-gradient(to right, var(--bg-body) 0%, transparent 100%);
+  opacity: 1;
+}
+
+.tabs-wrapper.overflow-right::after {
+  right: 40px;
+  background: linear-gradient(to left, var(--bg-body) 0%, transparent 100%);
+  opacity: 1;
+}
+
+/* Contenedor de pestañas con scroll suave */
+.tabs-container {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1px;
+  flex: 1;
+}
+
+.tabs-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Botones de pestaña (manteniendo estilos existentes) */
+.tab-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  padding: 12px 18px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s, background 0.2s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  scroll-snap-align: start;
+}
+
+.tab-btn:hover {
+  color: var(--text-dark);
+  background-color: rgba(0,0,0,0.03);
+}
+
+.tab-btn.active {
+  color: var(--accent-color) !important;
+  border-bottom-color: var(--accent-color);
+  font-weight: 600;
+}
+
+.tab-nav-arrow.right.animate-hint {
+  animation: slideHint 0.6s ease-in-out;
+}
+
+/* Mejorar visualización de optgroup en select */
+#doc-tratamiento optgroup {
+  font-weight: 600;
+  color: var(--accent-color);
+  font-style: normal;
+}
+
+#doc-tratamiento optgroup option {
+  font-weight: 400;
+  color: var(--text-dark);
+  padding-left: 10px;
+}

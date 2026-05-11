@@ -1,47 +1,38 @@
 // src/renderer/modules/DocenteModule.js
-// 📍 Arquitectura: Módulo autocontenido para gestión de Docentes
-// 🔗 DB Schema: docentes(codigo, apellido_paterno, nombres, correo_contacto, estado, ...)
-
 import { DataTable } from '../components/DataTable/DataTable.js';
 import modalDocenteHtml from '../views/partials/modals/modal-docente.html';
 
 export class DocenteModule {
   constructor() {
-    this.data = [];
+    this.data = []; // Persiste en memoria
     this.modalElement = null;
     this.initialized = false;
-    this.table = null; // Instancia de DataTable
+    this.table = null;
   }
 
-  // =========================================
-  // MÉTODO PRINCIPAL DE INICIALIZACIÓN
-  // =========================================
   async init() {
-    if (this.initialized) {
-      console.log('📘 [DocenteModule] Ya inicializado, omitiendo...');
-      return;
-    }
-    
-    console.log('📘 [DocenteModule] Iniciando módulo de Docentes...');
-    this.initialized = true;
-    
-    // 1. Inyectar Modal en el DOM (si no existe)
+    console.log('📘 [DocenteModule] Iniciando...');
+
+    // 1. Asegurar Modal (Global)
     if (!document.getElementById('modal-docente')) {
       const template = document.createElement('div');
       template.innerHTML = modalDocenteHtml;
       document.body.appendChild(template.firstElementChild);
       this.modalElement = document.getElementById('modal-docente');
-      console.log('✅ Modal docente inyectado');
     }
 
-    // 2. Cargar datos desde IPC
-    await this.loadData();
-
-    // 3. ⚠️ CRÍTICO: Esperar que el DOM esté listo antes de renderizar
-    // Las pestañas usan display:none, así que el tbody puede no estar renderizado aún
+    // 2. Esperar DOM (Crítico para SPA)
     await this.waitForDOMReady('tabla-docentes-body');
 
-    // 4. Crear y configurar instancia de DataTable
+    // 3. Lazy Load Data (Solo si está vacío)
+    if (!this.data || this.data.length === 0) {
+      console.log('📡 [DocenteModule] Cargando datos (Primera vez)...');
+      await this.loadData();
+    } else {
+      console.log('💾 [DocenteModule] Usando datos en caché...');
+    }
+
+    // 4. Renderizar Tabla (SIEMPRE, para vincular al nuevo DOM)
     this.table = new DataTable({
       tbodyId: 'tabla-docentes-body',
       columns: this.getColumns(),
@@ -52,21 +43,19 @@ export class DocenteModule {
       onExpand: true
     });
 
-    // 5. Renderizar tabla con datos
-    if (this.data?.length) {
+    if (this.data && this.data.length > 0) {
       this.table.setData(this.data);
-      console.log(`✅ Tabla renderizada con ${this.data.length} docentes`);
     } else {
-      console.warn('⚠️ Sin datos para renderizar');
-      this.table.render(); // Renderiza estado vacío
+      this.table.render();
     }
-    
-    // 6. Configurar eventos adicionales
+
+    // 5. Re-vincular Eventos (SIEMPRE, porque los inputs son nuevos)
     this.setupSearch();
     this.setupModalEvents();
     this.setupGlobalHelpers();
-    
-    console.log('✅ [DocenteModule] Inicialización completa');
+
+    this.initialized = true;
+    console.log('✅ [DocenteModule] Listo');
   }
 
   // =========================================
@@ -115,7 +104,7 @@ export class DocenteModule {
         return false;
       }
     } catch (error) {
-      console.error('❌ [DocenteModule] Error crítico cargando datos:', error);
+      console.error('❌ [DocenteModule] Error al cargar los datos:', error);
       return false;
     }
   }
@@ -242,7 +231,12 @@ export class DocenteModule {
       document.getElementById('doc-nombres').value = doc.nombres || '';
       document.getElementById('doc-correo').value = doc.correo_contacto || '';
       document.getElementById('doc-telefono').value = doc.telefono_contacto || '';
-      document.getElementById('doc-nivel').value = doc.nivel_academico || '';
+      document.getElementById('doc-nivel').value = doc.nivel_academico || 'base';
+      
+      // ✅ NUEVO: Cargar tratamiento y artículo
+      document.getElementById('doc-tratamiento').value = doc.tratamiento || '';
+      document.getElementById('doc-articulo').value = doc.articulo || 'El';
+      
       document.getElementById('doc-estado').value = doc.estado || 'activo';
     }
     
@@ -251,6 +245,30 @@ export class DocenteModule {
   }
 
   async saveDocente(modal) {
+    // 🔍 DEBUG: Capturar y validar tratamiento
+    const tratamientoEl = document.getElementById('doc-tratamiento');
+    const tratamientoRaw = tratamientoEl?.value;
+    
+    console.log('🔍 [DEBUG] tratamientoEl existe:', !!tratamientoEl);
+    console.log('🔍 [DEBUG] tratamientoRaw:', tratamientoRaw);
+    console.log('🔍 [DEBUG] tratamientoRaw.trim():', tratamientoRaw?.trim());
+    
+    const tratamiento = tratamientoRaw?.trim();
+    
+    // Validación estricta: no permitir fallbacks
+    if (!tratamiento || tratamiento === '') {
+      console.error('❌ [ERROR] Tratamiento vacío o no seleccionado');
+      alert('⚠️ Debes seleccionar un tratamiento (Dr., Dra., Mtro., etc.)');
+      tratamientoEl?.focus();
+      return;
+    }
+
+    // Calcular artículo automáticamente
+    const tratamientosFemeninos = ['Dra.', 'Mtra.'];
+    const esFemenino = tratamiento.endsWith('a.') || tratamientosFemeninos.includes(tratamiento);
+    const articulo = esFemenino ? 'La' : 'El';
+
+    // Construir objeto de datos
     const datos = {
       id: document.getElementById('doc-id')?.value || null,
       codigo: document.getElementById('doc-codigo')?.value?.trim(),
@@ -259,18 +277,23 @@ export class DocenteModule {
       nombres: document.getElementById('doc-nombres')?.value?.trim(),
       correo_contacto: document.getElementById('doc-correo')?.value?.trim(),
       telefono_contacto: document.getElementById('doc-telefono')?.value?.trim(),
-      nivel_academico: document.getElementById('doc-nivel')?.value,
-      tratamiento: document.getElementById('doc-tratamiento')?.value || 'Dr.',
-      articulo: document.getElementById('doc-articulo')?.value || 'El',
-      estado: document.getElementById('doc-estado')?.value || 'activo'
+      nivel_academico: document.getElementById('doc-nivel')?.value || 'base',
+      tratamiento: tratamiento,  // ✅ Sin fallback
+      articulo: articulo,        // ✅ Calculado
+      estado: 'activo'           // ✅ Siempre activo
     };
 
+    // 🔍 DEBUG: Mostrar datos completos antes de enviar
+    console.log('💾 [DEBUG] Datos a enviar:', JSON.stringify(datos, null, 2));
+
+    // Validaciones obligatorias
     if (!datos.codigo || !datos.apellido_paterno || !datos.nombres) {
       alert('⚠️ Campos obligatorios:\n• Código\n• Apellido Paterno\n• Nombres');
       return;
     }
 
     try {
+      console.log('📡 Enviando a IPC...');
       const res = await window.electronAPI.guardarDocente(datos);
       
       if (res.success) {
@@ -279,10 +302,11 @@ export class DocenteModule {
         await this.loadData();
         this.table?.setData(this.data);
       } else {
+        console.error('❌ Error del backend:', res.error);
         alert(`❌ Error: ${res.error || 'No se pudo guardar'}`);
       }
     } catch (error) {
-      console.error('💥 Error guardando docente:', error);
+      console.error('💥 Error de red/IPC:', error);
       alert('Error de conexión con la base de datos');
     }
   }
@@ -358,6 +382,23 @@ export class DocenteModule {
     if (menu?.classList.contains('context-menu')) {
       menu.classList.toggle('hidden');
     }
+  }
+
+  // En DocenteModule.js
+  actualizarArticuloTratamiento() {
+    const tratamiento = document.getElementById('doc-tratamiento')?.value;
+    const articuloInput = document.getElementById('doc-articulo');
+    
+    if (!tratamiento || !articuloInput) return;
+    
+    // Determinar artículo basado en el tratamiento
+    const tratamientosFemeninos = ['Dra.', 'Mtra.'];
+    const esFemenino = tratamiento.endsWith('a.') || tratamientosFemeninos.includes(tratamiento);
+    
+    articuloInput.value = esFemenino ? 'La' : 'El';
+    
+    // Feedback visual opcional
+    console.log(`Tratamiento: ${tratamiento} → Artículo: ${articuloInput.value}`);
   }
 
   // =========================================

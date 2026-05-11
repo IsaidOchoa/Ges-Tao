@@ -1,61 +1,82 @@
-<!-- MODAL DOCENTE -->
+<!-- modal-docente.html -->
 <div id="modal-docente" class="modal-overlay hidden">
   <div class="modal-content">
     <div class="modal-header">
-      <h3>Nuevo Docente</h3>
+      <h3 id="modal-titulo-docente">Nuevo Docente</h3>
       <button class="btn-close" id="btn-cerrar-modal-docente">&times;</button>
     </div>
-    <div class="modal-body">
-      <form id="form-docente">
-        <input type="hidden" id="doc-id"> <!-- Para edición -->
-        <div class="form-row-flex">
-          <div class="form-group flex-1">
-            <label>Código Único *</label>
-            <input type="text" id="doc-codigo" required placeholder="Ej. DOC-001">
-          </div>
-          <div class="form-group flex-1">
-            <label>Nivel Académico</label>
-            <select id="doc-nivel">
-              <option value="">Seleccione...</option>
-              <option value="Tiempo Completo">Tiempo Completo</option>
-              <option value="Profesor de Asignatura">Profesor de Asignatura</option>
-              <option value="Investigador">Investigador</option>
-            </select>
-          </div>
+    
+    <form id="form-docente">
+      <input type="hidden" id="doc-id">
+      <!-- Estado siempre activo (oculto) -->
+      <input type="hidden" id="doc-estado" value="activo">
+      
+      <div class="form-row-flex">
+        <div class="form-group flex-1">
+          <label>Código Único *</label>
+          <input type="text" id="doc-codigo" required placeholder="DOC-001">
         </div>
-        <div class="form-row-flex">
-          <div class="form-group flex-2">
-            <label>Apellido Paterno *</label>
-            <input type="text" id="doc-ap-paterno" required placeholder="Pérez">
-          </div>
-          <div class="form-group flex-2">
-            <label>Apellido Materno</label>
-            <input type="text" id="doc-ap-materno" placeholder="Hernández">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Nombres *</label>
-          <input type="text" id="doc-nombres" required placeholder="Juan Carlos">
-        </div>
-        <div class="form-row-flex">
-          <div class="form-group flex-2">
-            <label>Correo de Contacto</label>
-            <input type="email" id="doc-correo" placeholder="juan@uv.mx">
-          </div>
-          <div class="form-group flex-2">
-            <label>Teléfono</label>
-            <input type="tel" id="doc-telefono" placeholder="(228) ...">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Estado</label>
-          <select id="doc-estado">
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
+        <div class="form-group flex-1">
+          <label>Nivel Académico</label>
+          <select id="doc-nivel">
+            <option value="base">Base</option>
+            <option value="temporal">Temporal</option>
+            <option value="asociado">Asociado</option>
+            <option value="titular">Titular</option>
           </select>
         </div>
-      </form>
-    </div>
+      </div>
+
+      <!-- 🆕 TRATAMIENTO (Género) -->
+      <div class="form-group">
+        <label>Tratamiento *</label>
+          <select id="doc-tratamiento" required onchange="docenteModuleInstance.actualizarArticuloTratamiento()">
+          <option value="">Seleccione...</option>
+          <optgroup label="Masculino">
+            <option value="Dr.">Dr. (Doctor)</option>
+            <option value="Mtro.">Mtro. (Maestro)</option>
+            <option value="Lic.">Lic. (Licenciado)</option>
+            <option value="Ing.">Ing. (Ingeniero)</option>
+            <option value="Arq.">Arq. (Arquitecto)</option>
+          </optgroup>
+          <optgroup label="Femenino">
+            <option value="Dra.">Dra. (Doctora)</option>
+            <option value="Mtra.">Mtra. (Maestra)</option>
+            <option value="Lic.">Lic. (Licenciada)</option>
+            <option value="Ing.">Ing. (Ingeniera)</option>
+            <option value="Arq.">Arq. (Arquitecta)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="form-row-flex">
+        <div class="form-group flex-2">
+          <label>Apellido Paterno *</label>
+          <input type="text" id="doc-ap-paterno" required>
+        </div>
+        <div class="form-group flex-1">
+          <label>Apellido Materno</label>
+          <input type="text" id="doc-ap-materno">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Nombres *</label>
+        <input type="text" id="doc-nombres" required>
+      </div>
+
+      <div class="form-row-flex">
+        <div class="form-group flex-2">
+          <label>Correo de Contacto</label>
+          <input type="email" id="doc-correo" placeholder="docente@uv.mx">
+        </div>
+        <div class="form-group flex-1">
+          <label>Teléfono</label>
+          <input type="tel" id="doc-telefono" placeholder="228...">
+        </div>
+      </div>
+    </form>
+
     <div class="modal-footer">
       <button class="btn btn-secondary" id="btn-cancelar-docente">Cancelar</button>
       <button class="btn btn-primary" id="btn-guardar-docente">Guardar</button>

@@ -117,6 +117,24 @@ try {
       console.log('[PRELOAD] Eliminando tipo de constancia ID:', id);
       return ipcRenderer.invoke('eliminar-tipo-constancia', id);
     },
+
+    // ==========================================
+    // 8. GESTIÓN DE ALUMNOS (NUEVO)
+    // ==========================================
+    listarAlumnos: () => {
+      console.log('[PRELOAD] Obteniendo lista de alumnos...');
+      return ipcRenderer.invoke('obtener-alumnos');
+    },
+
+    guardarAlumno: (datos) => {
+      console.log('[PRELOAD] Guardando alumno:', datos.nombres);
+      return ipcRenderer.invoke('guardar-alumno', datos);
+    },
+
+    eliminarAlumno: (id) => {
+      console.log('[PRELOAD] Eliminando alumno ID:', id);
+      return ipcRenderer.invoke('eliminar-alumno', id);
+    },
   });
   
   console.log('[PRELOAD] electronAPI expuesto correctamente con todos los modulos.');

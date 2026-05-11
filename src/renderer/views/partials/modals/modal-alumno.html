@@ -1,0 +1,74 @@
+<!-- src/renderer/views/partials/modals/modal-alumno.html -->
+<div id="modal-alumno" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-titulo-alumno">Nuevo Alumno</h3>
+      <button class="btn-close" id="btn-cerrar-modal-alumno">&times;</button>
+    </div>
+    
+    <form id="form-alumno">
+      <input type="hidden" id="alumno-id">
+      
+      <div class="form-row-flex">
+        <div class="form-group flex-1">
+          <label>Matrícula *</label>
+          <input type="text" id="alumno-matricula" required placeholder="MAT-2024-XXX">
+        </div>
+        <div class="form-group flex-1">
+          <label>Programa Académico</label>
+          <select id="alumno-programa">
+            <option value="Maestría">Maestría</option>
+            <option value="Doctorado">Doctorado</option>
+            <option value="Especialidad">Especialidad</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row-flex">
+        <div class="form-group flex-2">
+          <label>Apellido Paterno *</label>
+          <input type="text" id="alumno-ap-paterno" required>
+        </div>
+        <div class="form-group flex-1">
+          <label>Apellido Materno</label>
+          <input type="text" id="alumno-ap-materno">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Nombres *</label>
+        <input type="text" id="alumno-nombres" required>
+      </div>
+
+      <div class="form-row-flex">
+        <div class="form-group flex-2">
+          <label>Correo Institucional</label>
+          <input type="email" id="alumno-correo" placeholder="alumno@uv.mx">
+        </div>
+        <div class="form-group flex-1">
+          <label>Teléfono</label>
+          <input type="tel" id="alumno-telefono" placeholder="228...">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Fecha de Ingreso</label>
+        <input type="date" id="alumno-fecha">
+      </div>
+
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="alumno-estado">
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+          <option value="egresado">Egresado</option>
+        </select>
+      </div>
+    </form>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancelar-alumno">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-alumno">Guardar</button>
+    </div>
+  </div>
+</div>
