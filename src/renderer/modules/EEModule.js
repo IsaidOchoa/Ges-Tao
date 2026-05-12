@@ -1,6 +1,8 @@
 // src/renderer/modules/EEModule.js
 import { DataTable } from '../components/DataTable/DataTable.js';
 import modalEEHtml from '../views/partials/modals/modal-ee.html';
+import { FormAutosave } from '../utils/formAutosave.js';
+import { UnsavedChangesGuard } from '../utils/unsavedChanges.js';
 
 export class EEModule {
   constructor() {
@@ -8,15 +10,17 @@ export class EEModule {
     this.modalElement = null;
     this.initialized = false;
     this.table = null;
+    this.formAutosave = null;
+    this.unsavedGuard = null;
   }
 
   // =========================================
-  // MÉTODO PRINCIPAL DE INICIALIZACIÓN
+  // MÉTODO PRINCIPAL DE INICIALIZACIÓN (Re-entrante)
   // =========================================
   async init() {
-    console.log('📘 [EEModule] Iniciando módulo de Experiencias Educativas...');
+    console.log('📘 [EEModule] Sincronizando módulo...');
 
-    // 1. Inyectar Modal en el DOM (solo si no existe)
+    // 1. Inyectar Modal (solo si no existe)
     if (!document.getElementById('modal-ee')) {
       const template = document.createElement('div');
       template.innerHTML = modalEEHtml;
@@ -25,10 +29,10 @@ export class EEModule {
       console.log('✅ Modal EE inyectado');
     }
 
-    // 2. Esperar que el tbody exista en el DOM (crítico para SPA)
+    // 2. Esperar que el tbody exista (crítico para SPA)
     await this.waitForDOMReady('tabla-ee-body');
 
-    // 3. Cargar datos SOLO si el array está vacío (Lazy Load)
+    // 3. Cargar datos SOLO si está vacío (Lazy Load)
     if (!this.data || this.data.length === 0) {
       console.log('📡 [EEModule] Cargando datos desde IPC...');
       await this.loadData();
@@ -44,7 +48,6 @@ export class EEModule {
     }
 
     if (this.data && this.data.length > 0) {
-      // ✅ Crear y configurar DataTable UNA SOLA VEZ
       this.table = new DataTable({
         tbodyId: 'tabla-ee-body',
         columns: this.getColumns(),
@@ -54,12 +57,9 @@ export class EEModule {
         onAction: 'eeModuleInstance.toggleActionMenu(event)',
         onExpand: true
       });
-      
-      // Renderizar con los datos
       this.table.setData(this.data);
       console.log(`✅ Tabla EE renderizada con ${this.data.length} registros`);
     } else {
-      // ✅ Mostrar estado vacío centrado
       this.renderEmptyState();
       console.log('ℹ️ [EEModule] Sin registros para mostrar');
     }
@@ -124,14 +124,21 @@ export class EEModule {
   }
 
   // =========================================
-  // CONFIGURACIÓN DE COLUMNAS (Alineada con tu BD)
+  // CONFIGURACIÓN DE COLUMNAS (Con mapeo visual de estados)
   // =========================================
   getColumns() {
+    // ✅ Mapeo visual exclusivo para EE: valor BD → texto UI
+    const estadoMap = {
+      'activa': { label: 'Vigente', class: 'badge-success' },
+      'inactiva': { label: 'Inactiva', class: 'badge-warning' },
+      'archivada': { label: 'Archivada', class: 'badge-secondary' }
+    };
+
     return [
       { 
         key: 'clave_ee', 
         label: 'Clave',
-        format: (v) => `<strong>${v}</strong>` 
+        format: (v) => `<strong style="font-family:monospace;">${v}</strong>` 
       },
       { 
         key: 'nombre', 
@@ -155,7 +162,12 @@ export class EEModule {
       { 
         key: 'estado', 
         label: 'Estado',
-        badge: true 
+        badge: true,
+        // ✅ Traducción visual sin tocar datos reales
+        format: (v) => {
+          const map = estadoMap[v] || { label: v, class: 'badge-secondary' };
+          return `<span class="badge ${map.class}">${map.label}</span>`;
+        }
       }
     ];
   }
@@ -198,7 +210,7 @@ export class EEModule {
   }
 
   // =========================================
-  // GESTIÓN DE MODALES
+  // GESTIÓN DE MODALES (Con auto-guardado y protección)
   // =========================================
   setupModalEvents() {
     const btnNuevo = document.getElementById('btn-nuevo-ee');
@@ -213,7 +225,13 @@ export class EEModule {
       this.openModal();
     };
 
-    const cerrarModal = () => modal.classList.add('hidden');
+    const cerrarModal = () => {
+      // ✅ Limpiar auto-guardado y guard al cerrar
+      this.formAutosave?.clear();
+      this.unsavedGuard = null;
+      modal.classList.add('hidden');
+    };
+    
     document.getElementById('modal-ee')?.querySelector('.btn-close')?.addEventListener('click', cerrarModal);
     document.getElementById('btn-cancelar-ee')?.addEventListener('click', cerrarModal);
     modal.addEventListener('click', (e) => { if(e.target === modal) cerrarModal(); });
@@ -237,6 +255,10 @@ export class EEModule {
     form.reset();
     document.getElementById('ee-id').value = '';
     
+    // ✅ Iniciar auto-guardado y protección de cambios
+    this.formAutosave = new FormAutosave('form-ee', 'ee-form');
+    this.unsavedGuard = new UnsavedChangesGuard('#form-ee');
+
     if (ee) {
       // Modo edición: prellenar formulario
       document.getElementById('ee-id').value = ee.id || '';
@@ -250,6 +272,10 @@ export class EEModule {
       document.getElementById('ee-area').value = ee.area || '';
       document.getElementById('ee-linea').value = ee.linea_investigacion || '';
       document.getElementById('ee-estado').value = ee.estado || 'activa';
+    } else {
+      // Modo nuevo: estado por defecto
+      const estadoField = document.getElementById('ee-estado');
+      if (estadoField) estadoField.value = 'activa';
     }
     
     modal.classList.remove('hidden');
@@ -265,7 +291,7 @@ export class EEModule {
       creditos: parseInt(document.getElementById('ee-creditos')?.value) || 0,
       creditos_teoria: parseInt(document.getElementById('ee-h-teoria')?.value) || 0,
       creditos_practica: parseInt(document.getElementById('ee-h-practica')?.value) || 0,
-      creditos_otros: 0, // Calculado automáticamente si es necesario
+      creditos_otros: 0,
       horas_teoria: parseInt(document.getElementById('ee-h-teoria')?.value) || 0,
       horas_practica: parseInt(document.getElementById('ee-h-practica')?.value) || 0,
       area: document.getElementById('ee-area')?.value,
@@ -274,7 +300,6 @@ export class EEModule {
       estado: document.getElementById('ee-estado')?.value || 'activa'
     };
 
-    // Validaciones
     if (!datos.clave_ee || !datos.nombre) {
       alert('⚠️ Campos obligatorios:\n• Clave EE\n• Nombre');
       return;
@@ -285,6 +310,11 @@ export class EEModule {
       
       if (res.success) {
         alert('✅ Experiencia Educativa guardada correctamente');
+        
+        // ✅ Limpiar auto-guardado y guard al guardar exitosamente
+        this.formAutosave?.clear();
+        this.unsavedGuard = null;
+        
         modal.classList.add('hidden');
         await this.loadData();
         this.table?.setData(this.data);
@@ -298,14 +328,14 @@ export class EEModule {
   }
 
   // =========================================
-  // UTILIDADES GLOBALES (Para onclick en HTML inyectado)
+  // UTILIDADES GLOBALES
   // =========================================
   setupGlobalHelpers() {
     window.eeModuleInstance = this;
   }
 
   // =========================================
-  // INTERACCIÓN DE FILAS: EXPANSIÓN
+  // INTERACCIÓN DE FILAS
   // =========================================
   handleRowClick(event) {
     const row = event.target.closest('.data-row');
@@ -315,20 +345,14 @@ export class EEModule {
       return;
     }
     
-    // Toggle visual
     row.classList.toggle('expanded');
-    
-    // Toggle fila de detalles
     const detailsRow = row.nextElementSibling;
     if (detailsRow?.classList.contains('sub-row-details')) {
       detailsRow.classList.toggle('hidden');
-      
       if (!detailsRow.classList.contains('hidden')) {
         this.loadRowSummary(row.dataset.id, detailsRow);
       }
     }
-    
-    // Selección visual
     document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
     row.classList.add('selected');
   }
@@ -340,9 +364,6 @@ export class EEModule {
     chips.innerHTML = '<span class="chip">⏳ Cargando...</span>';
     
     try {
-      // 🔄 Futuro: Consultar asignaciones reales desde BD
-      // const asignaciones = await window.electronAPI.getEEAsignaciones(rowId);
-      
       setTimeout(() => {
         chips.innerHTML = `
           <span class="chip accent">👨‍🏫 2 Docentes</span>
@@ -355,9 +376,6 @@ export class EEModule {
     }
   }
 
-  // =========================================
-  // MENÚ CONTEXTUAL (3 PUNTOS)
-  // =========================================
   toggleActionMenu(event) {
     event.stopPropagation();
     document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
@@ -368,11 +386,26 @@ export class EEModule {
     }
   }
 
-  // =========================================
-  // ACCESO AL MEGA MODAL DE ASIGNACIONES
-  // =========================================
   openAssignmentModal(eeId) {
     console.log(`🔗 [EEModule] Abrir asignaciones para EE ID: ${eeId}`);
     alert(`🚧 Función en desarrollo:\nGestionar docentes, periodos y contenidos para esta Experiencia Educativa.`);
+  }
+
+  // =========================================
+  // ESTADO VACÍO
+  // =========================================
+  renderEmptyState() {
+    const tbody = document.getElementById('tabla-ee-body');
+    if (!tbody) return;
+    
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding: 50px 20px; color:var(--text-muted);">
+          <i class="fa-solid fa-book-open" 
+             style="font-size: 2.5rem; margin: 0 auto 15px auto; display: block; opacity: 0.6;"></i>
+          <p style="margin: 0; font-size: 1rem;">Sin experiencias educativas registradas</p>
+        </td>
+      </tr>
+    `;
   }
 }

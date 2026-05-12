@@ -21,77 +21,85 @@ module.exports = () => {
   // ==========================================
   // GUARDAR ALUMNO (Insertar o Actualizar)
   // ==========================================
-  ipcMain.handle('guardar-alumno', async (event, datos) => {
+
+    ipcMain.handle('guardar-alumno', async (event, datos) => {
     console.log('[IPC] Guardando alumno:', datos.nombres);
+    console.log('[IPC] Datos completos:', datos);
     
     try {
-      const db = getDB();
-      let stmt;
-      
-      if (datos.id) {
-        // ✅ Actualizar existente
+        const db = getDB();
+        let stmt;
+        
+        if (datos.id) {
         stmt = db.prepare(`UPDATE alumnos SET 
-          matricula = ?,
-          apellido_paterno = ?,
-          apellido_materno = ?,
-          nombres = ?,
-          correo_contacto = ?,
-          telefono_contacto = ?,
-          programa_academico = ?,
-          fecha_ingreso = ?,
-          estado = ?
-          WHERE id = ?`);
+            matricula = ?,
+            apellido_paterno = ?,
+            apellido_materno = ?,
+            nombres = ?,
+            correo_contacto = ?,
+            telefono_contacto = ?,
+            programa_academico = ?,
+            periodo_ingreso = ?,
+            tratamiento = ?,
+            articulo = ?,
+            estado = ?
+            WHERE id = ?`);
         
         stmt.run(
-          datos.matricula,
-          datos.apellido_paterno,
-          datos.apellido_materno || '',
-          datos.nombres,
-          datos.correo_contacto || '',
-          datos.telefono_contacto || '',
-          datos.programa_academico || '',
-          datos.fecha_ingreso || null,
-          datos.estado || 'activo',
-          datos.id
+            datos.matricula,
+            datos.apellido_paterno,
+            datos.apellido_materno || '',
+            datos.nombres,
+            datos.correo_contacto || '',
+            datos.telefono_contacto || '',
+            datos.programa_academico || '',
+            datos.periodo_ingreso || null,
+            datos.tratamiento || 'Est.',
+            datos.articulo || 'El',
+            'activo',
+            datos.id
         );
-      } else {
-        // ✅ Insertar nuevo
+        } else {
         stmt = db.prepare(`INSERT INTO alumnos (
-          matricula, 
-          apellido_paterno, 
-          apellido_materno, 
-          nombres, 
-          correo_contacto, 
-          telefono_contacto, 
-          programa_academico,
-          fecha_ingreso,
-          estado
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+            matricula, 
+            apellido_paterno, 
+            apellido_materno, 
+            nombres, 
+            correo_contacto, 
+            telefono_contacto, 
+            programa_academico,
+            periodo_ingreso,
+            tratamiento,
+            articulo,
+            estado
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         
         stmt.run(
-          datos.matricula,
-          datos.apellido_paterno,
-          datos.apellido_materno || '',
-          datos.nombres,
-          datos.correo_contacto || '',
-          datos.telefono_contacto || '',
-          datos.programa_academico || '',
-          datos.fecha_ingreso || null,
-          datos.estado || 'activo'
+            datos.matricula,
+            datos.apellido_paterno,
+            datos.apellido_materno || '',
+            datos.nombres,
+            datos.correo_contacto || '',
+            datos.telefono_contacto || '',
+            datos.programa_academico || '',
+            datos.periodo_ingreso || null,
+            datos.tratamiento || 'Est.',
+            datos.articulo || 'El',
+            'activo'
         );
-      }
-      
-      return { success: true, message: 'Alumno guardado correctamente' };
+        }
+        
+        return { success: true, message: 'Alumno guardado correctamente' };
     } catch (error) {
-      console.error('[IPC] Error guardando alumno:', error);
-      
-      if (error.message.includes('UNIQUE constraint failed: alumnos.matricula')) {
+        console.error('[IPC] Error guardando alumno:', error);
+        
+        if (error.message.includes('UNIQUE constraint failed: alumnos.matricula')) {
         return { success: false, error: 'La matrícula ya existe.' };
-      }
-      
-      return { success: false, error: error.message };
+        }
+        
+        return { success: false, error: error.message };
     }
-  });
+    });
 
   // ==========================================
   // ELIMINAR ALUMNO

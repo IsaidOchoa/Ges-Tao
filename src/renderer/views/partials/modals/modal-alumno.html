@@ -7,23 +7,49 @@
     </div>
     
     <form id="form-alumno">
+      <!-- Campos ocultos -->
       <input type="hidden" id="alumno-id">
+      <input type="hidden" id="alumno-estado" value="activo">
+      <input type="hidden" id="alumno-articulo" value="El">
       
+      <!-- Fila 1: Matricula y Programa -->
       <div class="form-row-flex">
         <div class="form-group flex-1">
-          <label>Matrícula *</label>
+          <label>Matricula *</label>
           <input type="text" id="alumno-matricula" required placeholder="MAT-2024-XXX">
         </div>
         <div class="form-group flex-1">
-          <label>Programa Académico</label>
+          <label>Programa Academico</label>
           <select id="alumno-programa">
-            <option value="Maestría">Maestría</option>
+            <option value="Maestria">Maestria</option>
             <option value="Doctorado">Doctorado</option>
             <option value="Especialidad">Especialidad</option>
+            <option value="Licenciatura">Licenciatura</option>
           </select>
         </div>
       </div>
 
+      <!-- Tratamiento (Genero para constancias) -->
+      <div class="form-group">
+        <label>Tratamiento *</label>
+        <select id="alumno-tratamiento" required>
+          <option value="">Seleccione...</option>
+          <optgroup label="Masculino">
+            <option value="Est.">Est. (Estudiante)</option>
+            <option value="Sr.">Sr. (Senor)</option>
+            <option value="Lic.">Lic. (Licenciado)</option>
+            <option value="Ing.">Ing. (Ingeniero)</option>
+          </optgroup>
+          <optgroup label="Femenino">
+            <option value="Est.">Est. (Estudiante)</option>
+            <option value="Sra.">Sra. (Senora)</option>
+            <option value="Lic.">Lic. (Licenciada)</option>
+            <option value="Ing.">Ing. (Ingeniera)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- Fila 2: Apellidos -->
       <div class="form-row-flex">
         <div class="form-group flex-2">
           <label>Apellido Paterno *</label>
@@ -35,39 +61,40 @@
         </div>
       </div>
 
+      <!-- Nombres -->
       <div class="form-group">
         <label>Nombres *</label>
         <input type="text" id="alumno-nombres" required>
       </div>
 
+      <!-- Fila 3: Contacto -->
       <div class="form-row-flex">
         <div class="form-group flex-2">
           <label>Correo Institucional</label>
           <input type="email" id="alumno-correo" placeholder="alumno@uv.mx">
         </div>
         <div class="form-group flex-1">
-          <label>Teléfono</label>
+          <label>Telefono</label>
           <input type="tel" id="alumno-telefono" placeholder="228...">
         </div>
       </div>
 
+      <!-- ✅ CORRECCION: Periodo de Ingreso (reemplaza Fecha) -->
       <div class="form-group">
-        <label>Fecha de Ingreso</label>
-        <input type="date" id="alumno-fecha">
-      </div>
-
-      <div class="form-group">
-        <label>Estado</label>
-        <select id="alumno-estado">
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
-          <option value="egresado">Egresado</option>
+        <label>Periodo de Ingreso *</label>
+        <select id="alumno-periodo" required>
+          <option value="">Seleccione periodo...</option>
+          <!-- 💡 Recomendacion: Cargar estas opciones dinamicamente desde la BD al abrir el modal -->
+          <option value="AGO23-ENE24">AGO23-ENE24 (Ago 2023 - Ene 2024)</option>
+          <option value="FEB-JUL24">FEB-JUL24 (Feb - Jul 2024)</option>
+          <option value="AGO-DIC24">AGO-DIC24 (Ago - Dic 2024)</option>
+          <option value="FEB-JUL25">FEB-JUL25 (Feb - Jul 2025)</option>
         </select>
       </div>
     </form>
 
     <div class="modal-footer">
-      <button class="btn btn-secondary" id="btn-cancelar-alumno">Cancelar</button>
+      <button class="btn btn-cancel" id="btn-cancelar-alumno">Cancelar</button>
       <button class="btn btn-primary" id="btn-guardar-alumno">Guardar</button>
     </div>
   </div>

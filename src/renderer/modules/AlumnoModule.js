@@ -255,6 +255,7 @@ export class AlumnoModule {
 
     form.reset();
     document.getElementById('alumno-id').value = '';
+    document.getElementById('alumno-estado').value = 'activo'; // Siempre activo
     
     if (alumno) {
       // Modo edición: prellenar formulario
@@ -266,8 +267,13 @@ export class AlumnoModule {
       document.getElementById('alumno-correo').value = alumno.correo_contacto || '';
       document.getElementById('alumno-telefono').value = alumno.telefono_contacto || '';
       document.getElementById('alumno-programa').value = alumno.programa_academico || '';
-      document.getElementById('alumno-fecha').value = alumno.fecha_ingreso || '';
-      document.getElementById('alumno-estado').value = alumno.estado || 'activo';
+      document.getElementById('alumno-fecha').value = alumno.fecha_ingreso ? alumno.fecha_ingreso.split('T')[0] : '';
+      
+      // ✅ NUEVO: Cargar tratamiento y artículo
+      document.getElementById('alumno-tratamiento').value = alumno.tratamiento || 'Est.';
+      document.getElementById('alumno-articulo').value = alumno.articulo || 'El';
+      
+      // ❌ NO cargar estado: siempre es 'activo' al editar desde modal
     }
     
     modal.classList.remove('hidden');
@@ -275,6 +281,17 @@ export class AlumnoModule {
   }
 
   async saveAlumno(modal) {
+    const tratamiento = document.getElementById('alumno-tratamiento')?.value?.trim();
+    
+    if (!tratamiento) {
+      alert('⚠️ Debes seleccionar un tratamiento');
+      return;
+    }
+
+    const tratamientosFemeninos = ['Sra.', 'Lic.'];
+    const esFemenino = tratamiento.endsWith('a.') || tratamientosFemeninos.includes(tratamiento);
+    const articulo = esFemenino ? 'La' : 'El';
+
     const datos = {
       id: document.getElementById('alumno-id')?.value || null,
       matricula: document.getElementById('alumno-matricula')?.value?.trim(),
@@ -284,12 +301,14 @@ export class AlumnoModule {
       correo_contacto: document.getElementById('alumno-correo')?.value?.trim(),
       telefono_contacto: document.getElementById('alumno-telefono')?.value?.trim(),
       programa_academico: document.getElementById('alumno-programa')?.value,
-      fecha_ingreso: document.getElementById('alumno-fecha')?.value,
-      estado: document.getElementById('alumno-estado')?.value || 'activo'
+      periodo_ingreso: document.getElementById('alumno-periodo')?.value,  // ✅ CAMBIO
+      tratamiento: tratamiento,
+      articulo: articulo,
+      estado: 'activo'
     };
 
-    if (!datos.matricula || !datos.apellido_paterno || !datos.nombres) {
-      alert('⚠️ Campos obligatorios:\n• Matrícula\n• Apellido Paterno\n• Nombres');
+    if (!datos.matricula || !datos.apellido_paterno || !datos.nombres || !datos.periodo_ingreso) {
+      alert('⚠️ Campos obligatorios:\n• Matrícula\n• Apellido Paterno\n• Nombres\n• Periodo de Ingreso');
       return;
     }
 
@@ -301,7 +320,6 @@ export class AlumnoModule {
         modal.classList.add('hidden');
         await this.loadData();
         
-        // Re-renderizar: si hay datos, tabla; si no, estado vacío
         if (this.data?.length) {
           this.table?.setData(this.data);
         } else {
@@ -311,7 +329,7 @@ export class AlumnoModule {
         alert(`❌ Error: ${res.error || 'No se pudo guardar'}`);
       }
     } catch (error) {
-      console.error('💥 Error guardando alumno:', error);
+      console.error('Error guardando alumno:', error);
       alert('Error de conexión con la base de datos');
     }
   }

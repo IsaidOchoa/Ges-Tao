@@ -10,7 +10,7 @@
         <input type="hidden" id="ee-id">
         <div class="form-row-flex">
           <div class="form-group flex-1">
-            <label>Clave EE *</label>
+            <label>NRC*</label>
             <input type="text" id="ee-clave" required placeholder="Ej. MSC-101">
           </div>
           <div class="form-group flex-1">
@@ -43,15 +43,23 @@
           <input type="text" id="ee-programa" placeholder="Ej. Maestría">
         </div>
         <div class="form-group">
-          <label>Estado</label>
-          <select id="ee-estado">
-            <option value="activa">Activa</option><option value="inactiva">Inactiva</option>
+          <label>Estado de la EE</label>
+          <select id="ee-estado" required>
+            <option value="activa">Vigente</option>
+            <option value="inactiva">Inactiva</option>
+            <option value="archivada">Archivada</option>
           </select>
+          <small style="color:var(--text-muted); display:block; margin-top:5px; font-size:0.85rem;">
+            <i class="fa-solid fa-circle-info"></i> 
+            <strong>Vigente</strong>: Se oferta en el periodo actual • 
+            <strong>Inactiva</strong>: Solo consulta en tablas • 
+            <strong>Archivada</strong>: Ya no se oferta en el periodo actual
+          </small>
         </div>
       </form>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="cerrarModal('modal-ee')">Cancelar</button>
+      <button class="btn btn-secondary btn-cancel" onclick="cerrarModal('modal-ee')">Cancelar</button>
       <button class="btn btn-primary" id="btn-guardar-ee">Guardar</button>
     </div>
   </div>

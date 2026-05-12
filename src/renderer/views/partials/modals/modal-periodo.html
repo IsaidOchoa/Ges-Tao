@@ -1,42 +1,189 @@
-<!-- MODAL PERIODO -->
+<!-- src/renderer/views/partials/modals/modal-periodo.html -->
 <div id="modal-periodo" class="modal-overlay hidden">
-  <div class="modal-content smaller">
+  <div class="modal-content modal-lg">
+    
+    <!-- Header -->
     <div class="modal-header">
-      <h3>Nuevo Periodo Escolar</h3>
-      <button class="btn-close" onclick="cerrarModal('modal-periodo')">&times;</button>
+      <h3 id="modal-titulo-periodo">Nuevo Periodo Escolar</h3>
+      <button class="btn-close" id="btn-cerrar-modal-periodo">&times;</button>
     </div>
-    <div class="modal-body">
-      <form id="form-periodo">
-        <input type="hidden" id="per-id">
-        <div class="form-group">
-          <label>Clave *</label>
-          <input type="text" id="per-clave" required placeholder="Ej. 2024-A">
+    
+    <!-- Formulario -->
+    <form id="form-periodo">
+      <input type="hidden" id="per-id">
+      
+      <!-- 🔹 Plantilla de Periodo (Selección guiada) -->
+      <div class="form-group">
+        <label>Plantilla de Periodo *</label>
+        <div class="template-selector">
+          <label class="template-option">
+            <input type="radio" name="plantilla" value="semestre-a" checked onchange="periodoModuleInstance.actualizarFechasDesdePlantilla()">
+            <div class="template-card">
+              <strong>Semestre A</strong>
+              <small>Feb - Jul (5 meses)</small>
+            </div>
+          </label>
+          <label class="template-option">
+            <input type="radio" name="plantilla" value="semestre-b" onchange="periodoModuleInstance.actualizarFechasDesdePlantilla()">
+            <div class="template-card">
+              <strong>Semestre B</strong>
+              <small>Ago - Ene (4 meses)</small>
+            </div>
+          </label>
+          <label class="template-option">
+            <input type="radio" name="plantilla" value="personalizado" onchange="periodoModuleInstance.activarModoPersonalizado()">
+            <div class="template-card">
+              <strong>Personalizado</strong>
+              <small>Configuración manual *</small>
+            </div>
+          </label>
         </div>
-        <div class="form-group">
-          <label>Descripción *</label>
-          <input type="text" id="per-desc" required placeholder="Ej. Agosto-Diciembre 2024">
-        </div>
-        <div class="form-row-flex">
-          <div class="form-group flex-1">
-            <label>Inicio *</label>
-            <input type="date" id="per-inicio" required>
-          </div>
-          <div class="form-group flex-1">
-            <label>Fin *</label>
-            <input type="date" id="per-fin" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Estado</label>
-          <select id="per-estado">
-            <option value="abierto">Abierto</option><option value="cerrado">Cerrado</option><option value="en_proceso">En Proceso</option>
+      </div>
+
+      <!-- 🔹 Año Base (para plantillas) -->
+      <div class="form-row-flex" id="row-ano-base">
+        <div class="form-group flex-1">
+          <label>Año Base *</label>
+          <select id="per-ano-base" onchange="periodoModuleInstance.actualizarFechasDesdePlantilla()">
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
           </select>
         </div>
-      </form>
-    </div>
+        <div class="form-group flex-2">
+          <label>Clave Generada (Automática)</label>
+          <input type="text" id="per-clave-preview" readonly 
+                 style="background:var(--bg-light); font-family:monospace; font-weight:600; color:var(--accent-color);"
+                 placeholder="Ej: FEB-JUL24">
+        </div>
+      </div>
+
+      <!-- 🔹 Fechas (Solo visibles en modo personalizado o para ajuste fino) -->
+      <div class="form-row-flex" id="row-fechas">
+        <div class="form-group flex-1">
+          <label>Fecha de Inicio *</label>
+          <input type="date" id="per-inicio" required onchange="periodoModuleInstance.actualizarClaveManual()">
+        </div>
+        <div class="form-group flex-1">
+          <label>Fecha de Fin *</label>
+          <input type="date" id="per-fin" required onchange="periodoModuleInstance.validarYActualizarClave()">
+        </div>
+      </div>
+
+      <!-- 🔹 Validación en tiempo real -->
+      <div id="periodo-validation" class="form-feedback hidden" style="margin-top:-15px; margin-bottom:15px;">
+        <!-- Se llena dinámicamente -->
+      </div>
+
+      <!-- 🔹 Descripción y Estado -->
+      <div class="form-row-flex">
+        <div class="form-group flex-3">
+          <label>Descripción *</label>
+          <input type="text" id="per-desc" required placeholder="Ej: Periodo Escolar Febrero - Julio 2024">
+        </div>
+        <div class="form-group flex-1">
+          <label>Estado</label>
+          <select id="per-estado">
+            <option value="abierto">Abierto</option>
+            <option value="en_progreso">En Progreso</option>
+            <option value="cerrado">Cerrado</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 🔹 Preview de Periodo (Visual) -->
+      <div class="periodo-preview" style="background:var(--bg-light); padding:12px 15px; border-radius:var(--radius-sm); margin-top:10px;">
+        <small style="color:var(--text-muted); display:block; margin-bottom:5px;">Vista previa:</small>
+        <strong id="preview-descripcion" style="color:var(--text-dark);">FEB-JUL24: Febrero - Julio 2024</strong>
+        <span id="preview-duracion" style="margin-left:10px; font-size:0.85rem; color:var(--success-color);">✓ 5 meses</span>
+      </div>
+    </form>
+
+    <!-- Footer -->
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="cerrarModal('modal-periodo')">Cancelar</button>
-      <button class="btn btn-primary" id="btn-guardar-periodo">Guardar</button>
+      <button class="btn btn-cancel" id="btn-cancelar-periodo">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-periodo">Guardar Periodo</button>
     </div>
+    
   </div>
 </div>
+
+<!-- Estilos específicos para el modal de periodos -->
+<style>
+  .template-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+  }
+  
+  .template-option {
+    cursor: pointer;
+  }
+  
+  .template-option input[type="radio"] {
+    display: none;
+  }
+  
+  .template-card {
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    text-align: center;
+    transition: all 0.2s ease;
+    background: var(--bg-white);
+  }
+  
+  .template-option input[type="radio"]:checked + .template-card {
+    border-color: var(--accent-color);
+    background: rgba(52, 152, 219, 0.08);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  }
+  
+  .template-card strong {
+    display: block;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+  }
+  
+  .template-card small {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+  
+  .periodo-preview {
+    border-left: 4px solid var(--accent-color);
+  }
+  
+  .form-feedback {
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+  }
+  
+  .form-feedback.error {
+    background: rgba(231, 76, 60, 0.1);
+    color: #c0392b;
+    border: 1px solid #e74c3c;
+  }
+  
+  .form-feedback.success {
+    background: rgba(39, 174, 96, 0.1);
+    color: #27ae60;
+    border: 1px solid #2ecc71;
+  }
+  
+  .form-feedback.warning {
+    background: rgba(241, 196, 15, 0.1);
+    color: #d35400;
+    border: 1px solid #f39c12;
+  }
+  
+  /* Responsive para móviles */
+  @media (max-width: 768px) {
+    .template-selector {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

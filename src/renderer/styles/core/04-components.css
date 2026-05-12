@@ -576,18 +576,41 @@ body[data-theme="dark"] select option:focus {
   font-weight: 600;
 }
 
-/* Animaciones (Si no estaban en otro lado) */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* src/renderer/styles/core/_buttons.css */
+
+/* =========================================
+   BOTÓN CANCELAR / PELIGRO - ROJO
+   ========================================= */
+.btn-cancel,
+.btn-danger,
+#btn-cancelar-docente,
+#btn-cancelar-alumno,
+#btn-cancelar-ee,
+#btn-cancelar-periodo,
+#btn-cancelar-programa,
+#btn-cancelar-tipo {
+  background-color: #e74c3c !important;
+  border-color: #c0392b !important;
+  color: white !important;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.btn-cancel:hover,
+.btn-danger:hover {
+  background-color: #c0392b !important;
+  border-color: #a93226 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+.btn-cancel:active,
+.btn-danger:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Feedback visual para formularios con cambios no guardados */
+.form-dirty {
+  border-left: 3px solid #f39c12 !important;
 }
