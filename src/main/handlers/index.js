@@ -1,3 +1,4 @@
+// src/main/handlers/index.js
 const authHandlers = require('./authHandlers');
 const docenteHandlers = require('./docenteHandlers');
 const eeHandlers = require('./eeHandlers');
@@ -7,6 +8,9 @@ const tipoConstanciaHandlers = require('./tipoConstanciaHandlers');
 const constanciaHandlers = require('./constanciaHandlers');
 const historialHandlers = require('./historialHandlers');
 const alumnoHandlers = require('./alumnoHandlers');
+const planHandlers = require('./planHandlers');
+const semestreHandlers = require('./semestreHandlers');
+const generacionHandlers = require('./generacionHandlers');
 
 module.exports = () => {
   authHandlers();
@@ -18,6 +22,9 @@ module.exports = () => {
   constanciaHandlers();
   historialHandlers();
   alumnoHandlers();
+  planHandlers();
+  semestreHandlers();
+  generacionHandlers();
   
   console.log('[HANDLERS] Todos los handlers IPC registrados correctamente.');
 };

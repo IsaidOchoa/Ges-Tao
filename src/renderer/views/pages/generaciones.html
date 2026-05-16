@@ -1,0 +1,140 @@
+<!-- src/renderer/views/pages/generaciones.html -->
+<!-- Vista de catálogo: Generaciones (cohortes por periodo de ingreso) -->
+<!-- Compatible con DataTable.js, dark mode y patrones Ges-Tao -->
+
+<div class="page-header">
+  <div class="page-title">
+    <h2><i class="fa-solid fa-users"></i> Generaciones</h2>
+    <p class="text-muted">Gestione las cohortes de alumnos por periodo de ingreso.</p>
+  </div>
+  <button id="btn-new-generacion" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Nueva Generación
+  </button>
+</div>
+
+<!-- Barra de búsqueda -->
+<div class="search-bar">
+  <i class="fa-solid fa-magnifying-glass search-icon"></i>
+  <input 
+    type="text" 
+    id="search-generaciones" 
+    class="form-control" 
+    placeholder="Buscar por clave, nombre, plan o periodo..."
+    autocomplete="off"
+  >
+  <button id="btn-clear-search-generaciones" class="btn-clear hidden" title="Limpiar búsqueda">
+    <i class="fa-solid fa-xmark"></i>
+  </button>
+</div>
+
+<!-- Contenedor de tabla -->
+<div class="table-responsive">
+  <table class="data-table" id="table-generaciones">
+    <thead>
+      <tr>
+        <th style="width: 36px;"></th> <!-- Expansión (opcional) -->
+        <th>Clave</th>
+        <th>Nombre</th>
+        <th>Plan de Estudio</th>
+        <th>Periodo Ingreso</th>
+        <th style="width: 80px;">Estado</th>
+        <th style="width: 50px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tbody-generaciones">
+      <!-- Renderizado dinámico por DataTable.js -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Estado vacío (fallback si DataTable no carga) -->
+<div id="empty-generaciones" class="empty-state hidden">
+  <i class="fa-regular fa-folder-open"></i>
+  <p>No hay generaciones registradas</p>
+  <button id="btn-empty-new-generacion" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Crear primera generación
+  </button>
+</div>
+
+<!-- Modal HTML (se inyecta dinámicamente por GeneracionModule.js) -->
+<div id="modal-generacion" class="modal-overlay hidden" data-module="GeneracionModule">
+  <div class="modal-container modal-lg">
+    <div class="modal-header">
+      <h3 id="modal-generacion-title">Nueva Generación</h3>
+      <button class="modal-close" title="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-generacion" class="form-grid">
+        <div class="form-group">
+          <label for="generacion-clave">Clave *</label>
+          <input type="text" id="generacion-clave" name="clave" class="form-control" 
+                 placeholder="Ej: GEN-2024A" maxlength="20" required>
+          <small class="form-hint">Identificador único (se puede auto-generar)</small>
+        </div>
+        <div class="form-group">
+          <label for="generacion-nombre">Nombre *</label>
+          <input type="text" id="generacion-nombre" name="nombre" class="form-control" 
+                 placeholder="Ej: Generación Febrero 2024 - Maestría" required>
+        </div>
+        <div class="form-group">
+          <label for="generacion-plan-id">Plan de Estudio *</label>
+          <select id="generacion-plan-id" name="plan_id" class="form-control" required>
+            <option value="">Cargando planes...</option>
+            <!-- Se popula dinámicamente desde PlanService -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="generacion-periodo-ingreso-id">Periodo de Ingreso *</label>
+          <select id="generacion-periodo-ingreso-id" name="periodo_ingreso_id" class="form-control" required>
+            <option value="">Cargando periodos...</option>
+            <!-- Se popula dinámicamente desde PeriodoService -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="generacion-estado">Estado</label>
+          <select id="generacion-estado" name="estado" class="form-control">
+            <option value="activa" selected>Activa</option>
+            <option value="inactiva">Inactiva</option>
+            <option value="archivada">Archivada</option>
+          </select>
+          <small class="form-hint">Las generaciones inactivas no aparecen en selects de nuevos alumnos</small>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-cancel" id="btn-cancel-generacion">
+        <i class="fa-solid fa-xmark"></i> Cancelar
+      </button>
+      <button type="submit" form="form-generacion" class="btn btn-primary" id="btn-save-generacion">
+        <i class="fa-solid fa-check"></i> Guardar Generación
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Script auxiliar para poblar selects de plan y periodo -->
+<script type="module">
+  // Este bloque se ejecutará cuando el módulo cargue la vista
+  // Ejemplo de cómo poblar los selects dinámicamente:
+  /*
+  import { PlanService } from '../../services/PlanService.js';
+  import { PeriodoService } from '../../services/PeriodoService.js';
+  
+  async function loadSelects() {
+    const plans = await PlanService.getDisponibles();
+    const periods = await PeriodoService.getDisponibles();
+    
+    const planSelect = document.getElementById('generacion-plan-id');
+    const periodSelect = document.getElementById('generacion-periodo-ingreso-id');
+    
+    planSelect.innerHTML = '<option value="">Seleccionar plan...</option>' + 
+      plans.map(p => `<option value="${p.id}">${p.clave} - ${p.nombre}</option>`).join('');
+    
+    periodSelect.innerHTML = '<option value="">Seleccionar periodo...</option>' + 
+      periods.map(p => `<option value="${p.id}">${p.clave} - ${p.descripcion}</option>`).join('');
+  }
+  
+  // Ejecutar cuando el modal se abra
+  document.getElementById('modal-generacion').addEventListener('shown', loadSelects);
+  */
+</script>

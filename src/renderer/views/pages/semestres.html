@@ -1,0 +1,102 @@
+<!-- src/renderer/views/pages/semestres.html -->
+<!-- Vista de catálogo: Semestres (orden académico 1°-14°) -->
+<!-- Compatible con DataTable.js, dark mode y patrones Ges-Tao -->
+
+<div class="page-header">
+  <div class="page-title">
+    <h2><i class="fa-solid fa-layer-group"></i> Semestres</h2>
+    <p class="text-muted">Defina la progresión académica del plan de estudios.</p>
+  </div>
+  <button id="btn-new-semestre" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Nuevo Semestre
+  </button>
+</div>
+
+<!-- Barra de búsqueda -->
+<div class="search-bar">
+  <i class="fa-solid fa-magnifying-glass search-icon"></i>
+  <input 
+    type="text" 
+    id="search-semestres" 
+    class="form-control" 
+    placeholder="Buscar por nombre, clave u orden..."
+    autocomplete="off"
+  >
+  <button id="btn-clear-search-semestres" class="btn-clear hidden" title="Limpiar búsqueda">
+    <i class="fa-solid fa-xmark"></i>
+  </button>
+</div>
+
+<!-- Contenedor de tabla -->
+<div class="table-responsive">
+  <table class="data-table" id="table-semestres">
+    <thead>
+      <tr>
+        <th style="width: 36px;"></th> <!-- Expansión (opcional) -->
+        <th style="width: 60px;">Orden</th>
+        <th>Nombre</th>
+        <th>Clave</th>
+        <th style="width: 80px;">Estado</th>
+        <th style="width: 50px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tbody-semestres">
+      <!-- Renderizado dinámico por DataTable.js -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Estado vacío (fallback si DataTable no carga) -->
+<div id="empty-semestres" class="empty-state hidden">
+  <i class="fa-regular fa-folder-open"></i>
+  <p>No hay semestres registrados</p>
+  <button id="btn-empty-new-semestre" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Crear primer semestre
+  </button>
+</div>
+
+<!-- Modal HTML (se inyecta dinámicamente por SemestreModule.js) -->
+<div id="modal-semestre" class="modal-overlay hidden" data-module="SemestreModule">
+  <div class="modal-container modal-md">
+    <div class="modal-header">
+      <h3 id="modal-semestre-title">Nuevo Semestre</h3>
+      <button class="modal-close" title="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-semestre" class="form-grid">
+        <div class="form-group">
+          <label for="semestre-orden">Orden Académico *</label>
+          <input type="number" id="semestre-orden" name="orden" class="form-control" 
+                 min="1" max="14" placeholder="Ej: 1" required>
+          <small class="form-hint">Del 1° al 14° semestre (valor único)</small>
+        </div>
+        <div class="form-group">
+          <label for="semestre-nombre">Nombre *</label>
+          <input type="text" id="semestre-nombre" name="nombre" class="form-control" 
+                 placeholder="Ej: Primer Semestre" required>
+        </div>
+        <div class="form-group">
+          <label for="semestre-clave">Clave *</label>
+          <input type="text" id="semestre-clave" name="clave" class="form-control" 
+                 placeholder="Ej: S1" maxlength="10" required>
+          <small class="form-hint">Identificador corto para reportes</small>
+        </div>
+        <div class="form-group">
+          <label for="semestre-estado">Estado</label>
+          <select id="semestre-estado" name="estado" class="form-control">
+            <option value="activo" selected>Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-cancel" id="btn-cancel-semestre">
+        <i class="fa-solid fa-xmark"></i> Cancelar
+      </button>
+      <button type="submit" form="form-semestre" class="btn btn-primary" id="btn-save-semestre">
+        <i class="fa-solid fa-check"></i> Guardar Semestre
+      </button>
+    </div>
+  </div>
+</div>

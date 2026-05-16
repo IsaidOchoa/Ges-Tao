@@ -1,54 +1,75 @@
-<!-- MODAL TIPO DE CONSTANCIA (SIMPLIFICADO) -->
+<!-- src/renderer/views/partials/modals/modal-tipos-constancia.html -->
 <div id="modal-tipo-constancia" class="modal-overlay hidden">
-  <div class="modal-content smaller">
+  <div class="modal-content">
+    
+    <!-- Header -->
     <div class="modal-header">
       <h3 id="modal-titulo-tipo">Nuevo Tipo de Constancia</h3>
-      <button class="btn-close" onclick="cerrarModal('modal-tipo-constancia')">&times;</button>
+      <button class="btn-close" id="btn-cerrar-modal-tipo">&times;</button>
     </div>
-    <div class="modal-body">
-      <form id="form-tipo-constancia">
-        <input type="hidden" id="tipo-id">
-        
-        <!-- Campo Nombre (Único obligatorio) -->
-        <div class="form-group">
-          <label>Nombre del Tipo *</label>
-          <input type="text" id="tipo-nombre" required placeholder="Ej. Participación como Docente" autofocus>
-          <small style="color:var(--text-muted); font-size:0.8rem; margin-top:4px; display:block;">
-            La clave única se generará automáticamente.
-          </small>
-        </div>
-        
-        <!-- Campo Descripción -->
-        <div class="form-group">
-          <label>Descripción (Opcional)</label>
-          <textarea id="tipo-descripcion" rows="3" placeholder="Breve descripción de uso..."></textarea>
-        </div>
+    
+    <!-- Formulario -->
+    <form id="form-tipo-constancia">
+      <!-- Campos ocultos (lógica interna) -->
+      <input type="hidden" id="tipo-id">
+      <input type="hidden" id="tipo-clave">
+      <input type="hidden" id="tipo-clave-original">
+      
+      <!-- Nombre -->
+      <div class="form-group">
+        <label>Nombre del Tipo *</label>
+        <input type="text" id="tipo-nombre" required 
+               placeholder="Ej: Participación como Docente"
+               onchange="if(!document.getElementById('tipo-id').value) { 
+                 const v = this.value.toUpperCase().split(' ').filter(p=>p.length>2).slice(0,2).map(p=>p.substring(0,4)).join('-'); 
+                 document.getElementById('tipo-clave').value = v || 'TIPO-'+Date.now().toString().slice(-4); 
+               }">
+        <small style="color:var(--text-muted);">
+          Ejemplos: Constancia de Estudios, Carta de Recomendación, Reconocimiento Especial
+        </small>
+      </div>
 
-        <!-- Configuración de Requisitos (Opcional pero útil) -->
-        <div style="margin-top: 15px; padding-top:15px; border-top:1px solid var(--border-color);">
-          <label style="font-weight:600; font-size:0.9rem; color:var(--text-dark); display:block; margin-bottom:10px;">
-            ¿Qué datos requiere este tipo?
-          </label>
-          <div class="form-row-flex">
-            <div class="form-group flex-1">
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal;">
-                <input type="checkbox" id="tipo-requiere-ee">
-                <span>Requiere Materia (EE)</span>
-              </label>
-            </div>
-            <div class="form-group flex-1">
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal;">
-                <input type="checkbox" id="tipo-requiere-periodo">
-                <span>Requiere Periodo</span>
-              </label>
-            </div>
+      <!-- Descripción -->
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea id="tipo-descripcion" rows="3" 
+                  placeholder="Describa el propósito y uso de este tipo de constancia..."></textarea>
+      </div>
+
+      <!-- Configuración de requisitos -->
+      <div class="form-group">
+        <label style="font-weight:600; margin-bottom:10px; display:block;">Requisitos del Tipo</label>
+        
+        <label style="display:flex; align-items:center; padding:10px; background:var(--bg-light); border-radius:var(--radius-sm); margin-bottom:8px; cursor:pointer;">
+          <input type="checkbox" id="tipo-requiere-ee" style="margin-right:10px; width:18px; height:18px;">
+          <div>
+            <strong>Requiere Experiencia Educativa</strong>
+            <small style="display:block; color:var(--text-muted);">
+              Este tipo de constancia está vinculado a una materia/EE específica
+            </small>
           </div>
-        </div>
-      </form>
-    </div>
+        </label>
+        
+        <label style="display:flex; align-items:center; padding:10px; background:var(--bg-light); border-radius:var(--radius-sm); cursor:pointer;">
+          <input type="checkbox" id="tipo-requiere-periodo" style="margin-right:10px; width:18px; height:18px;">
+          <div>
+            <strong>Requiere Periodo Escolar</strong>
+            <small style="display:block; color:var(--text-muted);">
+              La constancia debe especificar el periodo académico (semestre/cuatrimestre)
+            </small>
+          </div>
+        </label>
+      </div>
+      
+      <!-- ✅ Estado NO visible: siempre 'activo' al crear/editar desde modal -->
+      <!-- El estado solo se modifica desde el menú contextual (3 puntos) de la tabla -->
+    </form>
+
+    <!-- Footer -->
     <div class="modal-footer">
-      <button class="btn btn-secondary btn-cancel" onclick="cerrarModal('modal-tipo-constancia')">Cancelar</button>
-      <button class="btn btn-primary" id="btn-guardar-tipo-constancia">Guardar</button>
+      <button class="btn btn-cancel" id="btn-cancelar-tipo">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-tipo-constancia">Guardar Tipo</button>
     </div>
+    
   </div>
 </div>

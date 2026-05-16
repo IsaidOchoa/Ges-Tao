@@ -1,0 +1,112 @@
+<!-- src/renderer/views/pages/planes-estudio.html -->
+<!-- Vista de catálogo: Planes de Estudio -->
+<!-- Compatible con DataTable.js, dark mode y patrones Ges-Tao -->
+
+<div class="page-header">
+  <div class="page-title">
+    <h2><i class="fa-solid fa-book-open"></i> Planes de Estudio</h2>
+    <p class="text-muted">Gestione los marcos curriculares del programa académico.</p>
+  </div>
+  <button id="btn-new-plan" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Nuevo Plan
+  </button>
+</div>
+
+<!-- Barra de búsqueda -->
+<div class="search-bar">
+  <i class="fa-solid fa-magnifying-glass search-icon"></i>
+  <input 
+    type="text" 
+    id="search-planes" 
+    class="form-control" 
+    placeholder="Buscar por clave, nombre o nivel..."
+    autocomplete="off"
+  >
+  <button id="btn-clear-search-planes" class="btn-clear hidden" title="Limpiar búsqueda">
+    <i class="fa-solid fa-xmark"></i>
+  </button>
+</div>
+
+<!-- Contenedor de tabla -->
+<div class="table-responsive">
+  <table class="data-table" id="table-planes">
+    <thead>
+      <tr>
+        <th style="width: 36px;"></th> <!-- Expansión (opcional) -->
+        <th>Clave</th>
+        <th>Nombre</th>
+        <th>Nivel</th>
+        <th style="width: 80px;">Estado</th>
+        <th style="width: 50px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tbody-planes">
+      <!-- Renderizado dinámico por DataTable.js -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Estado vacío (fallback si DataTable no carga) -->
+<div id="empty-planes" class="empty-state hidden">
+  <i class="fa-regular fa-folder-open"></i>
+  <p>No hay planes de estudio registrados</p>
+  <button id="btn-empty-new-plan" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Crear primer plan
+  </button>
+</div>
+
+<!-- Modal HTML (se inyecta dinámicamente por PlanModule.js) -->
+<!-- Estructura base para referencia -->
+<div id="modal-plan" class="modal-overlay hidden" data-module="PlanModule">
+  <div class="modal-container modal-lg">
+    <div class="modal-header">
+      <h3 id="modal-plan-title">Nuevo Plan de Estudio</h3>
+      <button class="modal-close" title="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-plan" class="form-grid">
+        <div class="form-group">
+          <label for="plan-clave">Clave *</label>
+          <input type="text" id="plan-clave" name="clave" class="form-control" 
+                 placeholder="Ej: MAE-2024" maxlength="20" required>
+          <small class="form-hint">Identificador único del plan</small>
+        </div>
+        <div class="form-group">
+          <label for="plan-nombre">Nombre *</label>
+          <input type="text" id="plan-nombre" name="nombre" class="form-control" 
+                 placeholder="Ej: Maestría en Ciencias Computacionales" required>
+        </div>
+        <div class="form-group">
+          <label for="plan-nivel">Nivel Académico *</label>
+          <select id="plan-nivel" name="nivel" class="form-control" required>
+            <option value="">Seleccionar...</option>
+            <option value="licenciatura">Licenciatura</option>
+            <option value="maestria">Maestría</option>
+            <option value="doctorado">Doctorado</option>
+            <option value="especialidad">Especialidad</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="plan-estado">Estado</label>
+          <select id="plan-estado" name="estado" class="form-control">
+            <option value="activo" selected>Activo</option>
+            <option value="inactivo">Inactivo</option>
+            <option value="archivado">Archivado</option>
+          </select>
+          <small class="form-hint">Los planes inactivos no aparecen en selects, pero se conservan en historial</small>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-cancel" id="btn-cancel-plan">
+        <i class="fa-solid fa-xmark"></i> Cancelar
+      </button>
+      <button type="submit" form="form-plan" class="btn btn-primary" id="btn-save-plan">
+        <i class="fa-solid fa-check"></i> Guardar Plan
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Script de inicialización del módulo (se carga dinámicamente) -->
+<!-- <script type="module" src="../modules/PlanModule.js"></script> -->
