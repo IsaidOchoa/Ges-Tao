@@ -1,0 +1,45 @@
+<div id="modal-plan" class="modal-overlay hidden" data-module="PlanModule">
+  <div class="modal-container modal-md">
+    <div class="modal-header">
+      <h3 id="modal-plan-title">Nuevo Plan de Estudio</h3>
+      <button class="modal-close" title="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-plan" class="form-grid">
+        <!-- Clave auto-generada (visible solo como referencia) -->
+        <div class="form-group">
+          <label for="plan-clave">Clave del Plan</label>
+          <input type="text" id="plan-clave" name="clave" class="form-control" 
+                 readonly placeholder="Se generará automáticamente al guardar" 
+                 style="background: var(--bg-light); cursor: not-allowed;">
+          <small class="form-hint">Identificador único generado por el sistema</small>
+        </div>
+
+        <div class="form-group">
+          <label for="plan-nombre">Nombre *</label>
+          <input type="text" id="plan-nombre" name="nombre" class="form-control" 
+                 placeholder="Ej: Maestría en Ciencias Computacionales" required>
+        </div>
+
+        <div class="form-group">
+          <label for="plan-nivel">Nivel Académico *</label>
+          <select id="plan-nivel" name="nivel" class="form-control" required>
+            <option value="">Seleccionar...</option>
+            <option value="licenciatura">Licenciatura</option>
+            <option value="maestria">Maestría</option>
+            <option value="doctorado">Doctorado</option>
+            <option value="especialidad">Especialidad</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-cancel" id="btn-cancel-plan">
+        <i class="fa-solid fa-xmark"></i> Cancelar
+      </button>
+      <button type="submit" form="form-plan" class="btn btn-primary" id="btn-save-plan">
+        <i class="fa-solid fa-check"></i> Guardar Plan
+      </button>
+    </div>
+  </div>
+</div>

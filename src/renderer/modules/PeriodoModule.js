@@ -1,10 +1,8 @@
 // src/renderer/modules/PeriodoModule.js
-// 📍 Arquitectura: Módulo autocontenido para gestión de Periodos Escolares
-// 🔗 DB Schema: periodos(clave, descripcion, fecha_inicio, fecha_fin, estado)
-
 import { DataTable } from '../components/DataTable/DataTable.js';
 import modalPeriodoHtml from '../views/partials/modals/modal-periodo.html';
 import { generarClavePeriodo, validarDuracionPeriodo, generarFechasDesdePlantilla } from '../utils/periodUtils.js';
+import '../styles/modals/modal-periodo.css';
 
 export class PeriodoModule {
   constructor() {
@@ -12,33 +10,26 @@ export class PeriodoModule {
     this.modalElement = null;
     this.initialized = false;
     this.table = null;
+    this.currentPlantilla = 'semestre-a';
+    this.currentAnio = new Date().getFullYear();
   }
 
-  // =========================================
-  // MÉTODO PRINCIPAL DE INICIALIZACIÓN (Re-entrante)
-  // =========================================
   async init() {
-    console.log('📘 [PeriodoModule] Sincronizando módulo...');
+    console.log('[PeriodoModule] Sincronizando módulo...');
 
-    // 1. Inyectar Modal (solo si no existe)
     if (!document.getElementById('modal-periodo')) {
       const template = document.createElement('div');
       template.innerHTML = modalPeriodoHtml;
       document.body.appendChild(template.firstElementChild);
       this.modalElement = document.getElementById('modal-periodo');
-      console.log('✅ Modal Periodo inyectado');
     }
 
-    // 2. Esperar que el tbody exista (crítico para SPA)
     await this.waitForDOMReady('tabla-periodos-body');
 
-    // 3. Cargar datos SOLO si está vacío (Lazy Load)
     if (!this.data || this.data.length === 0) {
-      console.log('📡 [PeriodoModule] Cargando datos...');
       await this.loadData();
     }
 
-    // 4. Renderizar: Tabla O estado vacío
     const tbody = document.getElementById('tabla-periodos-body');
     if (!tbody) return;
 
@@ -53,35 +44,27 @@ export class PeriodoModule {
         onExpand: false
       });
       this.table.setData(this.data);
-      console.log(`✅ Tabla Periodos renderizada con ${this.data.length} registros`);
     } else {
       this.renderEmptyState();
     }
 
-    // 5. Re-vincular eventos (SIEMPRE, porque el DOM es nuevo)
     this.setupSearch();
     this.setupModalEvents();
     this.setupGlobalHelpers();
 
-    console.log('✅ [PeriodoModule] Listo');
+    console.log('[PeriodoModule] Listo');
   }
 
-  // =========================================
-  // UTILIDAD: Esperar que el tbody exista en el DOM
-  // =========================================
   async waitForDOMReady(tbodyId, timeout = 2000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
       if (document.getElementById(tbodyId)) return true;
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    console.error(`❌ [PeriodoModule] Timeout: tbody "${tbodyId}" no encontrado`);
+    console.error(`[PeriodoModule] Timeout: tbody "${tbodyId}" no encontrado`);
     return false;
   }
 
-  // =========================================
-  // CAPA DE DATOS
-  // =========================================
   async loadData() {
     try {
       const res = await window.electronAPI.listarPeriodos();
@@ -91,14 +74,11 @@ export class PeriodoModule {
       }
       return false;
     } catch (error) {
-      console.error('❌ Error cargando periodos:', error);
+      console.error('Error cargando periodos:', error);
       return false;
     }
   }
 
-  // =========================================
-  // CONFIGURACIÓN DE COLUMNAS
-  // =========================================
   getColumns() {
     return [
       { 
@@ -106,25 +86,10 @@ export class PeriodoModule {
         label: 'Código',
         format: (v) => `<strong style="font-family:monospace; color:var(--accent-color);">${v}</strong>` 
       },
-      { 
-        key: 'descripcion', 
-        label: 'Periodo' 
-      },
-      { 
-        key: 'fecha_inicio', 
-        label: 'Inicio',
-        format: (v) => this.formatDate(v)
-      },
-      { 
-        key: 'fecha_fin', 
-        label: 'Fin',
-        format: (v) => this.formatDate(v)
-      },
-      { 
-        key: 'estado', 
-        label: 'Estado',
-        badge: true 
-      }
+      { key: 'descripcion', label: 'Periodo' },
+      { key: 'fecha_inicio', label: 'Inicio', format: (v) => this.formatDate(v) },
+      { key: 'fecha_fin', label: 'Fin', format: (v) => this.formatDate(v) },
+      { key: 'estado', label: 'Estado', badge: true }
     ];
   }
 
@@ -134,9 +99,6 @@ export class PeriodoModule {
     return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  // =========================================
-  // BUSCADOR EN TIEMPO REAL
-  // =========================================
   setupSearch() {
     const input = document.getElementById('buscador-periodos');
     if (!input) return;
@@ -156,28 +118,19 @@ export class PeriodoModule {
     });
   }
 
-  // =========================================
-  // GESTIÓN DE MODALES - ✅ CORREGIDO
-  // =========================================
   setupModalEvents() {
     const btnNuevo = document.getElementById('btn-nuevo-periodo');
     const modal = document.getElementById('modal-periodo');
-    if (!btnNuevo || !modal) {
-      console.warn('⚠️ [PeriodoModule] Elementos del modal no encontrados');
-      return;
-    }
+    if (!btnNuevo || !modal) return;
 
-    btnNuevo.onclick = (e) => {
-      e.preventDefault();
-      this.openModal();
-    };
+    btnNuevo.onclick = (e) => { e.preventDefault(); this.openModal(); };
     
     const cerrar = () => modal.classList.add('hidden');
-    document.getElementById('btn-cerrar-modal-periodo')?.addEventListener('click', cerrar);
-    document.getElementById('btn-cancelar-periodo')?.addEventListener('click', cerrar);
-    modal.addEventListener('click', (e) => { if(e.target === modal) cerrar(); });
+    modal.querySelector('.btn-close')?.addEventListener('click', cerrar);
+    modal.querySelector('.btn-cancel')?.addEventListener('click', cerrar);
+    modal.addEventListener('click', (e) => { if (e.target === modal) cerrar(); });
 
-    const btnSave = document.getElementById('btn-guardar-periodo');
+    const btnSave = modal.querySelector('#btn-guardar-periodo');
     if (btnSave) {
       const newBtn = btnSave.cloneNode(true);
       btnSave.parentNode.replaceChild(newBtn, btnSave);
@@ -186,233 +139,199 @@ export class PeriodoModule {
         await this.savePeriodo(modal);
       });
     }
+
+    // Listeners para actualización en tiempo real
+    document.querySelectorAll('input[name="plantilla"]').forEach(radio => {
+      radio.addEventListener('change', () => this.onPlantillaChange());
+    });
+    
+    document.getElementById('periodo-anio-base')?.addEventListener('change', () => this.onAnioChange());
+    document.getElementById('periodo-fecha-inicio')?.addEventListener('change', () => this.updatePreview());
+    document.getElementById('periodo-fecha-fin')?.addEventListener('change', () => this.updatePreview());
   }
 
-  // ✅ openModal CORREGIDO con IDs exactos y null checks
+  initAnioSelector() {
+    const select = document.getElementById('periodo-anio-base');
+    if (!select) return;
+    
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - 10;
+    const endYear = currentYear + 10;
+    
+    select.innerHTML = '';
+    for (let year = startYear; year <= endYear; year++) {
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      if (year === currentYear) option.selected = true;
+      select.appendChild(option);
+    }
+  }
+
+  onPlantillaChange() {
+    const plantilla = document.querySelector('input[name="plantilla"]:checked')?.value;
+    this.currentPlantilla = plantilla;
+    
+    const sectionFechas = document.getElementById('section-fechas');
+    const fechaInicio = document.getElementById('periodo-fecha-inicio');
+    const fechaFin = document.getElementById('periodo-fecha-fin');
+    
+    if (plantilla === 'personalizado') {
+      sectionFechas?.classList.remove('hidden');
+      if (fechaInicio) { fechaInicio.required = true; fechaInicio.disabled = false; }
+      if (fechaFin) { fechaFin.required = true; fechaFin.disabled = false; }
+    } else {
+      sectionFechas?.classList.add('hidden');
+      if (fechaInicio) { fechaInicio.required = false; fechaInicio.disabled = true; }
+      if (fechaFin) { fechaFin.required = false; fechaFin.disabled = true; }
+      this.updatePreview();
+    }
+  }
+
+  onAnioChange() {
+    this.currentAnio = parseInt(document.getElementById('periodo-anio-base')?.value || new Date().getFullYear());
+    this.updatePreview();
+  }
+
+  updatePreview() {
+    const plantilla = this.currentPlantilla;
+    const anio = this.currentAnio;
+    const previewText = document.getElementById('preview-text');
+    const claveField = document.getElementById('periodo-clave');
+    const descField = document.getElementById('periodo-descripcion');
+    
+    let clave = '';
+    let descripcion = '';
+    
+    if (plantilla === 'semestre-a') {
+      clave = `FEB-JUL${anio.toString().slice(-2)}`;
+      descripcion = `FEB ${anio} - JUL ${anio}`;
+    } else if (plantilla === 'semestre-b') {
+      const anioFin = anio + 1;
+      clave = `AGO-ENE${anioFin.toString().slice(-2)}`;
+      descripcion = `AGO ${anio} - ENE ${anioFin}`;
+    } else if (plantilla === 'personalizado') {
+      const fechaInicio = document.getElementById('periodo-fecha-inicio')?.value;
+      const fechaFin = document.getElementById('periodo-fecha-fin')?.value;
+      
+      if (fechaInicio && fechaFin) {
+        const inicio = new Date(fechaInicio);
+        const fin = new Date(fechaFin);
+        const mesInicio = inicio.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+        const mesFin = fin.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+        const anioFin = fin.getFullYear();
+        
+        clave = `${mesInicio}-${mesFin}${anioFin.toString().slice(-2)}`;
+        descripcion = `${mesInicio} ${inicio.getFullYear()} - ${mesFin} ${anioFin}`;
+      }
+    }
+    
+    if (claveField) claveField.value = clave;
+    if (descField && plantilla !== 'personalizado') descField.value = descripcion;
+    if (previewText) previewText.textContent = descripcion || 'Seleccione una plantilla';
+  }
+
   openModal(periodo = null) {
     const modal = document.getElementById('modal-periodo');
     const form = document.getElementById('form-periodo');
-    if (!modal || !form) {
-      console.error('❌ Modal o formulario no encontrados');
-      return;
-    }
-
+    if (!modal || !form) return;
+    
     form.reset();
     
-    // ✅ Null checks antes de asignar valores
-    const idField = document.getElementById('per-id');
-    if (idField) idField.value = '';
-
-    const anoBase = document.getElementById('per-ano-base');
-    if (anoBase) anoBase.value = new Date().getFullYear().toString();
-
-    // Si es edición, cargar datos existentes
+    this.initAnioSelector();
+    
+    const plantillaSemestreA = document.querySelector('input[name="plantilla"][value="semestre-a"]');
+    if (plantillaSemestreA) plantillaSemestreA.checked = true;
+    
+    this.currentPlantilla = 'semestre-a';
+    this.currentAnio = new Date().getFullYear();
+    
+    const anioSelect = document.getElementById('periodo-anio-base');
+    if (anioSelect) anioSelect.value = this.currentAnio;
+    
     if (periodo) {
+      const idField = document.getElementById('periodo-id');
       if (idField) idField.value = periodo.id || '';
       
-      const claveField = document.getElementById('per-clave-preview');
+      const claveField = document.getElementById('periodo-clave');
       if (claveField) claveField.value = periodo.clave || '';
       
-      const descField = document.getElementById('per-desc');
+      const descField = document.getElementById('periodo-descripcion');
       if (descField) descField.value = periodo.descripcion || '';
       
-      const inicioField = document.getElementById('per-inicio');
-      if (inicioField && periodo.fecha_inicio) {
-        inicioField.value = periodo.fecha_inicio.split('T')[0];
-      }
-      
-      const finField = document.getElementById('per-fin');
-      if (finField && periodo.fecha_fin) {
-        finField.value = periodo.fecha_fin.split('T')[0];
-      }
-      
-      const estadoField = document.getElementById('per-estado');
+      const estadoField = document.getElementById('periodo-estado');
       if (estadoField) estadoField.value = periodo.estado || 'abierto';
       
-      // Actualizar preview visual
-      this.actualizarPreview(periodo.clave, periodo.descripcion);
+      // Detectar plantilla desde la clave
+      if (periodo.clave?.startsWith('FEB-JUL')) {
+        const plantillaA = document.querySelector('input[name="plantilla"][value="semestre-a"]');
+        if (plantillaA) plantillaA.checked = true;
+        this.currentPlantilla = 'semestre-a';
+      } else if (periodo.clave?.startsWith('AGO-ENE')) {
+        const plantillaB = document.querySelector('input[name="plantilla"][value="semestre-b"]');
+        if (plantillaB) plantillaB.checked = true;
+        this.currentPlantilla = 'semestre-b';
+      } else {
+        const plantillaPersonalizado = document.querySelector('input[name="plantilla"][value="personalizado"]');
+        if (plantillaPersonalizado) plantillaPersonalizado.checked = true;
+        this.currentPlantilla = 'personalizado';
+        
+        const fechaInicio = document.getElementById('periodo-fecha-inicio');
+        const fechaFin = document.getElementById('periodo-fecha-fin');
+        if (periodo.fecha_inicio && fechaInicio) fechaInicio.value = periodo.fecha_inicio.split('T')[0];
+        if (periodo.fecha_fin && fechaFin) fechaFin.value = periodo.fecha_fin.split('T')[0];
+      }
+      
+      this.onPlantillaChange();
+      this.updatePreview();
     } else {
-      // Modo nuevo: generar fechas desde plantilla por defecto
-      this.actualizarFechasDesdePlantilla();
+      this.onPlantillaChange();
     }
     
     modal.classList.remove('hidden');
-    
-    // Focus en el primer campo visible
-    const claveField = document.getElementById('per-clave-preview');
-    if (claveField) claveField.focus();
   }
 
-  // ✅ savePeriodo con validaciones y mapeo correcto
   async savePeriodo(modal) {
-    const id = document.getElementById('per-id')?.value;
-    const clave = document.getElementById('per-clave-preview')?.value?.trim();
-    const descripcion = document.getElementById('per-desc')?.value?.trim();
-    const fechaInicio = document.getElementById('per-inicio')?.value;
-    const fechaFin = document.getElementById('per-fin')?.value;
-    const estado = document.getElementById('per-estado')?.value || 'abierto';
-
-    // Validaciones básicas
-    if (!clave || !descripcion || !fechaInicio || !fechaFin) {
-      return alert('⚠️ Todos los campos son obligatorios');
-    }
-
-    // Validar duración máxima (6 meses)
-    if (!validarDuracionPeriodo(fechaInicio, fechaFin, 6)) {
-      return alert('⚠️ Los periodos no pueden exceder 6 meses de duración');
-    }
-
-    // Validar lógica de fechas
-    if (new Date(fechaFin) < new Date(fechaInicio)) {
-      return alert('⚠️ La fecha de fin no puede ser anterior a la de inicio');
-    }
-
+    const form = document.getElementById('form-periodo');
     const datos = {
-      id: id ? parseInt(id) : null,
-      clave: clave,
-      descripcion: descripcion,
-      fecha_inicio: fechaInicio,
-      fecha_fin: fechaFin,
-      estado: estado
+      id: document.getElementById('periodo-id')?.value ? parseInt(document.getElementById('periodo-id').value) : null,
+      clave: document.getElementById('periodo-clave')?.value?.trim(),
+      descripcion: document.getElementById('periodo-descripcion')?.value?.trim(),
+      anio_base: parseInt(document.getElementById('periodo-anio-base')?.value),
+      fecha_inicio: document.getElementById('periodo-fecha-inicio')?.value || null,
+      fecha_fin: document.getElementById('periodo-fecha-fin')?.value || null,
+      estado: document.getElementById('periodo-estado')?.value || 'abierto'
     };
-
+    
+    if (!datos.clave || !datos.descripcion) {
+      alert('Clave y descripción son obligatorios');
+      return;
+    }
+    
+    if (datos.fecha_inicio && datos.fecha_fin) {
+      if (!validarDuracionPeriodo(datos.fecha_inicio, datos.fecha_fin, 6)) {
+        alert('Los periodos no pueden exceder 6 meses de duración');
+        return;
+      }
+      if (new Date(datos.fecha_fin) < new Date(datos.fecha_inicio)) {
+        alert('La fecha de fin no puede ser anterior a la de inicio');
+        return;
+      }
+    }
+    
     try {
       const res = await window.electronAPI.guardarPeriodo(datos);
-      
       if (res.success) {
-        alert('✅ Periodo guardado correctamente');
         modal.classList.add('hidden');
         await this.loadData();
         this.table?.setData(this.data);
       } else {
-        alert(`❌ Error: ${res.error}`);
+        alert(`Error: ${res.error}`);
       }
     } catch (error) {
-      console.error('💥 Error guardando periodo:', error);
-      alert('Error de conexión con la base de datos');
+      console.error('Error guardando periodo:', error);
+      alert('Error de conexión');
     }
-  }
-
-  // =========================================
-  // LÓGICA DE PLANTILLAS Y VALIDACIÓN
-  // =========================================
-  
-  actualizarFechasDesdePlantilla() {
-    const plantilla = document.querySelector('input[name="plantilla"]:checked')?.value;
-    const anoBaseEl = document.getElementById('per-ano-base');
-    const ano = anoBaseEl ? parseInt(anoBaseEl.value) : new Date().getFullYear();
-    
-    if (!plantilla || plantilla === 'personalizado') {
-      this.activarModoPersonalizado();
-      return;
-    }
-    
-    try {
-      const { fechaInicio, fechaFin, clave, descripcion } = generarFechasDesdePlantilla(plantilla, ano);
-      
-      const inicioEl = document.getElementById('per-inicio');
-      const finEl = document.getElementById('per-fin');
-      const claveEl = document.getElementById('per-clave-preview');
-      const descEl = document.getElementById('per-desc');
-      
-      if (inicioEl) inicioEl.value = fechaInicio;
-      if (finEl) finEl.value = fechaFin;
-      if (claveEl) claveEl.value = clave;
-      if (descEl) descEl.value = descripcion;
-      
-      this.actualizarPreview(clave, descripcion);
-      this.mostrarValidacion('✓ Periodo válido', 'success');
-    } catch (error) {
-      console.error('Error generando fechas:', error);
-      this.mostrarValidacion('❌ Error al generar fechas', 'error');
-    }
-  }
-
-  activarModoPersonalizado() {
-    const inicioEl = document.getElementById('per-inicio');
-    const finEl = document.getElementById('per-fin');
-    const claveEl = document.getElementById('per-clave-preview');
-    
-    if (inicioEl) inicioEl.disabled = false;
-    if (finEl) finEl.disabled = false;
-    if (claveEl) claveEl.value = '';
-    
-    this.mostrarValidacion('✏️ Edita las fechas manualmente', 'warning');
-  }
-
-  validarYActualizarClave() {
-    const inicio = document.getElementById('per-inicio')?.value;
-    const fin = document.getElementById('per-fin')?.value;
-    
-    if (!inicio || !fin) return;
-    
-    // Validar duración máxima
-    if (!validarDuracionPeriodo(inicio, fin, 6)) {
-      this.mostrarValidacion('⚠️ Los periodos no pueden exceder 6 meses', 'warning');
-      return;
-    }
-    
-    // Validar lógica
-    if (new Date(fin) < new Date(inicio)) {
-      this.mostrarValidacion('❌ Fecha fin no puede ser anterior a inicio', 'error');
-      return;
-    }
-    
-    // Generar clave
-    const clave = generarClavePeriodo(inicio, fin);
-    const claveEl = document.getElementById('per-clave-preview');
-    if (claveEl) claveEl.value = clave;
-    
-    this.actualizarPreview(clave);
-    this.mostrarValidacion('✓ Periodo válido', 'success');
-  }
-
-  actualizarPreview(clave, descripcion = '') {
-    const previewDesc = document.getElementById('preview-descripcion');
-    const previewDur = document.getElementById('preview-duracion');
-    
-    if (previewDesc && clave) {
-      previewDesc.textContent = `${clave}${descripcion ? `: ${descripcion}` : ''}`;
-    }
-    
-    // Calcular duración aproximada para el badge
-    if (previewDur) {
-      previewDur.textContent = '✓ Válido';
-      previewDur.style.color = 'var(--success-color)';
-    }
-  }
-
-  mostrarValidacion(mensaje, tipo) {
-    const container = document.getElementById('periodo-validation');
-    if (!container) return;
-    
-    container.textContent = mensaje;
-    container.className = `form-feedback ${tipo}`;
-    container.classList.remove('hidden');
-    
-    // Ocultar automáticamente después de 3 segundos si es éxito
-    if (tipo === 'success') {
-      setTimeout(() => container.classList.add('hidden'), 3000);
-    }
-  }
-
-  // =========================================
-  // ESTADO VACÍO Y UTILIDADES
-  // =========================================
-  
-  renderEmptyState() {
-    const tbody = document.getElementById('tabla-periodos-body');
-    if (!tbody) return;
-    
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align:center; padding: 50px 20px; color:var(--text-muted);">
-          <i class="fa-regular fa-calendar-days" 
-             style="font-size: 2.5rem; margin: 0 auto 15px auto; display: block; opacity: 0.6;"></i>
-          <p style="margin: 0; font-size: 1rem;">Sin periodos escolares registrados</p>
-        </td>
-      </tr>
-    `;
   }
 
   setupGlobalHelpers() {
@@ -433,5 +352,13 @@ export class PeriodoModule {
     document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
     const menu = event.target.closest('.action-icon-container')?.previousElementSibling;
     if (menu?.classList.contains('context-menu')) menu.classList.toggle('hidden');
+  }
+
+  renderEmptyState() {
+    const tbody = document.getElementById('tabla-periodos-body');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:50px;color:var(--text-muted)">
+      <i class="fa-regular fa-calendar-days" style="font-size:2.5rem;margin:0 auto 15px;display:block;opacity:0.6"></i>
+      <p style="margin:0">No hay periodos registrados</p></td></tr>`;
   }
 }

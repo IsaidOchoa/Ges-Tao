@@ -15,4 +15,6 @@
 @import './views/_historial.css';
 @import './views/_reportes.css';
 
+@import './modals/modal-periodo.css';
+
 @import '@fortawesome/fontawesome-free/css/all.min.css';

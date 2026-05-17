@@ -1,307 +1,246 @@
 // src/renderer/modules/PlanModule.js
-
 import { DataTable } from '../components/DataTable/DataTable.js';
-import { waitForDOMReady } from '../utils/uiHelpers.js';
+import modalPlanHtml from '../views/partials/modals/modal-plan.html';
 import { FormAutosave } from '../utils/formAutosave.js';
 import { UnsavedChangesGuard } from '../utils/unsavedChanges.js';
 
-export default class PlanModule {
-  constructor(config = {}) {
-    this.tbodyId = config.tbodyId || 'tbody-planes';
-    this.modalId = config.modalId || 'modal-plan';
-    this.formId = config.formId || 'form-plan';
-    this.searchInputId = config.searchInputId || 'search-planes';
-    
+export class PlanModule {
+  constructor() {
+    // ✅ Constructor simple, igual que EEModule
     this.data = [];
-    this.filteredData = [];
+    this.modalElement = null;
+    this.initialized = false;
     this.table = null;
     this.formAutosave = null;
     this.unsavedGuard = null;
-    this.editingId = null;
-    
-    // Exponer instancia global para onclicks en HTML inyectado
-    window.PlanModuleInstance = this;
   }
 
+  // =========================================
+  // INICIALIZACIÓN (Patrón idéntico a EEModule)
+  // =========================================
   async init() {
-    console.log('[PlanModule] Iniciando...');
-    await waitForDOMReady();
-    await this._loadData();
-    this._renderTable();
-    this._bindEvents();
-    this._initUtilities();
-    console.log('[PlanModule] ✅ Inicializado');
-  }
+    console.log('[PlanModule] Sincronizando módulo...');
 
-  async _loadData() {
-    try {
-      // 🔄 Llamada directa a IPC (sin servicio intermedio)
-      const response = await window.api.ipc.invoke('obtener-planes');
-      if (response.success) {
-        this.data = response.data;
-        this._applySearchFilter();
-      } else {
-        console.error('[PlanModule] Error:', response.error);
-        this.data = [];
-        this.filteredData = [];
-      }
-    } catch (error) {
-      console.error('[PlanModule] Excepción:', error);
-      this.data = [];
-      this.filteredData = [];
+    // 1. Inyectar Modal (solo si no existe)
+    if (!document.getElementById('modal-plan')) {
+      const template = document.createElement('div');
+      template.innerHTML = modalPlanHtml;
+      document.body.appendChild(template.firstElementChild);
+      this.modalElement = document.getElementById('modal-plan');
+      console.log('Modal Plan inyectado');
     }
-  }
 
-  _renderTable() {
-    const tbody = document.getElementById(this.tbodyId);
-    const emptyState = document.getElementById('empty-planes');
-    
-    if (!tbody) return;
-    
-    if (emptyState) {
-      emptyState.classList.toggle('hidden', this.filteredData.length > 0);
+    // 2. Esperar que el tbody exista (ID hardcodeado, igual que EEModule)
+    await this.waitForDOMReady('tabla-planes-body');
+
+    // 3. Cargar datos SOLO si está vacío (Lazy Load)
+    if (!this.data || this.data.length === 0) {
+      console.log('[PlanModule] Cargando datos desde IPC...');
+      await this.loadData();
+    } else {
+      console.log('[PlanModule] Usando datos en caché...');
     }
-    
-    if (this.filteredData.length === 0) {
-      tbody.innerHTML = '';
+
+    // 4. Renderizar: Tabla con datos O estado vacío
+    const tbody = document.getElementById('tabla-planes-body');
+    if (!tbody) {
+      console.error('[PlanModule] tbody no encontrado');
       return;
     }
-    
-    if (!this.table) {
+
+    if (this.data && this.data.length > 0) {
+      // ✅ ID hardcodeado directamente, igual que EEModule
       this.table = new DataTable({
-        tbodyId: this.tbodyId,
+        tbodyId: 'tabla-planes-body',
         columns: this.getColumns(),
         expandable: false,
         actions: true,
-        onAction: `window.PlanModuleInstance?.showContextMenu(event)`
+        onAction: 'planModuleInstance.toggleActionMenu(event)'
       });
+      this.table.setData(this.data);
+      console.log(`Tabla Planes renderizada con ${this.data.length} registros`);
+    } else {
+      this.renderEmptyState();
+      console.log('[PlanModule] Sin registros para mostrar');
     }
-    this.table.setData(this.filteredData);
+
+    // 5. Re-vincular eventos (SIEMPRE, porque el DOM es nuevo)
+    this.setupSearch();
+    this.setupModalEvents();
+    this.setupGlobalHelpers();
+
+    console.log('[PlanModule] Inicialización completa');
   }
 
+  // =========================================
+  // UTILIDAD: Esperar tbody (ID hardcodeado)
+  // =========================================
+  async waitForDOMReady(tbodyId, timeout = 2000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const tbody = document.getElementById(tbodyId);
+      if (tbody) {
+        console.log(`[PlanModule] tbody "${tbodyId}" encontrado en DOM`);
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    console.error(`[PlanModule] Timeout: tbody "${tbodyId}" no encontrado en ${timeout}ms`);
+    return false;
+  }
+
+  // =========================================
+  // CAPA DE DATOS
+  // =========================================
+  async loadData() {
+    try {
+      console.log('[PlanModule] Solicitando datos a IPC...');
+      const res = await window.electronAPI.listarPlanes();
+      
+      if (res.success) {
+        this.data = res.rows || res.data;
+        return true;
+      } else {
+        console.warn('[PlanModule] Error en respuesta IPC:', res.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('[PlanModule] Error crítico cargando datos:', error);
+      return false;
+    }
+  }
+
+  // =========================================
+  // COLUMNAS (Adaptar a tus campos)
+  // =========================================
   getColumns() {
     return [
-      { key: 'clave', title: 'Clave', format: (val) => `<strong>${val || '-'}</strong>` },
-      { 
-        key: 'nombre', 
-        title: 'Nombre',
-        format: (val) => val?.length > 40 ? `${val.substring(0, 37)}...` : val || '-'
-      },
+      { key: 'clave', label: 'Clave', format: (v) => `<strong>${v}</strong>` },
+      { key: 'nombre', label: 'Nombre', format: (v) => v.length > 30 ? v.substring(0, 30) + '...' : v },
       { 
         key: 'nivel', 
-        title: 'Nivel',
-        format: (val) => {
-          const map = { 
-            licenciatura: '🎓 Lic.', 
-            maestria: '🎓 Maest.', 
-            doctorado: '🎓 Doc.',
-            especialidad: '🎓 Esp.'
-          };
-          return map[val] || val || '-';
+        label: 'Nivel',
+        format: (v) => {
+          const map = { licenciatura: '🎓 Licenciatura', maestria: '🎓 Maestría', doctorado: '🎓 Doctorado' };
+          return map[v] || v;
         }
       },
-      { key: 'estado', title: 'Estado' } // Se renderiza como status-dot automáticamente
+      { 
+        key: 'estado', 
+        label: 'Estado',
+        badge: true,
+        format: (v) => {
+          const map = { activo: { label: 'Activo', class: 'badge-success' }, inactivo: { label: 'Inactivo', class: 'badge-warning' } };
+          const m = map[v] || { label: v, class: 'badge-secondary' };
+          return `<span class="badge ${m.class}">${m.label}</span>`;
+        }
+      }
     ];
   }
 
+  // =========================================
+  // BUSCADOR
+  // =========================================
   setupSearch() {
-    const searchInput = document.getElementById(this.searchInputId);
-    const clearBtn = document.getElementById('btn-clear-search-planes');
-    
-    if (!searchInput) return;
-    
-    const newInput = searchInput.cloneNode(true);
-    searchInput.parentNode.replaceChild(newInput, searchInput);
-    
+    const input = document.getElementById('buscador-planes');
+    if (!input) return;
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
     newInput.addEventListener('input', (e) => {
-      this._applySearchFilter(e.target.value.toLowerCase());
-      this._renderTable();
-      if (clearBtn) clearBtn.classList.toggle('hidden', !e.target.value);
+      const txt = e.target.value.toLowerCase().trim();
+      if (!txt) { this.table?.setData(this.data); return; }
+      const filtered = this.data.filter(item => 
+        [item.clave, item.nombre, item.nivel].filter(v => v).join(' ').toLowerCase().includes(txt)
+      );
+      this.table?.setData(filtered);
     });
-    
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => {
-        newInput.value = '';
-        this._applySearchFilter('');
-        this._renderTable();
-        clearBtn.classList.add('hidden');
-        newInput.focus();
-      });
-    }
   }
 
-  _applySearchFilter(term = '') {
-    if (!term) {
-      this.filteredData = [...this.data];
-      return;
-    }
-    this.filteredData = this.data.filter(item => 
-      item.clave?.toLowerCase().includes(term) ||
-      item.nombre?.toLowerCase().includes(term) ||
-      item.nivel?.toLowerCase().includes(term) ||
-      item.estado?.toLowerCase().includes(term)
-    );
-  }
-
-  _bindEvents() {
-    const newBtn = document.getElementById('btn-new-plan');
-    if (newBtn) newBtn.onclick = (e) => { e.preventDefault(); this.openModal(); };
-    
-    const emptyNewBtn = document.getElementById('btn-empty-new-plan');
-    if (emptyNewBtn) emptyNewBtn.onclick = (e) => { e.preventDefault(); this.openModal(); };
-    
-    this.setupSearch();
-    this.setupModalEvents();
-  }
-
-  _initUtilities() {
-    this.formAutosave = new FormAutosave(this.formId, { debounceMs: 2000, maxAgeHours: 24 });
-    this.unsavedGuard = new UnsavedChangesGuard(this.formId, { preventTabClose: true });
-  }
-
+  // =========================================
+  // MODALES
+  // =========================================
   setupModalEvents() {
-    const modal = document.getElementById(this.modalId);
-    if (!modal) return;
-    
-    modal.querySelector('.modal-close')?.addEventListener('click', () => this.closeModal());
-    modal.querySelector('.btn-cancel')?.addEventListener('click', (e) => { e.preventDefault(); this.closeModal(); });
-    
-    const form = document.getElementById(this.formId);
-    if (form) {
-      form.onsubmit = async (e) => { e.preventDefault(); await this.savePlan(); };
+    const btnNuevo = document.getElementById('btn-nuevo-plan');
+    const modal = document.getElementById('modal-plan');
+    if (!btnNuevo || !modal) return;
+    btnNuevo.onclick = (e) => { e.preventDefault(); this.openModal(); };
+    const cerrarModal = () => {
+      this.formAutosave?.clear();
+      this.unsavedGuard = null;
+      modal.classList.add('hidden');
+    };
+    modal.querySelector('.btn-close')?.addEventListener('click', cerrarModal);
+    modal.querySelector('.btn-cancel')?.addEventListener('click', cerrarModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) cerrarModal(); });
+    const btnSave = modal.querySelector('.btn-primary');
+    if (btnSave) {
+      const newBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newBtn, btnSave);
+      newBtn.addEventListener('click', async (e) => { e.preventDefault(); await this.savePlan(modal); });
     }
-    
-    modal.onclick = (e) => { if (e.target === modal) this.closeModal(); };
   }
 
   openModal(plan = null) {
-    const modal = document.getElementById(this.modalId);
-    const form = document.getElementById(this.formId);
-    const title = document.getElementById('modal-plan-title');
-    
+    const modal = document.getElementById('modal-plan');
+    const form = document.getElementById('form-plan');
     if (!modal || !form) return;
-    
     form.reset();
-    this.formAutosave?.clear();
-    this.unsavedGuard?.reset();
-    
+    this.formAutosave = new FormAutosave('form-plan', 'plan-form');
+    this.unsavedGuard = new UnsavedChangesGuard('#form-plan');
     if (plan) {
-      this.editingId = plan.id;
-      title.textContent = 'Editar Plan de Estudio';
+      // Modo edición: prellenar
       form.querySelector('[name="clave"]').value = plan.clave || '';
       form.querySelector('[name="nombre"]').value = plan.nombre || '';
       form.querySelector('[name="nivel"]').value = plan.nivel || '';
-      form.querySelector('[name="estado"]').value = plan.estado || 'activo';
     } else {
-      this.editingId = null;
-      title.textContent = 'Nuevo Plan de Estudio';
-      form.querySelector('[name="estado"]').value = 'activo';
+      // Modo nuevo: valores por defecto
+      form.querySelector('[name="nivel"]').value = 'licenciatura';
     }
-    
     modal.classList.remove('hidden');
-    this.formAutosave?.start();
-    this.unsavedGuard?.enable();
   }
 
-  closeModal() {
-    const modal = document.getElementById(this.modalId);
-    if (!modal) return;
-    
-    this.formAutosave?.stop();
-    this.unsavedGuard?.disable();
-    modal.classList.add('hidden');
-    this.editingId = null;
-  }
-
-  async savePlan() {
-    const form = document.getElementById(this.formId);
-    if (!form) return;
-    
-    const clave = form.querySelector('[name="clave"]').value.trim();
-    const nombre = form.querySelector('[name="nombre"]').value.trim();
-    const nivel = form.querySelector('[name="nivel"]').value;
-    
-    if (!clave || !nombre || !nivel) {
-      this._showToast('error', 'Clave, nombre y nivel son obligatorios.');
-      return;
-    }
-    
-    const payload = {
-      id: this.editingId,
-      clave,
-      nombre,
-      nivel,
-      estado: form.querySelector('[name="estado"]').value
+  async savePlan(modal) {
+    const form = document.getElementById('form-plan');
+    const datos = {
+      id: form.querySelector('[name="id"]')?.value || null,
+      clave: form.querySelector('[name="clave"]')?.value?.trim(),
+      nombre: form.querySelector('[name="nombre"]')?.value?.trim(),
+      nivel: form.querySelector('[name="nivel"]')?.value,
+      estado: 'activo'
     };
-    
+    if (!datos.clave || !datos.nombre) { alert('Clave y nombre son obligatorios'); return; }
     try {
-      const saveBtn = document.getElementById('btn-save-plan');
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
-      }
-      
-      // 🔄 Llamada directa a IPC
-      const response = await window.api.ipc.invoke('guardar-plan', payload);
-      
-      if (response.success) {
+      const res = await window.electronAPI.guardarPlan(datos);
+      if (res.success) {
         this.formAutosave?.clear();
-        this.unsavedGuard?.reset();
-        this.closeModal();
-        await this._loadData();
-        this._renderTable();
-        this._showToast('success', `Plan ${this.editingId ? 'actualizado' : 'creado'} exitosamente.`);
+        this.unsavedGuard = null;
+        modal.classList.add('hidden');
+        await this.loadData();
+        this.table?.setData(this.data);
       } else {
-        this._showToast('error', response.error || 'Error al guardar.');
+        alert(`Error: ${res.error}`);
       }
     } catch (error) {
-      console.error('[PlanModule] Error en savePlan:', error);
-      this._showToast('error', 'Error de conexión.');
-    } finally {
-      const saveBtn = document.getElementById('btn-save-plan');
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> Guardar Plan';
-      }
+      console.error('[PlanModule] Error guardando plan:', error);
+      alert('Error de conexión');
     }
   }
 
-  showContextMenu(event) {
-    const row = event.target.closest('tr.data-row');
-    if (!row) return;
-    
-    const id = row.dataset.id;
-    const estado = row.dataset.estado;
-    const plan = this.data.find(p => p.id == id);
-    if (!plan) return;
-    
-    const nuevoEstado = estado === 'activo' ? 'inactivo' : 'activo';
-    if (confirm(`¿Cambiar estado de "${plan.clave}" a "${nuevoEstado}"?`)) {
-      this._toggleEstado(plan.id, nuevoEstado);
-    }
+  // =========================================
+  // UTILIDADES
+  // =========================================
+  setupGlobalHelpers() { window.planModuleInstance = this; }
+  toggleActionMenu(event) {
+    event.stopPropagation();
+    document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
+    const menu = event.target.closest('.action-icon-container')?.previousElementSibling;
+    if (menu?.classList.contains('context-menu')) menu.classList.toggle('hidden');
   }
-
-  async _toggleEstado(id, nuevoEstado) {
-    try {
-      const response = await window.api.ipc.invoke('cambiar-estado-plan', id, nuevoEstado);
-      if (response.success) {
-        await this._loadData();
-        this._renderTable();
-        this._showToast('success', 'Estado actualizado.');
-      } else {
-        this._showToast('error', response.error);
-      }
-    } catch (error) {
-      console.error('[PlanModule] Error:', error);
-      this._showToast('error', 'Error al actualizar estado.');
-    }
-  }
-
-  _showToast(type, message) {
-    if (window.Toast) {
-      window.Toast[type](message);
-      return;
-    }
-    alert(`${type.toUpperCase()}: ${message}`);
+  renderEmptyState() {
+    const tbody = document.getElementById('tabla-planes-body');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:50px;color:var(--text-muted)">
+      <i class="fa-solid fa-book-open" style="font-size:2.5rem;margin:0 auto 15px;display:block;opacity:0.6"></i>
+      <p style="margin:0">No hay planes de estudio registrados</p></td></tr>`;
   }
 }

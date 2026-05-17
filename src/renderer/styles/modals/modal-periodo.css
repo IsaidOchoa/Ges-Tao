@@ -1,0 +1,28 @@
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+
+  padding: 8px 10px;
+
+  border: 1px solid #ddd;
+  border-radius: 6px;
+
+  cursor: pointer;
+}
+
+.radio-label {
+  display: flex;
+  flex-direction: column;
+}
+
+.radio-option input[type="radio"] {
+  margin-left: 12px;
+}

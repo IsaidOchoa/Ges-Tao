@@ -138,6 +138,7 @@
   flex-shrink: 0;
 }
 
+/* --- ITEMS DE NAVEGACIÓN BASE --- */
 .nav-item {
   display: flex;
   align-items: center;
@@ -176,6 +177,234 @@
   height: 1em;
 }
 
+/* =======================================================
+    DROPDOWN PARA SIDEBAR (Gestión de Datos)
+   ======================================================= */
+
+/* Item padre con dropdown */
+.nav-item.has-dropdown {
+  justify-content: space-between; /* Empuja el indicador a la derecha */
+  position: relative;
+}
+
+.nav-item.has-dropdown:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-item.has-dropdown.expanded {
+  background-color: rgba(52, 152, 219, 0.15);
+  border-left-color: var(--accent-color);
+  color: white;
+}
+
+/* Indicador (flecha) */
+.dropdown-indicator {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+  transition: transform 0.3s ease, opacity 0.2s;
+}
+
+.dropdown-indicator i {
+  font-size: 0.75rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-item.has-dropdown.expanded .dropdown-indicator i {
+  transform: rotate(90deg);
+}
+
+/* Contenedor del dropdown */
+.nav-dropdown {
+  background-color: rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.35s ease, opacity 0.25s ease;
+  border-left: 2px solid transparent;
+  margin-left: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.nav-dropdown:not(.hidden) {
+  max-height: 300px; /* Altura máxima esperada */
+  opacity: 1;
+  border-left-color: rgba(52, 152, 219, 0.3);
+}
+
+/* Items del dropdown (solo texto, sin iconos) */
+.nav-dropdown-item {
+  display: block;
+  padding: 10px 20px 10px 54px; /* Alineado con el texto de los items principales */
+  color: #bdc3c7;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  white-space: normal;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.nav-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.nav-dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+  border-left-color: var(--accent-color);
+  padding-left: 57px; /* Efecto de desplazamiento sutil */
+}
+
+.nav-dropdown-item:active {
+  background-color: rgba(52, 152, 219, 0.2);
+}
+
+/* =======================================================
+   POPOVER FLOTANTE (Solo cuando sidebar está COLAPSADO)
+   ======================================================= */
+
+.nav-popover {
+  position: absolute;
+  left: calc(var(--sidebar-width-collapsed) + 10px); /* 10px de separación */
+  top: 50%;
+  transform: translateY(-50%) scale(0.95);
+  background-color: var(--bg-white, #ffffff);
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  min-width: 240px;
+  max-width: 280px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  z-index: 10000;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.nav-popover:not(.hidden) {
+  max-height: 400px;
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+  pointer-events: all;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Scrollbar para popover (Chrome/Edge/Safari) */
+.nav-popover::-webkit-scrollbar {
+  width: 4px;
+}
+
+.nav-popover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav-popover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+/* Flecha triangular que apunta al ícono */
+.popover-arrow {
+  position: absolute;
+  left: -8px; /* Posición a la izquierda del popover */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid var(--bg-white, #ffffff);
+  filter: drop-shadow(-2px 0 2px rgba(0, 0, 0, 0.05));
+}
+
+/* Contenido del popover */
+.popover-content {
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Items del popover */
+.popover-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  color: var(--text-dark, #2c3e50);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.popover-item:hover {
+  background-color: rgba(52, 152, 219, 0.08);
+  border-left-color: var(--accent-color);
+  color: var(--accent-color);
+  padding-left: 19px; /* Pequeño desplazamiento */
+}
+
+.popover-item i {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.popover-item:hover i {
+  opacity: 1;
+}
+
+/* Divisor en popover */
+.popover-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.08);
+  margin: 6px 0;
+}
+
+/* =======================================================
+   RESPONSIVE: Ajustar popover si la pantalla es pequeña
+   ======================================================= */
+@media (max-width: 768px) {
+  .nav-popover {
+    left: calc(var(--sidebar-width-collapsed) + 5px);
+    min-width: 200px;
+    max-width: 240px;
+  }
+}
+
+/* =======================================================
+   OCULTAR ELEMENTOS SEGÚN ESTADO DEL SIDEBAR
+   ======================================================= */
+
+/* Cuando sidebar está COLAPSADO: ocultar dropdown inline */
+.sidebar.collapsed #catalogos-dropdown-inline {
+  display: none !important;
+}
+
+/* Cuando sidebar está EXPANDIDO: ocultar popover */
+.sidebar:not(.collapsed) #catalogos-popover {
+  display: none !important;
+}
+
+/* Ajustar indicador de dropdown cuando está colapsado */
+.sidebar.collapsed .dropdown-indicator {
+  display: none !important;
+}
+
+/* =======================================================
+   ESTADOS COLAPSADOS (Overrides)
+   ======================================================= */
+
 .sidebar.collapsed .nav-item {
   justify-content: center;
   padding: 15px 0;
@@ -183,7 +412,6 @@
 
 .sidebar.collapsed .nav-item .text {
   display: none !important;
-  /* Fuerza a que desaparezca */
   opacity: 0;
   pointer-events: none;
 }
@@ -205,6 +433,21 @@
 
 .sidebar.collapsed .nav-item span:not(.icon) {
   display: none;
+}
+
+/* 🆕 Ocultar dropdowns e indicadores cuando está colapsado */
+.sidebar.collapsed .nav-dropdown,
+.sidebar.collapsed .dropdown-indicator {
+  display: none !important;
+}
+
+.sidebar.collapsed .nav-item.has-dropdown {
+  cursor: default;
+  justify-content: center !important;
+}
+
+.sidebar.collapsed .nav-item.has-dropdown:hover {
+  background-color: transparent;
 }
 
 
@@ -373,3 +616,9 @@ span.status-dot {
 }
 
 /* Asegurar que cuando esté colapsado, la línea y el margen no rompan el diseño */
+.sidebar.collapsed .settings-link {
+  border-top: none;
+  margin-top: 0;
+  padding: 15px 0;
+  justify-content: center;
+}

@@ -135,6 +135,54 @@ try {
       console.log('[PRELOAD] Eliminando alumno ID:', id);
       return ipcRenderer.invoke('eliminar-alumno', id);
     },
+
+        // ==========================================
+    // 9. PLANES DE ESTUDIO (NUEVO)
+    // ==========================================
+    listarPlanes: () => {
+      console.log('[PRELOAD] Obteniendo lista de planes de estudio...');
+      return ipcRenderer.invoke('obtener-planes');
+    },
+    guardarPlan: (datos) => {
+      console.log('[PRELOAD] Guardando plan:', datos.clave);
+      return ipcRenderer.invoke('guardar-plan', datos);
+    },
+    cambiarEstadoPlan: (id, estado) => {
+      console.log(`[PRELOAD] Cambiando estado de plan ${id} a ${estado}`);
+      return ipcRenderer.invoke('cambiar-estado-plan', id, estado);
+    },
+    eliminarPlan: (id) => {
+      console.log('[PRELOAD] Eliminando plan ID:', id);
+      return ipcRenderer.invoke('eliminar-plan', id);
+    },
+
+    // ==========================================
+    // 10. SEMESTRES (NUEVO)
+    // ==========================================
+    listarSemestres: () => {
+      console.log('[PRELOAD] Obteniendo lista de semestres...');
+      return ipcRenderer.invoke('obtener-semestres');
+    },
+    guardarSemestre: (datos) => {
+      console.log('[PRELOAD] Guardando semestre:', datos.clave);
+      return ipcRenderer.invoke('guardar-semestre', datos);
+    },
+
+    // ==========================================
+    // 11. GENERACIONES (NUEVO)
+    // ==========================================
+    listarGeneraciones: () => {
+      console.log('[PRELOAD] Obteniendo lista de generaciones...');
+      return ipcRenderer.invoke('obtener-generaciones');
+    },
+    guardarGeneracion: (datos) => {
+      console.log('[PRELOAD] Guardando generación:', datos.clave);
+      return ipcRenderer.invoke('guardar-generacion', datos);
+    },
+    obtenerDatosSelectsGeneracion: () => {
+      console.log('[PRELOAD] Obteniendo datos para selects de generación...');
+      return ipcRenderer.invoke('obtener-datos-selects-generacion');
+    },
   });
   
   console.log('[PRELOAD] electronAPI expuesto correctamente con todos los modulos.');

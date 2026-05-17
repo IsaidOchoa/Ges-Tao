@@ -1,8 +1,9 @@
 // =======================================================
-// 1. IMPORTS DE VISTAS Y MÓDULOS
+// IMPORTS
 // =======================================================
 import './styles/main.css';
-// Vistas (HTML) - Importadas como strings gracias a webpack raw-loader
+
+// Vistas HTML
 import homeHtml from './views/pages/home.html';
 import catalogosHtml from './views/pages/catalogos.html';
 import emisionHtml from './views/pages/emision.html';
@@ -11,51 +12,42 @@ import configuracionHtml from './views/pages/configuracion.html';
 import reportesHtml from './views/pages/reportes.html';
 import perfilHtml from './views/pages/perfil.html';
 import bibliotecaHtml from './views/pages/biblioteca.html';
-// import alumnosHtml from './views/alumnos.html'; // 🆕 Descomentar cuando crees la vista
 
-// Módulos (Lógica POO)
+// Módulos
 import { AuthModule } from './modules/AuthModule.js';
 import { CatalogoModule } from './modules/CatalogoModule.js';
 import { EmisionModule } from './modules/EmisionModule.js';
 import { HistorialModule } from './modules/HistorialModule.js';
 import { BibliotecaModule } from './modules/BibliotecaModule.js';
-// import { AlumnoModule } from './modules/AlumnoModule.js'; // 🆕 Descomentar cuando lo crees
 
-// Mapa de vistas HTML
+// Mapa de vistas
 const views = {
   'home': homeHtml,
-  'catalogos': catalogosHtml, 
+  'catalogos': catalogosHtml,
   'configuracion': configuracionHtml,
   'perfil': perfilHtml,
   'reportes': reportesHtml || '<div class="card"><h3>Reportes</h3><p>En construcción...</p></div>',
   'emision': emisionHtml,
   'historial': historialHtml,
-  'biblioteca': bibliotecaHtml,
-  // 'alumnos': alumnosHtml, // 🆕 Agregar cuando exista
+  'biblioteca': bibliotecaHtml
 };
 
 // =======================================================
-// 2. INSTANCIAS GLOBALES DE MÓDULOS
+// INSTANCIAS GLOBALES
 // =======================================================
-
 const auth = new AuthModule();
 const catalogos = new CatalogoModule();
 const emision = new EmisionModule();
 const historial = new HistorialModule();
 const biblioteca = new BibliotecaModule();
-// const alumnos = new AlumnoModule(); // 🆕 Instancia para módulo de alumnos
-
-// Variables de estado global mínimo
 let currentUser = null;
 
 // =======================================================
-// 3. FUNCIONES UTILITARIAS GLOBALES (UI)
+// UTILIDADES UI
 // =======================================================
-
 function updateConnectionStatus() {
   const isOnline = navigator.onLine;
   const indicator = document.getElementById('connection-status');
-  
   if (indicator) {
     if (isOnline) {
       indicator.classList.remove('offline');
@@ -78,74 +70,59 @@ function applyDarkMode(isDark) {
 }
 
 // =======================================================
-// 4. LÓGICA PRINCIPAL AL CARGAR EL DOM
+// INICIALIZACIÓN DOM
 // =======================================================
-
 document.addEventListener('DOMContentLoaded', () => {
-  
-  // --- INICIALIZAR SERVICIOS BASE ---
   updateConnectionStatus();
   window.addEventListener('online', updateConnectionStatus);
   window.addEventListener('offline', updateConnectionStatus);
 
-  // --- MODO OSCURO ---
   const savedDarkMode = localStorage.getItem('gesTao_darkMode') === 'true';
   const darkModeToggle = document.getElementById('toggle-dark-mode');
-  
   applyDarkMode(savedDarkMode);
   if (darkModeToggle) {
     darkModeToggle.checked = savedDarkMode;
     darkModeToggle.addEventListener('change', (e) => applyDarkMode(e.target.checked));
   }
 
-  // --- INICIALIZAR MÓDULO DE AUTH ---
   auth.init();
-  
-  // Callback para cuando el login sea exitoso
-  window.onLoginSuccess = () => {
-    navigate('home');
-  };
+  window.onLoginSuccess = () => navigate('home');
 
-  // --- SIDEBAR TOGGLE ---
+  // Sidebar toggle
   const btnToggle = document.getElementById('btn-toggle-sidebar');
   const sidebar = document.getElementById('main-sidebar');
   if (btnToggle && sidebar) {
     btnToggle.addEventListener('click', () => {
       sidebar.classList.toggle('collapsed');
       localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+      closeCatalogosPopover();
+      const dropdown = document.getElementById('catalogos-dropdown-inline');
+      if (dropdown && !dropdown.classList.contains('hidden')) {
+        toggleCatalogosDropdown({ stopPropagation: () => {} });
+      }
     });
     if (localStorage.getItem('sidebarCollapsed') === 'true') {
       sidebar.classList.add('collapsed');
     }
   }
 
-  // --- PERFIL DROPDOWN ---
+  // Perfil dropdown
   const avatarBtn = document.getElementById('user-avatar-btn');
   const dropdown = document.getElementById('profile-dropdown');
-
   if (avatarBtn && dropdown) {
     avatarBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       dropdown.classList.toggle('hidden');
     });
-
     document.addEventListener('click', (e) => {
       if (!dropdown.contains(e.target) && !avatarBtn.contains(e.target)) {
         dropdown.classList.add('hidden');
       }
     });
   }
+  window.toggleProfileMenu = () => { if (dropdown) dropdown.classList.add('hidden'); };
 
-  // Función global para cerrar menú perfil
-  window.toggleProfileMenu = () => {
-    if(dropdown) dropdown.classList.add('hidden');
-  };
-
-  // =======================================================
-  // HELPERS GLOBALES PARA MODALES
-  // =======================================================
-  // Estas funciones deben estar AQUÍ para que el HTML (onclick) las encuentre
-  
+  // Helpers globales para modales
   window.abrirModal = (id) => {
     const modal = document.getElementById(id);
     if (modal) {
@@ -154,50 +131,38 @@ document.addEventListener('DOMContentLoaded', () => {
       if (form) form.reset();
     }
   };
-
   window.cerrarModal = (id) => {
     const modal = document.getElementById(id);
     if (modal) modal.classList.add('hidden');
   };
-
-  // También exponemos doLogout por si el HTML lo usa directamente
-  window.doLogout = () => {
-    if (auth) auth.logout();
-  };
-  
+  window.doLogout = () => { if (auth) auth.logout(); };
 });
 
 // =======================================================
-// 5. NAVEGACIÓN Y ORQUESTACIÓN DE VISTAS
+// NAVEGACIÓN PRINCIPAL
 // =======================================================
-
 async function navigate(viewName, targetTab = null) {
   const contentDiv = document.getElementById('content-area');
   const pageTitle = document.getElementById('pageTitle');
-  
-  // Feedback visual de carga
+
   contentDiv.style.opacity = '0.5';
   contentDiv.style.pointerEvents = 'none';
 
-  // Actualizar menú activo
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const activeLink = document.querySelector(`.nav-item[onclick="navigate('${viewName}')"]`);
-  if(activeLink) activeLink.classList.add('active');
+  document.querySelectorAll('.nav-item, .nav-subitem').forEach(el => el.classList.remove('active'));
+  const activeLink = document.querySelector(`.nav-item[onclick*="'${viewName}'"], .nav-subitem[data-view="${viewName}"]`);
+  if (activeLink) activeLink.classList.add('active');
 
-  // Cerrar dropdowns
   const dropdown = document.getElementById('profile-dropdown');
-  if(dropdown) dropdown.classList.add('hidden');
+  if (dropdown) dropdown.classList.add('hidden');
 
   await new Promise(resolve => setTimeout(resolve, 50));
 
   try {
     const htmlContent = views[viewName];
     if (!htmlContent) throw new Error(`Vista '${viewName}' no encontrada`);
-    
-    // Inyectar HTML
+
     contentDiv.innerHTML = htmlContent;
-    
-    // Actualizar título
+
     const titles = {
       'home': 'Panel Principal',
       'catalogos': 'Gestión de Datos',
@@ -206,16 +171,15 @@ async function navigate(viewName, targetTab = null) {
       'reportes': 'Reportes Estadísticos',
       'emision': 'Emisión de Constancias',
       'historial': 'Historial y Búsqueda',
-      'biblioteca': 'Biblioteca de Constancias',
-      'alumnos': 'Gestión de Alumnos'
+      'biblioteca': 'Biblioteca de Constancias'
     };
+
     if (viewName === 'home') {
       setTimeout(() => cargarPeriodoActual(), 100);
     }
-    
     pageTitle.innerText = titles[viewName] || 'Ges-TAO';
 
-     // --- ORQUESTACIÓN: Llamar al módulo correspondiente ---
+    // Orquestación de módulos
     switch (viewName) {
       case 'catalogos':
         await catalogos.init(targetTab);
@@ -229,9 +193,6 @@ async function navigate(viewName, targetTab = null) {
       case 'biblioteca':
         await biblioteca.init();
         break;
-      case 'alumnos':
-        await alumnos.init();
-        break;
       case 'configuracion':
         setTimeout(() => {
           const toggle = document.getElementById('toggle-dark-mode');
@@ -244,47 +205,160 @@ async function navigate(viewName, targetTab = null) {
       default:
         break;
     }
-
   } catch (error) {
-    console.error(error);
-    contentDiv.innerHTML = `<div class="card error"><h4>Error</h4><p>${error.message}</p></div>`;
+    console.error(`[navigate] Error cargando vista '${viewName}':`, error);
+    contentDiv.innerHTML = `
+      <div class="card error">
+        <h4><i class="fa-solid fa-triangle-exclamation"></i> Error de Carga</h4>
+        <p>${error.message || 'No se pudo cargar la vista solicitada.'}</p>
+        <button class="btn btn-primary" onclick="navigate('home')">
+          <i class="fa-solid fa-house"></i> Volver al Inicio
+        </button>
+      </div>
+    `;
   } finally {
     contentDiv.style.opacity = '1';
     contentDiv.style.pointerEvents = 'auto';
   }
 }
 
-// 🆕 Función para cargar el periodo actual en el dashboard
 async function cargarPeriodoActual() {
   try {
-    // Intentar obtener el periodo activo/vigente
-    const res = await window.electronAPI.listarPeriodos();
-    
-    if (res.success) {
-      const periodos = res.rows || res.data;
-      
-      // Buscar el periodo activo o vigente
-      const periodoActivo = periodos.find(p => 
-        p.estado?.toLowerCase() === 'activo' || 
+    const res = await window.electronAPI?.listarPeriodos?.();
+    if (res?.success) {
+      const periodos = res.rows || res.data || [];
+      const periodoActivo = periodos.find(p =>
+        p.estado?.toLowerCase() === 'activo' ||
         p.estado?.toLowerCase() === 'vigente' ||
         p.estatus?.toLowerCase() === 'activo'
       );
-      
-      // Si no hay activo, tomar el último registrado
       const periodoMostrar = periodoActivo || periodos[periodos.length - 1];
-      
       if (periodoMostrar) {
         const elemento = document.getElementById('periodo-actual-valor');
         if (elemento) {
-          // Mostrar clave o descripción (ajusta según tu BD)
           elemento.textContent = periodoMostrar.clave || periodoMostrar.descripcion || 'No definido';
         }
       }
     }
   } catch (error) {
-    console.error('❌ Error cargando periodo actual:', error);
+    console.error('Error cargando periodo actual:', error);
   }
 }
 
-// Exportar para uso global en HTML
+// =======================================================
+// EXPORTS GLOBALES
+// =======================================================
 window.navigate = navigate;
+window.gesTaoUtils = { applyDarkMode, updateConnectionStatus };
+
+if (process.env.NODE_ENV === 'development') {
+  window.__GES_TAO_MODULES__ = { auth, catalogos, emision, historial, biblioteca };
+  console.log('Ges-TAO: Módulos expuestos en window.__GES_TAO_MODULES__');
+}
+
+export { navigate, auth, catalogos, emision, historial, biblioteca };
+
+// =======================================================
+// DROPDOWN DE CATÁLOGOS
+// =======================================================
+window.toggleCatalogosDropdown = function(event) {
+  if (event) event.stopPropagation();
+  const dropdown = document.getElementById('catalogos-dropdown-inline');
+  const parent = document.getElementById('gestion-datos-trigger');
+  if (dropdown && parent) {
+    dropdown.classList.toggle('hidden');
+    parent.classList.toggle('expanded');
+    const indicator = parent.querySelector('.dropdown-indicator i');
+    if (indicator) {
+      indicator.style.transform = dropdown.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(90deg)';
+    }
+  }
+};
+
+window.closeCatalogosDropdown = function() {
+  const dropdown = document.getElementById('catalogos-dropdown-inline');
+  const parent = document.getElementById('gestion-datos-trigger');
+  if (dropdown) dropdown.classList.add('hidden');
+  if (parent) parent.classList.remove('expanded');
+  const indicator = parent?.querySelector('.dropdown-indicator i');
+  if (indicator) indicator.style.transform = 'rotate(0deg)';
+};
+
+// =======================================================
+// POPOVER COLAPSADO
+// =======================================================
+window.handleGestionDatosClick = function(event) {
+  event.stopPropagation();
+  const sidebar = document.getElementById('main-sidebar');
+  const isCollapsed = sidebar?.classList.contains('collapsed');
+  if (isCollapsed) {
+    toggleCatalogosPopover(event);
+  } else {
+    toggleCatalogosDropdown(event);
+  }
+};
+
+window.toggleCatalogosPopover = function(event) {
+  if (event) event.stopPropagation();
+  const popover = document.getElementById('catalogos-popover');
+  const trigger = document.getElementById('gestion-datos-trigger');
+  if (!popover || !trigger) return;
+  const isOpen = !popover.classList.contains('hidden');
+  if (isOpen) {
+    closeCatalogosPopover();
+  } else {
+    const triggerRect = trigger.getBoundingClientRect();
+    const sidebarRect = document.getElementById('main-sidebar')?.getBoundingClientRect();
+    if (sidebarRect) {
+      const topPosition = triggerRect.top - sidebarRect.top + (triggerRect.height / 2);
+      popover.style.top = `${topPosition}px`;
+    }
+    popover.classList.remove('hidden');
+    trigger.classList.add('active');
+  }
+};
+
+window.closeCatalogosPopover = function() {
+  const popover = document.getElementById('catalogos-popover');
+  const trigger = document.getElementById('gestion-datos-trigger');
+  if (popover) popover.classList.add('hidden');
+  if (trigger) trigger.classList.remove('active');
+};
+
+// =======================================================
+// LISTENERS GLOBALES
+// =======================================================
+document.addEventListener('click', function(event) {
+  const sidebar = document.getElementById('main-sidebar');
+  if (!sidebar) return;
+  const isCollapsed = sidebar.classList.contains('collapsed');
+  const trigger = document.getElementById('gestion-datos-trigger');
+  if (isCollapsed) {
+    const popover = document.getElementById('catalogos-popover');
+    if (popover && !popover.classList.contains('hidden') &&
+        !popover.contains(event.target) && !trigger?.contains(event.target)) {
+      closeCatalogosPopover();
+    }
+  } else {
+    const dropdown = document.getElementById('catalogos-dropdown-inline');
+    if (dropdown && !dropdown.classList.contains('hidden') &&
+        !dropdown.contains(event.target) && !trigger?.contains(event.target)) {
+      closeCatalogosDropdown();
+    }
+  }
+});
+
+window.addEventListener('resize', () => {
+  closeCatalogosPopover();
+  closeCatalogosDropdown();
+});
+
+const btnToggle = document.getElementById('btn-toggle-sidebar');
+if (btnToggle) {
+  btnToggle.addEventListener('click', () => {
+    setTimeout(() => {
+      closeCatalogosPopover();
+      closeCatalogosDropdown();
+    }, 50);
+  });
+}

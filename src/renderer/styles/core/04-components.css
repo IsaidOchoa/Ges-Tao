@@ -614,3 +614,25 @@ body[data-theme="dark"] select option:focus {
 .form-dirty {
   border-left: 3px solid #f39c12 !important;
 }
+
+/* =========================================
+   CORRECCIÓN: Radio buttons NO deben ocupar 100%
+   ========================================= */
+input[type="radio"],
+input[type="checkbox"] {
+  width: auto !important;
+  max-width: none !important;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 8px 0 0; /* Espacio a la derecha */
+  padding: 0;
+}
+
+/* Asegurar que los labels con radios no se comporten como bloques */
+label:has(input[type="radio"]):not(.radio-option-compact),
+label:has(input[type="checkbox"]):not(.radio-option-compact) {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  margin-bottom: 0;
+}

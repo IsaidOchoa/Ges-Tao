@@ -1,0 +1,40 @@
+<div id="modal-semestre" class="modal-overlay hidden" data-module="SemestreModule">
+  <div class="modal-container modal-sm">
+    <div class="modal-header">
+      <h3 id="modal-semestre-title">Nuevo Semestre</h3>
+      <button class="modal-close" title="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-semestre" class="form-grid">
+        <div class="form-group">
+          <label for="semestre-orden">Orden Académico *</label>
+          <input type="number" id="semestre-orden" name="orden" class="form-control" 
+                 min="1" max="14" placeholder="Ej: 1" required>
+          <small class="form-hint">Posición en la malla (1° a 14°)</small>
+        </div>
+
+        <div class="form-group">
+          <label for="semestre-nombre">Nombre *</label>
+          <input type="text" id="semestre-nombre" name="nombre" class="form-control" 
+                 placeholder="Ej: Primer Semestre" required>
+        </div>
+
+        <!-- Clave auto-generada basada en orden -->
+        <div class="form-group">
+          <label>Clave</label>
+          <input type="text" name="clave" class="form-control" readonly 
+                 placeholder="Se generará automáticamente (Ej: S1)" 
+                 style="background: var(--bg-light); cursor: not-allowed;">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-cancel" id="btn-cancel-semestre">
+        <i class="fa-solid fa-xmark"></i> Cancelar
+      </button>
+      <button type="submit" form="form-semestre" class="btn btn-primary" id="btn-save-semestre">
+        <i class="fa-solid fa-check"></i> Guardar Semestre
+      </button>
+    </div>
+  </div>
+</div>

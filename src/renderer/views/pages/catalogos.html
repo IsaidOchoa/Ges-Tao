@@ -6,34 +6,43 @@
   <div class="tabs-wrapper" id="tabs-wrapper">
     
     <!-- Flecha Izquierda -->
-    <button class="tab-nav-arrow left" id="tab-arrow-left" onclick="catalogoModuleInstance.scrollTabs('left')" title="Ver pestañas anteriores">
+    <button class="tab-nav-arrow left" id="tab-arrow-left" title="Ver pestañas anteriores">
       <i class="fa-solid fa-chevron-left"></i>
     </button>
     
     <!-- Contenedor de Pestañas -->
     <div class="tabs-container" id="tabs-container">
-      <button class="tab-btn active" id="btn-tab-docentes">
+      <button class="tab-btn" id="btn-tab-docentes" data-tab="tab-docentes">
         <i class="fa-solid fa-chalkboard-user"></i> Docentes
       </button>
-      <button class="tab-btn" id="btn-tab-alumnos">
+      <button class="tab-btn" id="btn-tab-alumnos" data-tab="tab-alumnos">
         <i class="fa-solid fa-graduation-cap"></i> Alumnos
       </button>
-      <button class="tab-btn" id="btn-tab-ee">
+      <button class="tab-btn" id="btn-tab-ee" data-tab="tab-ee">
         <i class="fa-solid fa-book-open"></i> Experiencias (EE)
       </button> 
-      <button class="tab-btn" id="btn-tab-tipos-constancia">
+      <button class="tab-btn" id="btn-tab-tipos-constancia" data-tab="tab-tipos-constancia">
         <i class="fa-solid fa-certificate"></i> Tipos de Constancia
       </button>
-      <button class="tab-btn" id="btn-tab-periodos">
+      <button class="tab-btn" id="btn-tab-periodos" data-tab="tab-periodos">
         <i class="fa-regular fa-calendar-days"></i> Periodos
       </button>
-      <button class="tab-btn" id="btn-tab-programas">
+      <button class="tab-btn" id="btn-tab-programas" data-tab="tab-programas">
         <i class="fa-solid fa-trophy"></i> Programas de Estímulo
+      </button>
+      <button class="tab-btn" id="btn-tab-planes" data-tab="tab-planes">
+        <i class="fa-solid fa-book-open"></i> Planes de Estudio
+      </button>
+      <button class="tab-btn" id="btn-tab-semestres" data-tab="tab-semestres">
+        <i class="fa-solid fa-layer-group"></i> Semestres
+      </button>
+      <button class="tab-btn" id="btn-tab-generaciones" data-tab="tab-generaciones">
+        <i class="fa-solid fa-users"></i> Generaciones
       </button>
     </div>
     
     <!-- Flecha Derecha -->
-    <button class="tab-nav-arrow right" id="tab-arrow-right" onclick="catalogoModuleInstance.scrollTabs('right')" title="Ver más pestañas">
+    <button class="tab-nav-arrow right" id="tab-arrow-right" title="Ver más pestañas">
       <i class="fa-solid fa-chevron-right"></i>
     </button>
     
@@ -42,7 +51,7 @@
   <!-- =========================================
        SECCIÓN 1: DOCENTES
        ========================================= -->
-  <div id="tab-docentes" class="tab-content active">
+  <div id="tab-docentes" class="tab-content">
     <div class="card">
       <div class="card-header-action">
         <div class="section-title-group">
@@ -56,7 +65,10 @@
       
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-docentes" class="buscador-catalogos" placeholder="Buscar docente...">
+        <input type="text" id="buscador-docentes" class="buscador-catalogos" placeholder="Buscar docente por nombre, código o correo...">
+        <button class="btn-clear hidden" id="btn-clear-docentes" title="Limpiar búsqueda">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
       
       <div class="table-responsive">
@@ -71,14 +83,78 @@
               <th style="text-align:right">ACCIONES</th>
             </tr>
           </thead>
-          <tbody id="tabla-docentes-body"></tbody>
+          <tbody id="tabla-docentes-body">
+            <!-- Renderizado dinámico por DocenteModule -->
+          </tbody>
         </table>
+      </div>
+      
+      <!-- Estado vacío (fallback) -->
+      <div id="empty-docentes" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay docentes registrados</p>
+        <button class="btn btn-primary" id="btn-empty-docente">
+          <i class="fa-solid fa-plus"></i> Crear primer docente
+        </button>
       </div>
     </div>
   </div>
 
   <!-- =========================================
-       SECCIÓN 2: EXPERIENCIAS EDUCATIVAS (EE)
+       SECCIÓN 2: ALUMNOS
+       ========================================= -->
+  <div id="tab-alumnos" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <div class="section-title-group">
+          <h3 class="section-title">Registro de Alumnos</h3>
+          <p class="section-desc">Administre matrículas, tutores y asignaciones académicas.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-nuevo-alumno">
+          <i class="fa-solid fa-plus"></i> Nuevo Alumno
+        </button>
+      </div>
+      
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input type="text" id="buscador-alumnos" class="buscador-catalogos" placeholder="Buscar por matrícula o nombre...">
+        <button class="btn-clear hidden" id="btn-clear-alumnos" title="Limpiar búsqueda">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-expand" scope="col"></th>
+              <th>MATRÍCULA</th>
+              <th>NOMBRE COMPLETO</th>
+              <th>CORREO</th>
+              <th>TUTOR</th>
+              <th>ESTADO</th>
+              <th style="text-align:right">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-alumnos-body">
+            <!-- Renderizado dinámico por AlumnoModule -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Estado vacío (fallback) -->
+      <div id="empty-alumnos" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay alumnos registrados</p>
+        <button class="btn btn-primary" id="btn-empty-alumno">
+          <i class="fa-solid fa-plus"></i> Registrar primer alumno
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       SECCIÓN 3: EXPERIENCIAS EDUCATIVAS (EE)
        ========================================= -->
   <div id="tab-ee" class="tab-content">
     <div class="card">
@@ -87,19 +163,45 @@
           <h3 class="section-title">Experiencias Educativas</h3>
           <p class="section-desc">Defina las materias y cursos disponibles.</p>
         </div>
-        <button class="btn btn-primary" id="btn-nuevo-ee"><i class="fa-solid fa-plus"></i> Nueva EE</button>
+        <button class="btn btn-primary" id="btn-nuevo-ee">
+          <i class="fa-solid fa-plus"></i> Nueva EE
+        </button>
       </div>
 
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
         <input type="text" id="buscador-ee" class="buscador-catalogos" placeholder="Buscar EE por nombre o clave...">
+        <button class="btn-clear hidden" id="btn-clear-ee" title="Limpiar búsqueda">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
       
       <div class="table-responsive">
         <table class="data-table">
-          <thead><tr><th class="col-expand" scope="col"></th><th>CLAVE</th><th>NOMBRE</th><th>TIPO</th><th>CRÉDITOS</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
-          <tbody id="tabla-ee-body"></tbody>
+          <thead>
+            <tr>
+              <th class="col-expand" scope="col"></th>
+              <th>CLAVE</th>
+              <th>NOMBRE</th>
+              <th>TIPO</th>
+              <th>CRÉDITOS</th>
+              <th>ESTADO</th>
+              <th style="text-align:right">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-ee-body">
+            <!-- Renderizado dinámico por EEModule -->
+          </tbody>
         </table>
+      </div>
+      
+      <!-- Estado vacío (fallback) -->
+      <div id="empty-ee" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay experiencias educativas registradas</p>
+        <button class="btn btn-primary" id="btn-empty-ee">
+          <i class="fa-solid fa-plus"></i> Crear primera EE
+        </button>
       </div>
     </div>
 
@@ -154,47 +256,6 @@
   </div>
 
   <!-- =========================================
-       SECCIÓN 3: ALUMNOS (NUEVO)
-       ========================================= -->
-  <div id="tab-alumnos" class="tab-content">
-    <div class="card">
-      <div class="card-header-action">
-        <div class="section-title-group">
-          <h3 class="section-title">Registro de Alumnos</h3>
-          <p class="section-desc">Administre matrículas, tutores y asignaciones académicas.</p>
-        </div>
-        <button class="btn btn-primary" id="btn-nuevo-alumno">
-          <i class="fa-solid fa-plus"></i> Nuevo Alumno
-        </button>
-      </div>
-      
-      <div class="search-wrapper">
-        <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-alumnos" class="buscador-catalogos" placeholder="Buscar por matrícula o nombre...">
-      </div>
-      
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th class="col-expand" scope="col"></th>
-              <th>MATRÍCULA</th>
-              <th>NOMBRE COMPLETO</th>
-              <th>CORREO INSTITUCIONAL</th>
-              <th>TUTOR</th>
-              <th>ESTADO</th>
-              <th style="text-align:right">ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-alumnos-body">
-            <!-- Se llenará dinámicamente desde AlumnoModule.js -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================
        SECCIÓN 4: TIPOS DE CONSTANCIA
        ========================================= -->
   <div id="tab-tipos-constancia" class="tab-content">
@@ -214,6 +275,9 @@
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
         <input type="text" id="buscador-tipos-constancia" class="buscador-catalogos" placeholder="Buscar por nombre o clave...">
+        <button class="btn-clear hidden" id="btn-clear-tipos" title="Limpiar búsqueda">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
       
       <div class="table-responsive">
@@ -221,7 +285,6 @@
           <thead>
             <tr>
               <th class="col-expand" scope="col"></th>
-              
               <th style="width:100px;">CLAVE</th>
               <th>NOMBRE</th>
               <th style="width:80px; text-align:center;">REQ. EE</th>
@@ -230,8 +293,19 @@
               <th style="text-align:right; width:40px;"></th>
             </tr>
           </thead>
-          <tbody id="tabla-tipos-constancia-body"></tbody>
+          <tbody id="tabla-tipos-constancia-body">
+            <!-- Renderizado dinámico por TipoConstanciaModule -->
+          </tbody>
         </table>
+      </div>
+      
+      <!-- Estado vacío (fallback) -->
+      <div id="empty-tipos" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay tipos de constancia registrados</p>
+        <button class="btn btn-primary" id="btn-empty-tipo">
+          <i class="fa-solid fa-plus"></i> Crear primer tipo
+        </button>
       </div>
     </div>
   </div>
@@ -246,19 +320,45 @@
           <h3 class="section-title">Periodos Escolares</h3>
           <p class="section-desc">Administre los ciclos académicos vigentes.</p>
         </div>
-        <button class="btn btn-primary" id="btn-nuevo-periodo"><i class="fa-solid fa-plus"></i> Nuevo Periodo</button>
+        <button class="btn btn-primary" id="btn-nuevo-periodo">
+          <i class="fa-solid fa-plus"></i> Nuevo Periodo
+        </button>
       </div>
       
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-periodos" class="buscador-catalogos" placeholder="Buscar periodo...">
+        <input type="text" id="buscador-periodos" class="buscador-catalogos" placeholder="Buscar periodo por clave o descripción...">
+        <button class="btn-clear hidden" id="btn-clear-periodos" title="Limpiar búsqueda">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
       
       <div class="table-responsive">
         <table class="data-table">
-          <thead><tr><th class="col-expand" scope="col"></th><th>CLAVE</th><th>DESCRIPCIÓN</th><th>INICIO</th><th>FIN</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
-          <tbody id="tabla-periodos-body"></tbody>
+          <thead>
+            <tr>
+              <th class="col-expand" scope="col"></th>
+              <th>CLAVE</th>
+              <th>DESCRIPCIÓN</th>
+              <th>INICIO</th>
+              <th>FIN</th>
+              <th>ESTADO</th>
+              <th style="text-align:right">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-periodos-body">
+            <!-- Renderizado dinámico por PeriodoModule -->
+          </tbody>
         </table>
+      </div>
+      
+      <!-- Estado vacío (fallback) -->
+      <div id="empty-periodos" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay periodos registrados</p>
+        <button class="btn btn-primary" id="btn-empty-periodo">
+          <i class="fa-solid fa-plus"></i> Crear primer periodo
+        </button>
       </div>
     </div>
   </div>
@@ -273,32 +373,193 @@
           <h3 class="section-title">Programas Institucionales</h3>
           <p class="section-desc">Registre los proyectos y programas especiales.</p>
         </div>
-        <button class="btn btn-primary" id="btn-nuevo-programa"><i class="fa-solid fa-plus"></i> Nuevo Programa</button>
+        <button class="btn btn-primary" id="btn-nuevo-programa">
+          <i class="fa-solid fa-plus"></i> Nuevo Programa
+        </button>
       </div>
       
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-programas" class="buscador-catalogos" placeholder="Buscar programa...">
+        <input type="text" id="buscador-programas" class="buscador-catalogos" placeholder="Buscar programa por nombre o responsable...">
+        <button class="btn-clear hidden" id="btn-clear-programas" title="Limpiar búsqueda">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
       
       <div class="table-responsive">
         <table class="data-table">
-          <thead><tr><th class="col-expand" scope="col"></th><th>NOMBRE</th><th>RESPONSABLE</th><th>FECHA REGISTRO</th><th>ESTADO</th><th style="text-align:right">ACCIONES</th></tr></thead>
-          <tbody id="tabla-programas-body"></tbody>
+          <thead>
+            <tr>
+              <th class="col-expand" scope="col"></th>
+              <th>NOMBRE</th>
+              <th>RESPONSABLE</th>
+              <th>FECHA REGISTRO</th>
+              <th>ESTADO</th>
+              <th style="text-align:right">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-programas-body">
+            <!-- Renderizado dinámico por ProgramaModule -->
+          </tbody>
         </table>
+      </div>
+      
+      <!-- Estado vacío (fallback) -->
+      <div id="empty-programas" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay programas registrados</p>
+        <button class="btn btn-primary" id="btn-empty-programa">
+          <i class="fa-solid fa-plus"></i> Crear primer programa
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- =========================================
+     SECCIÓN: PLANES DE ESTUDIO
+     ========================================= -->
+<div id="tab-planes" class="tab-content">
+  <div class="card">
+    <div class="card-header-action">
+      <div class="section-title-group">
+        <h3 class="section-title">Planes de Estudio</h3>
+        <p class="section-desc">Gestione los marcos curriculares del programa académico.</p>
+      </div>
+      <button class="btn btn-primary" id="btn-nuevo-plan">
+        <i class="fa-solid fa-plus"></i> Nuevo Plan
+      </button>
+    </div>
+    
+    <div class="search-wrapper">
+      <i class="fa-solid fa-search search-icon"></i>
+      <input type="text" id="buscador-planes" class="buscador-catalogos" placeholder="Buscar plan por clave, nombre o nivel...">
+      <button class="btn-clear hidden" id="btn-clear-planes" title="Limpiar búsqueda">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-expand" scope="col"></th>
+            <th>CLAVE</th>
+            <th>NOMBRE</th>
+            <th>NIVEL</th>
+            <th>ESTADO</th>
+            <th style="text-align:right">ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-planes-body"></tbody>
+      </table>
+    </div>
+    
+    <div id="empty-planes" class="empty-state hidden">
+      <i class="fa-regular fa-folder-open"></i>
+      <p>No hay planes de estudio registrados</p>
+      <button class="btn btn-primary" id="btn-empty-plan">
+        <i class="fa-solid fa-plus"></i> Crear primer plan
+      </button>
+    </div>
+  </div>
 </div>
 
-<script type="module">
-  import { CatalogoModule } from '../modules/CatalogoModule.js';
-  
-  document.addEventListener('DOMContentLoaded', () => {
-    const catalogo = new CatalogoModule();
-    catalogo.init();
-    // Exponer instancia global para el botón de cerrar panel
-    window.catalogoModuleInstance = catalogo;
-  });
-</script>
+<!-- =========================================
+     SECCIÓN: SEMESTRES
+     ========================================= -->
+<div id="tab-semestres" class="tab-content">
+  <div class="card">
+    <div class="card-header-action">
+      <div class="section-title-group">
+        <h3 class="section-title">Semestres Académicos</h3>
+        <p class="section-desc">Defina la progresión académica del plan de estudios.</p>
+      </div>
+      <button class="btn btn-primary" id="btn-nuevo-semestre">
+        <i class="fa-solid fa-plus"></i> Nuevo Semestre
+      </button>
+    </div>
+    
+    <div class="search-wrapper">
+      <i class="fa-solid fa-search search-icon"></i>
+      <input type="text" id="buscador-semestres" class="buscador-catalogos" placeholder="Buscar semestre por nombre, clave u orden...">
+      <button class="btn-clear hidden" id="btn-clear-semestres" title="Limpiar búsqueda">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-expand" scope="col"></th>
+            <th style="width: 60px;">ORDEN</th>
+            <th>NOMBRE</th>
+            <th>CLAVE</th>
+            <th>ESTADO</th>
+            <th style="text-align:right">ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-semestres-body"></tbody>
+      </table>
+    </div>
+    
+    <div id="empty-semestres" class="empty-state hidden">
+      <i class="fa-regular fa-folder-open"></i>
+      <p>No hay semestres registrados</p>
+      <button class="btn btn-primary" id="btn-empty-semestre">
+        <i class="fa-solid fa-plus"></i> Crear primer semestre
+      </button>
+    </div>
+  </div>
+</div>
+
+  <!-- =========================================
+      SECCIÓN: GENERACIONES
+      ========================================= -->
+  <div id="tab-generaciones" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <div class="section-title-group">
+          <h3 class="section-title">Generaciones de Alumnos</h3>
+          <p class="section-desc">Gestione las cohortes de alumnos por periodo de ingreso.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-nueva-generacion">
+          <i class="fa-solid fa-plus"></i> Nueva Generación
+        </button>
+      </div>
+      
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input type="text" id="buscador-generaciones" class="buscador-catalogos" placeholder="Buscar generación por clave, nombre, plan o periodo...">
+        <button class="btn-clear hidden" id="btn-clear-generaciones" title="Limpiar búsqueda">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-expand" scope="col"></th>
+              <th>CLAVE</th>
+              <th>NOMBRE</th>
+              <th>PLAN</th>
+              <th>PERIODO INGRESO</th>
+              <th>ESTADO</th>
+              <th style="text-align:right">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-generaciones-body"></tbody>
+        </table>
+      </div>
+      
+      <div id="empty-generaciones" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay generaciones registradas</p>
+        <button class="btn btn-primary" id="btn-empty-generacion">
+          <i class="fa-solid fa-plus"></i> Crear primera generación
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

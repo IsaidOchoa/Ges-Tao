@@ -1,66 +1,114 @@
-<!-- MODAL EXPERIENCIA EDUCATIVA -->
-<div id="modal-ee" class="modal-overlay hidden">
+<!-- MODAL PERIODO ESCOLAR -->
+<div id="modal-periodo" class="modal-overlay hidden">
   <div class="modal-content">
     <div class="modal-header">
-      <h3 id="modal-titulo-ee">Nueva Experiencia Educativa</h3>
-      <button class="btn-close" onclick="cerrarModal('modal-ee')">&times;</button>
+      <h3 id="modal-titulo-periodo">Nuevo Periodo Escolar</h3>
+      <button class="btn-close" onclick="cerrarModal('modal-periodo')">&times;</button>
     </div>
+    
     <div class="modal-body">
-      <form id="form-ee">
-        <input type="hidden" id="ee-id">
+      <form id="form-periodo">
+        <input type="hidden" id="periodo-id">
+        
+        <!-- Plantilla de Periodo -->
+        <div class="form-group">
+          <label>Plantilla *</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="plantilla" value="semestre-a" checked 
+                     onchange="class="btn btn-secondary btn-cancel" onclick="cerrarModal.onPlantillaChange()">
+              <span class="radio-label">
+                <strong>Semestre A</strong>
+                <small>Feb - Jul</small>
+              </span>
+            </label>
+            
+            <label class="radio-option">
+              <input type="radio" name="plantilla" value="semestre-b" 
+                     onchange="class="btn btn-secondary btn-cancel" onclick="cerrarModal.onPlantillaChange()">
+              <span class="radio-label">
+                <strong>Semestre B</strong>
+                <small>Ago - Ene</small>
+              </span>
+            </label>
+            
+            <label class="radio-option">
+              <input type="radio" name="plantilla" value="personalizado" 
+                     onchange="class="btn btn-secondary btn-cancel" onclick="cerrarModal.onPlantillaChange()">
+              <span class="radio-label">
+                <strong>Personalizado</strong>
+                <small>Fechas manuales</small>
+              </span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Año Base (siempre visible) -->
         <div class="form-row-flex">
           <div class="form-group flex-1">
-            <label>NRC*</label>
-            <input type="text" id="ee-clave" required placeholder="Ej. MSC-101">
-          </div>
-          <div class="form-group flex-1">
-            <label>Tipo</label>
-            <select id="ee-tipo">
-              <option>Obligatoria</option><option>Optativa</option><option>Taller</option>
+            <label>Año Base *</label>
+            <select id="periodo-anio" name="anio_base" 
+                    onchange="class="btn btn-secondary btn-cancel" onclick="cerrarModal.onAnioChange()">
+              <!-- Se llena dinámicamente -->
             </select>
           </div>
-        </div>
-        <div class="form-group">
-          <label>Nombre *</label>
-          <input type="text" id="ee-nombre" required>
-        </div>
-        <div class="form-row-flex">
+          
           <div class="form-group flex-1">
-            <label>Créditos</label>
-            <input type="number" id="ee-creditos" value="0">
-          </div>
-          <div class="form-group flex-1">
-            <label>Hrs Teoría</label>
-            <input type="number" id="ee-h-teoria" value="0">
-          </div>
-          <div class="form-group flex-1">
-            <label>Hrs Práctica</label>
-            <input type="number" id="ee-h-practica" value="0">
+            <label>Clave (Automática)</label>
+            <input type="text" id="periodo-clave" name="clave" 
+                   class="form-control-readonly" readonly>
           </div>
         </div>
-        <div class="form-group">
-          <label>Programa Académico</label>
-          <input type="text" id="ee-programa" placeholder="Ej. Maestría">
+        
+        <!-- Fechas (solo visible si es Personalizado) -->
+        <div id="section-fechas" class="hidden">
+          <div class="form-row-flex">
+            <div class="form-group flex-1">
+              <label>Fecha Inicio *</label>
+              <input type="date" id="periodo-fecha-inicio" name="fecha_inicio">
+            </div>
+            <div class="form-group flex-1">
+              <label>Fecha Fin *</label>
+              <input type="date" id="periodo-fecha-fin" name="fecha_fin">
+            </div>
+          </div>
         </div>
+        
+        <!-- Descripción -->
         <div class="form-group">
-          <label>Estado de la EE</label>
-          <select id="ee-estado" required>
-            <option value="activa">Vigente</option>
-            <option value="inactiva">Inactiva</option>
-            <option value="archivada">Archivada</option>
+          <label>Descripción *</label>
+          <input type="text" id="periodo-descripcion" name="descripcion" 
+                 placeholder="Se genera automáticamente">
+        </div>
+        
+        <!-- Estado -->
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="periodo-estado" name="estado">
+            <option value="abierto">Abierto</option>
+            <option value="cerrado">Cerrado</option>
+            <option value="proceso">En Proceso</option>
           </select>
-          <small style="color:var(--text-muted); display:block; margin-top:5px; font-size:0.85rem;">
-            <i class="fa-solid fa-circle-info"></i> 
-            <strong>Vigente</strong>: Se oferta en el periodo actual • 
-            <strong>Inactiva</strong>: Solo consulta en tablas • 
-            <strong>Archivada</strong>: Ya no se oferta en el periodo actual
-          </small>
         </div>
+        
+        <!-- Vista Previa -->
+        <div class="form-group preview-section">
+          <label style="font-size: 0.85rem; color: var(--text-muted);">Vista previa:</label>
+          <div id="periodo-preview" class="preview-box">
+            <strong id="preview-text">-</strong>
+          </div>
+        </div>
+        
       </form>
     </div>
+    
     <div class="modal-footer">
-      <button class="btn btn-secondary btn-cancel" onclick="cerrarModal('modal-ee')">Cancelar</button>
-      <button class="btn btn-primary" id="btn-guardar-ee">Guardar</button>
+      <button class="btn btn-secondary btn-cancel" onclick="cerrarModal('modal-periodo')">
+        Cancelar
+      </button>
+      <button class="btn btn-primary" id="btn-guardar-periodo">
+        Guardar Periodo
+      </button>
     </div>
   </div>
 </div>

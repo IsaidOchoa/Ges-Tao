@@ -10,28 +10,28 @@
     
     <!-- Formulario -->
     <form id="form-periodo">
-      <input type="hidden" id="per-id">
+      <input type="hidden" id="periodo-id">
       
-      <!-- 🔹 Plantilla de Periodo (Selección guiada) -->
+      <!-- 🔹 Plantilla de Periodo (Selección guiada - Diseño Avanzado) -->
       <div class="form-group">
         <label>Plantilla de Periodo *</label>
         <div class="template-selector">
           <label class="template-option">
-            <input type="radio" name="plantilla" value="semestre-a" checked onchange="periodoModuleInstance.actualizarFechasDesdePlantilla()">
+            <input type="radio" name="plantilla" value="semestre-a" checked>
             <div class="template-card">
               <strong>Semestre A</strong>
               <small>Feb - Jul (5 meses)</small>
             </div>
           </label>
           <label class="template-option">
-            <input type="radio" name="plantilla" value="semestre-b" onchange="periodoModuleInstance.actualizarFechasDesdePlantilla()">
+            <input type="radio" name="plantilla" value="semestre-b">
             <div class="template-card">
               <strong>Semestre B</strong>
               <small>Ago - Ene (4 meses)</small>
             </div>
           </label>
           <label class="template-option">
-            <input type="radio" name="plantilla" value="personalizado" onchange="periodoModuleInstance.activarModoPersonalizado()">
+            <input type="radio" name="plantilla" value="personalizado">
             <div class="template-card">
               <strong>Personalizado</strong>
               <small>Configuración manual *</small>
@@ -40,11 +40,12 @@
         </div>
       </div>
 
-      <!-- 🔹 Año Base (para plantillas) -->
+      <!-- 🔹 Año Base -->
       <div class="form-row-flex" id="row-ano-base">
         <div class="form-group flex-1">
           <label>Año Base *</label>
-          <select id="per-ano-base" onchange="periodoModuleInstance.actualizarFechasDesdePlantilla()">
+          <!-- ID corregido a periodo-anio-base -->
+          <select id="periodo-anio-base">
             <option value="2024">2024</option>
             <option value="2025">2025</option>
             <option value="2026">2026</option>
@@ -53,38 +54,40 @@
         </div>
         <div class="form-group flex-2">
           <label>Clave Generada (Automática)</label>
-          <input type="text" id="per-clave-preview" readonly 
+          <!-- ID corregido a periodo-clave -->
+          <input type="text" id="periodo-clave" readonly 
                  style="background:var(--bg-light); font-family:monospace; font-weight:600; color:var(--accent-color);"
                  placeholder="Ej: FEB-JUL24">
         </div>
       </div>
 
-      <!-- 🔹 Fechas (Solo visibles en modo personalizado o para ajuste fino) -->
-      <div class="form-row-flex" id="row-fechas">
+      <!-- 🔹 Fechas (Ocultas por defecto, se muestran en Personalizado) -->
+      <div class="form-row-flex hidden" id="section-fechas">
         <div class="form-group flex-1">
           <label>Fecha de Inicio *</label>
-          <input type="date" id="per-inicio" required onchange="periodoModuleInstance.actualizarClaveManual()">
+          <!-- ID corregido a periodo-fecha-inicio -->
+          <input type="date" id="periodo-fecha-inicio">
         </div>
         <div class="form-group flex-1">
           <label>Fecha de Fin *</label>
-          <input type="date" id="per-fin" required onchange="periodoModuleInstance.validarYActualizarClave()">
+          <!-- ID corregido a periodo-fecha-fin -->
+          <input type="date" id="periodo-fecha-fin">
         </div>
       </div>
 
       <!-- 🔹 Validación en tiempo real -->
-      <div id="periodo-validation" class="form-feedback hidden" style="margin-top:-15px; margin-bottom:15px;">
-        <!-- Se llena dinámicamente -->
-      </div>
+      <div id="periodo-validation" class="form-feedback hidden" style="margin-top:-15px; margin-bottom:15px;"></div>
 
       <!-- 🔹 Descripción y Estado -->
       <div class="form-row-flex">
         <div class="form-group flex-3">
           <label>Descripción *</label>
-          <input type="text" id="per-desc" required placeholder="Ej: Periodo Escolar Febrero - Julio 2024">
+          <!-- ID corregido a periodo-descripcion -->
+          <input type="text" id="periodo-descripcion" required placeholder="Ej: Periodo Escolar Febrero - Julio 2024">
         </div>
         <div class="form-group flex-1">
           <label>Estado</label>
-          <select id="per-estado">
+          <select id="periodo-estado">
             <option value="abierto">Abierto</option>
             <option value="en_progreso">En Progreso</option>
             <option value="cerrado">Cerrado</option>
@@ -92,11 +95,11 @@
         </div>
       </div>
 
-      <!-- 🔹 Preview de Periodo (Visual) -->
+      <!-- 🔹 Preview de Periodo -->
       <div class="periodo-preview" style="background:var(--bg-light); padding:12px 15px; border-radius:var(--radius-sm); margin-top:10px;">
         <small style="color:var(--text-muted); display:block; margin-bottom:5px;">Vista previa:</small>
-        <strong id="preview-descripcion" style="color:var(--text-dark);">FEB-JUL24: Febrero - Julio 2024</strong>
-        <span id="preview-duracion" style="margin-left:10px; font-size:0.85rem; color:var(--success-color);">✓ 5 meses</span>
+        <strong id="preview-descripcion" style="color:var(--text-dark);">-</strong>
+        <span id="preview-duracion" style="margin-left:10px; font-size:0.85rem; color:var(--success-color);">✓ Válido</span>
       </div>
     </form>
 
@@ -108,3 +111,37 @@
     
   </div>
 </div>
+
+<!-- Estilos específicos (Mantén esto aquí o muévelo a tu CSS global) -->
+<style>
+  .template-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .template-option { cursor: pointer; }
+  .template-option input[type="radio"] { display: none; }
+  .template-card {
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    text-align: center;
+    transition: all 0.2s ease;
+    background: var(--bg-white);
+  }
+  .template-option input[type="radio"]:checked + .template-card {
+    border-color: var(--accent-color);
+    background: rgba(52, 152, 219, 0.08);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  }
+  .template-card strong { display: block; color: var(--text-dark); margin-bottom: 4px; }
+  .template-card small { color: var(--text-muted); font-size: 0.8rem; }
+  .periodo-preview { border-left: 4px solid var(--accent-color); }
+  .form-feedback { padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.9rem; }
+  .form-feedback.error { background: rgba(231, 76, 60, 0.1); color: #c0392b; border: 1px solid #e74c3c; }
+  .form-feedback.success { background: rgba(39, 174, 96, 0.1); color: #27ae60; border: 1px solid #2ecc71; }
+  .form-feedback.warning { background: rgba(241, 196, 15, 0.1); color: #d35400; border: 1px solid #f39c12; }
+  .hidden { display: none !important; }
+  @media (max-width: 768px) { .template-selector { grid-template-columns: 1fr; } }
+</style>
