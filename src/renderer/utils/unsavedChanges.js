@@ -1,79 +1,108 @@
-// Detecta cambios en formularios y muestra advertencia al cerrar
+// src/renderer/utils/unsavedChanges.js
+
+/**
+ * Guard para detectar cambios no guardados en formularios
+ * Versión corregida: SIN interceptación de UI, solo detección de estado
+ */
 export class UnsavedChangesGuard {
-  constructor(formSelector, message = 'Tienes cambios sin guardar. ¿Deseas salir sin guardar?') {
+  constructor(formSelector, options = {}) {
     this.form = document.querySelector(formSelector);
-    this.message = message;
+    this.message = options.message || 'Tienes cambios sin guardar.';
     this.initialState = null;
     this.isDirty = false;
+    this._listeners = [];
+    this._beforeUnloadHandler = null;
+    this._destroyed = false;
     
-    if (!this.form) return;
+    if (!this.form) {
+      console.warn(`[UnsavedChangesGuard] Form "${formSelector}" not found`);
+      return;
+    }
     
-    // Capturar estado inicial
-    this.captureInitialState();
+    this._init();
+  }
+  
+  _init() {
+    this._captureState();
     
     // Escuchar cambios
-    this.form.addEventListener('input', () => this.markDirty());
-    this.form.addEventListener('change', () => this.markDirty());
+    const handler = () => this._markDirty();
+    this.form.addEventListener('input', handler);
+    this.form.addEventListener('change', handler);
+    this._listeners.push({ el: this.form, type: 'input', handler });
+    this._listeners.push({ el: this.form, type: 'change', handler });
     
-    // Escuchar guardado exitoso para limpiar
-    this.form.addEventListener('form-saved', () => this.clean());
+    // Escuchar guardado exitoso
+    const savedHandler = () => this.clean();
+    this.form.addEventListener('form-saved', savedHandler);
+    this._listeners.push({ el: this.form, type: 'form-saved', handler: savedHandler });
     
-    // Prevenir cierre de modal con cambios
-    this.setupModalGuard();
-    
-    // Prevenir cierre de pestaña/navegador (opcional)
-    window.addEventListener('beforeunload', (e) => {
-      if (this.isDirty) {
+    // beforeunload para cierre de pestaña (solo si es necesario)
+    this._beforeUnloadHandler = (e) => {
+      if (!this._destroyed && this.isDirty) {
         e.preventDefault();
         e.returnValue = '';
+        return '';
       }
-    });
+    };
+    window.addEventListener('beforeunload', this._beforeUnloadHandler);
   }
   
-  captureInitialState() {
-    const formData = new FormData(this.form);
-    this.initialState = new URLSearchParams(formData).toString();
-    this.isDirty = false;
-  }
-  
-  markDirty() {
-    this.isDirty = true;
-    // Feedback visual opcional
-    this.form.classList.add('form-dirty');
-  }
-  
-  clean() {
-    this.isDirty = false;
-    this.form.classList.remove('form-dirty');
-    this.captureInitialState();
-  }
-  
-  setupModalGuard() {
-    const modal = this.form.closest('.modal-overlay');
-    if (!modal) return;
-    
-    // Escuchar clic en botón cancelar o cerrar
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal || 
-          e.target.closest('.btn-close') || 
-          e.target.closest('.btn-cancel')) {
-        if (this.isDirty && !confirm(this.message)) {
-          e.preventDefault();
-          e.stopPropagation();
-        } else {
-          this.clean(); // Limpiar si el usuario confirma salir
-        }
-      }
-    });
-  }
-  
-  // Método para llamar manualmente antes de cerrar
-  confirmExit(callback) {
-    if (this.isDirty && !confirm(this.message)) {
-      return false;
+  _captureState() {
+    try {
+      const formData = new FormData(this.form);
+      this.initialState = new URLSearchParams(formData).toString();
+      this.isDirty = false;
+      this.form.classList?.remove('form-dirty');
+    } catch (e) {
+      console.warn('[UnsavedChangesGuard] Error capturing state:', e);
     }
-    this.clean();
-    callback?.();
-    return true;
+  }
+  
+  _markDirty() {
+    if (this._destroyed) return;
+    this.isDirty = true;
+    this.form.classList?.add('form-dirty');
+  }
+  
+  /**
+   * Limpia estado y marca como "guardado"
+   */
+  clean() {
+    if (this._destroyed) return;
+    this.isDirty = false;
+    this.form.classList?.remove('form-dirty');
+    this._captureState();
+  }
+  
+  /**
+   * Getter para que el módulo consulte el estado
+   */
+  get hasUnsavedChanges() {
+    return !this._destroyed && this.isDirty;
+  }
+  
+  /**
+   * Destruye el guard y libera todos los recursos (CRÍTICO)
+   */
+  destroy() {
+    if (this._destroyed) return;
+    this._destroyed = true;
+    
+    // Remover listeners del formulario
+    this._listeners.forEach(({ el, type, handler }) => {
+      el?.removeEventListener(type, handler);
+    });
+    this._listeners = [];
+    
+    // Remover beforeunload
+    if (this._beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+      this._beforeUnloadHandler = null;
+    }
+    
+    // Limpiar referencias
+    this.form = null;
+    this.initialState = null;
   }
 }

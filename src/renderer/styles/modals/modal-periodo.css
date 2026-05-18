@@ -1,28 +1,281 @@
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* =========================================
+   MODAL PERIODO - ESTILOS AISLADOS
+   Override de reglas globales con !important
+   ========================================= */
+
+/* --- CONTENEDOR PRINCIPAL --- */
+#modal-periodo .modal-content {
+  max-width: 950px !important;
+  width: 95% !important;
+  padding: 24px !important;
+  max-height: 90vh !important;
+  overflow-y: auto;
 }
 
-.radio-option {
-  display: flex;
-  align-items: center;
-  flex-direction: row-reverse;
-  justify-content: space-between;
-
-  padding: 8px 10px;
-
-  border: 1px solid #ddd;
-  border-radius: 6px;
-
-  cursor: pointer;
+/* --- GRID DE 2 COLUMNAS (Override global flex) --- */
+#modal-periodo .periodo-grid {
+  display: grid !important;
+  grid-template-columns: 320px 1fr !important;
+  gap: 24px !important;
+  margin-bottom: 16px !important;
 }
 
-.radio-label {
-  display: flex;
-  flex-direction: column;
+/* --- COLUMNAS --- */
+#modal-periodo .periodo-col-left {
+  border-right: 1px solid var(--border-color, #dee2e6) !important;
+  padding-right: 20px !important;
 }
 
-.radio-option input[type="radio"] {
-  margin-left: 12px;
+#modal-periodo .periodo-col-right {
+  padding-left: 8px !important;
+}
+
+/* --- FORM ROW FLEX (Override global) --- */
+#modal-periodo .form-row-flex {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 12px !important;
+  margin-bottom: 12px !important;
+  flex-wrap: nowrap !important;
+}
+
+#modal-periodo .form-group {
+  margin-bottom: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#modal-periodo .flex-1 {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+}
+
+#modal-periodo .flex-2 {
+  flex: 2 1 0 !important;
+  min-width: 0 !important;
+}
+
+/* --- TARJETAS DE PLANTILLA --- */
+#modal-periodo .template-options-vertical {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+#modal-periodo .template-card-option {
+  cursor: pointer !important;
+}
+
+#modal-periodo .template-card-option input[type="radio"] {
+  display: none !important;
+}
+
+#modal-periodo .template-card-content {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  padding: 14px 16px !important;
+  background: var(--bg-light, #f8f9fa) !important;
+  border: 2px solid transparent !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+#modal-periodo .template-card-option:hover .template-card-content {
+  background: var(--bg-white, #ffffff) !important;
+  border-color: var(--border-color, #dee2e6) !important;
+}
+
+#modal-periodo .template-card-option input[type="radio"]:checked + .template-card-content {
+  background: rgba(52, 152, 219, 0.08) !important;
+  border-color: var(--accent-color, #3498db) !important;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15) !important;
+}
+
+#modal-periodo .template-radio-indicator {
+  width: 18px !important;
+  height: 18px !important;
+  border: 2px solid var(--border-color, #dee2e6) !important;
+  border-radius: 50% !important;
+  margin-top: 2px !important;
+  flex-shrink: 0 !important;
+  transition: all 0.2s !important;
+}
+
+#modal-periodo .template-card-option input[type="radio"]:checked + .template-card-content .template-radio-indicator {
+  border-color: var(--accent-color, #3498db) !important;
+  background: var(--accent-color, #3498db) !important;
+  box-shadow: inset 0 0 0 4px white !important;
+}
+
+#modal-periodo .template-info strong {
+  display: block !important;
+  color: var(--text-dark, #2c3e50) !important;
+  font-size: 0.95rem !important;
+  margin-bottom: 2px !important;
+  font-weight: 600 !important;
+}
+
+#modal-periodo .template-info small {
+  color: var(--text-muted, #95a5a6) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.3 !important;
+}
+
+/* --- SECCIÓN DE FECHAS --- */
+#modal-periodo .fechas-section {
+  margin-bottom: 16px !important;
+  padding: 14px !important;
+  background: rgba(241, 196, 15, 0.08) !important;
+  border: 1px dashed var(--warning-color, #f39c12) !important;
+  border-radius: 8px !important;
+  animation: fadeIn 0.3s ease !important;
+}
+
+#modal-periodo .fechas-section.hidden {
+  display: none !important;
+}
+
+/* --- INPUTS Y SELECTS --- */
+#modal-periodo input[type="text"],
+#modal-periodo input[type="date"],
+#modal-periodo select {
+  width: 100% !important;
+  padding: 8px 12px !important;
+  border: 1px solid var(--border-color, #dee2e6) !important;
+  border-radius: 6px !important;
+  font-size: 0.95rem !important;
+  background: var(--bg-white, #ffffff) !important;
+  color: var(--text-dark, #2c3e50) !important;
+}
+
+#modal-periodo .form-control-readonly {
+  background: var(--bg-light, #f8f9fa) !important;
+  cursor: not-allowed !important;
+  font-weight: 600 !important;
+  color: var(--accent-color, #3498db) !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+/* --- VISTA PREVIA --- */
+#modal-periodo .periodo-preview-box {
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.08) 0%, rgba(52, 152, 219, 0.02) 100%) !important;
+  border-left: 4px solid var(--accent-color, #3498db) !important;
+  padding: 14px 16px !important;
+  border-radius: 8px !important;
+  margin-top: 8px !important;
+}
+
+#modal-periodo .preview-label {
+  display: block !important;
+  color: var(--text-muted, #95a5a6) !important;
+  font-size: 0.8rem !important;
+  margin-bottom: 8px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+#modal-periodo .preview-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+#modal-periodo .preview-content strong {
+  color: var(--text-dark, #2c3e50) !important;
+  font-size: 1rem !important;
+  font-family: 'Courier New', monospace !important;
+  font-weight: 600 !important;
+}
+
+#modal-periodo .preview-badge {
+  font-size: 0.85rem !important;
+  color: var(--success-color, #27ae60) !important;
+  font-weight: 500 !important;
+}
+
+/* --- LABELS --- */
+#modal-periodo label {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  margin-bottom: 6px !important;
+  color: var(--text-dark, #2c3e50) !important;
+}
+
+/* --- FOOTER --- */
+#modal-periodo .modal-footer {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  margin-top: 20px !important;
+  padding-top: 20px !important;
+  border-top: 1px solid var(--border-color, #dee2e6) !important;
+}
+
+/* --- BOTONES --- */
+#modal-periodo .btn {
+  padding: 10px 20px !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+#modal-periodo .btn-cancel {
+  background: var(--danger-color, #e74c3c) !important;
+  color: white !important;
+}
+
+#modal-periodo .btn-cancel:hover {
+  background: #c0392b !important;
+  transform: translateY(-1px) !important;
+}
+
+#modal-periodo .btn-primary {
+  background: var(--primary-color, #3498db) !important;
+  color: white !important;
+}
+
+#modal-periodo .btn-primary:hover {
+  background: #2980b9 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* --- ANIMACIONES --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0 !important;
+    transform: translateY(-8px) !important;
+  }
+  to {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+  }
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+  #modal-periodo .periodo-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  #modal-periodo .periodo-col-left {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color, #dee2e6) !important;
+    padding-right: 0 !important;
+    padding-bottom: 16px !important;
+  }
+  
+  #modal-periodo .periodo-col-right {
+    padding-left: 0 !important;
+  }
+  
+  #modal-periodo .form-row-flex {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
 }

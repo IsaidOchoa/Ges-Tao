@@ -1,3 +1,4 @@
+// src/renderer/modules/GeneracionModule.js
 import { DataTable } from '../components/DataTable/DataTable.js';
 import modalGeneracionHtml from '../views/partials/modals/modal-generacion.html';
 import { FormAutosave } from '../utils/formAutosave.js';
@@ -6,122 +7,74 @@ import { UnsavedChangesGuard } from '../utils/unsavedChanges.js';
 export class GeneracionModule {
   constructor() {
     this.data = [];
-    this.modalElement = null;
-    this.initialized = false;
     this.table = null;
     this.formAutosave = null;
     this.unsavedGuard = null;
-    this.planesCache = [];
-    this.periodosCache = [];
+    this.cachedSelectData = null;
   }
 
   async init() {
-    console.log('[GeneracionModule] Sincronizando módulo...');
-
+    console.log('📘 [GeneracionModule] Sincronizando...');
     if (!document.getElementById('modal-generacion')) {
       const template = document.createElement('div');
       template.innerHTML = modalGeneracionHtml;
       document.body.appendChild(template.firstElementChild);
-      this.modalElement = document.getElementById('modal-generacion');
     }
 
     await this.waitForDOMReady('tabla-generaciones-body');
-
-    if (!this.data || this.data.length === 0) {
-      await this.loadData();
-    }
+    
+    // Cargar datos para selects (Plan, Periodo)
+    if(!this.cachedSelectData) await this.loadSelectData();
+    
+    if (!this.data.length) await this.loadData();
 
     const tbody = document.getElementById('tabla-generaciones-body');
     if (!tbody) return;
 
-    if (this.data && this.data.length > 0) {
+    if (this.data.length > 0) {
       this.table = new DataTable({
         tbodyId: 'tabla-generaciones-body',
-        columns: this.getColumns(),
-        expandable: false,
+        columns: [
+          { key: 'clave', label: 'Clave' },
+          { key: 'nombre', label: 'Nombre' },
+          { key: 'plan', label: 'Plan' },
+          { key: 'periodo_ingreso', label: 'Ingreso' },
+          { key: 'estado', label: 'Estado', badge: true }
+        ],
         actions: true,
+        onRowClick: 'generacionModuleInstance.handleRowClick(event)',
         onAction: 'generacionModuleInstance.toggleActionMenu(event)'
       });
       this.table.setData(this.data);
-    } else {
-      this.renderEmptyState();
-    }
+    } else { this.renderEmptyState(); }
 
     this.setupSearch();
     this.setupModalEvents();
     this.setupGlobalHelpers();
-
-    console.log('[GeneracionModule] Inicialización completa');
+    console.log('✅ [GeneracionModule] Listo');
   }
 
-  async waitForDOMReady(tbodyId, timeout = 2000) {
-    const start = Date.now();
-    while (Date.now() - start < timeout) {
-      if (document.getElementById(tbodyId)) return true;
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-    console.error(`[GeneracionModule] Timeout: tbody "${tbodyId}" no encontrado`);
-    return false;
-  }
-
-  async loadData() {
-    try {
-      const res = await window.electronAPI.listarGeneraciones();
-      if (res.success) {
-        this.data = res.rows || res.data;
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('[GeneracionModule] Error cargando datos:', error);
-      return false;
-    }
-  }
-
+  async waitForDOMReady(id) { for(let i=0;i<40;i++){ if(document.getElementById(id)) return true; await new Promise(r=>setTimeout(r,50)); } return false; }
+  
+  async loadData() { try { const res = await window.electronAPI.listarGeneraciones(); if(res.success) this.data = res.rows || res.data; } catch(e){ console.error(e); } }
+  
   async loadSelectData() {
     try {
-      const [planesRes, periodosRes] = await Promise.all([
-        window.electronAPI.listarPlanes(),
-        window.electronAPI.listarPeriodos()
-      ]);
-      if (planesRes.success) this.planesCache = planesRes.rows || planesRes.data;
-      if (periodosRes.success) this.periodosCache = periodosRes.rows || periodosRes.data;
-    } catch (error) {
-      console.error('[GeneracionModule] Error cargando selects:', error);
-    }
-  }
-
-  getColumns() {
-    return [
-      { key: 'clave', label: 'Clave', format: (v) => `<strong>${v}</strong>` },
-      { key: 'nombre', label: 'Nombre', format: (v) => v.length > 30 ? v.substring(0, 30) + '...' : v },
-      { key: 'plan_nombre', label: 'Plan', format: (v) => v || '-' },
-      { key: 'periodo_desc', label: 'Periodo', format: (v) => v || '-' },
-      { 
-        key: 'estado', 
-        label: 'Estado',
-        badge: true,
-        format: (v) => {
-          const map = { activa: { label: 'Activa', class: 'badge-success' }, inactiva: { label: 'Inactiva', class: 'badge-warning' } };
-          const m = map[v] || { label: v, class: 'badge-secondary' };
-          return `<span class="badge ${m.class}">${m.label}</span>`;
-        }
-      }
-    ];
+      // Asumiendo que existe un endpoint para obtener datos de selects
+      // Si no, ajusta esto a tu lógica real
+      const res = await window.electronAPI.obtenerDatosSelectsGeneracion();
+      if(res.success) this.cachedSelectData = res.data;
+    } catch(e){ console.error(e); }
   }
 
   setupSearch() {
     const input = document.getElementById('buscador-generaciones');
-    if (!input) return;
+    if(!input) return;
     const newInput = input.cloneNode(true);
     input.parentNode.replaceChild(newInput, input);
-    newInput.addEventListener('input', (e) => {
-      const txt = e.target.value.toLowerCase().trim();
-      if (!txt) { this.table?.setData(this.data); return; }
-      const filtered = this.data.filter(item => 
-        [item.clave, item.nombre, item.plan_nombre, item.periodo_desc].filter(v => v).join(' ').toLowerCase().includes(txt)
-      );
-      this.table?.setData(filtered);
+    newInput.addEventListener('input', e => {
+      const t = e.target.value.toLowerCase();
+      this.table?.setData(t ? this.data.filter(i => i.nombre?.toLowerCase().includes(t)) : this.data);
     });
   }
 
@@ -129,106 +82,87 @@ export class GeneracionModule {
     const btnNuevo = document.getElementById('btn-nueva-generacion');
     const modal = document.getElementById('modal-generacion');
     if (!btnNuevo || !modal) return;
-    
+
     btnNuevo.onclick = (e) => { e.preventDefault(); this.openModal(); };
     
-    const cerrarModal = () => {
+    const cerrar = () => {
       this.formAutosave?.clear();
       this.unsavedGuard = null;
+      document.getElementById('form-generacion')?.reset();
       modal.classList.add('hidden');
     };
-    
-    modal.querySelector('.btn-close')?.addEventListener('click', cerrarModal);
-    modal.querySelector('.btn-cancel')?.addEventListener('click', cerrarModal);
-    modal.addEventListener('click', (e) => { if (e.target === modal) cerrarModal(); });
-    
-    const btnSave = modal.querySelector('.btn-primary');
-    if (btnSave) {
+
+    document.getElementById('btn-cerrar-modal-generacion')?.addEventListener('click', cerrar);
+    document.getElementById('btn-cancelar-generacion')?.addEventListener('click', cerrar);
+    modal.addEventListener('click', e => { if(e.target === modal) cerrar(); });
+
+    const btnSave = document.getElementById('btn-guardar-generacion');
+    if(btnSave) {
       const newBtn = btnSave.cloneNode(true);
       btnSave.parentNode.replaceChild(newBtn, btnSave);
-      newBtn.addEventListener('click', async (e) => { e.preventDefault(); await this.saveGeneracion(modal); });
+      newBtn.addEventListener('click', async e => { e.preventDefault(); await this.save(modal, cerrar); });
     }
   }
 
-  async openModal(generacion = null) {
+  openModal(gen = null) {
     const modal = document.getElementById('modal-generacion');
     const form = document.getElementById('form-generacion');
-    if (!modal || !form) return;
-    
-    await this.loadSelectData();
+    if(!modal || !form) return;
     
     form.reset();
+    document.getElementById('generacion-id').value = '';
     this.formAutosave = new FormAutosave('form-generacion', 'generacion-form');
     this.unsavedGuard = new UnsavedChangesGuard('#form-generacion');
-    
-    const planSelect = form.querySelector('[name="plan_id"]');
-    const periodoSelect = form.querySelector('[name="periodo_ingreso_id"]');
-    
-    if (planSelect) {
-      planSelect.innerHTML = '<option value="">Seleccionar plan...</option>' + 
-        this.planesCache.map(p => `<option value="${p.id}">${p.clave} - ${p.nombre}</option>`).join('');
+
+    // Llenar selects si hay datos cacheados
+    if(this.cachedSelectData) {
+       const planSel = document.getElementById('generacion-plan');
+       if(planSel && this.cachedSelectData.planes) {
+         planSel.innerHTML = '<option value="">Seleccionar...</option>' + this.cachedSelectData.planes.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+       }
+       const perSel = document.getElementById('generacion-periodo');
+       if(perSel && this.cachedSelectData.periodos) {
+         perSel.innerHTML = '<option value="">Seleccionar...</option>' + this.cachedSelectData.periodos.map(p => `<option value="${p.id}">${p.clave}</option>`).join('');
+       }
     }
-    if (periodoSelect) {
-      periodoSelect.innerHTML = '<option value="">Seleccionar periodo...</option>' + 
-        this.periodosCache.map(p => `<option value="${p.id}">${p.clave} - ${p.descripcion}</option>`).join('');
+
+    if(gen) {
+      document.getElementById('generacion-id').value = gen.id;
+      document.getElementById('generacion-clave').value = gen.clave;
+      document.getElementById('generacion-nombre').value = gen.nombre;
+      document.getElementById('generacion-plan').value = gen.plan;
+      document.getElementById('generacion-periodo').value = gen.periodo_ingreso;
+      document.getElementById('generacion-estado').value = gen.estado;
+    } else {
+      document.getElementById('generacion-estado').value = 'activa';
     }
-    
-    if (generacion) {
-      form.querySelector('[name="clave"]').value = generacion.clave || '';
-      form.querySelector('[name="nombre"]').value = generacion.nombre || '';
-      if (planSelect) planSelect.value = generacion.plan_id || '';
-      if (periodoSelect) periodoSelect.value = generacion.periodo_ingreso_id || '';
-    }
-    
     modal.classList.remove('hidden');
   }
 
-  async saveGeneracion(modal) {
-    const form = document.getElementById('form-generacion');
+  async save(modal, onClose) {
     const datos = {
-      id: form.querySelector('[name="id"]')?.value || null,
-      clave: form.querySelector('[name="clave"]')?.value?.trim(),
-      nombre: form.querySelector('[name="nombre"]')?.value?.trim(),
-      plan_id: parseInt(form.querySelector('[name="plan_id"]')?.value) || null,
-      periodo_ingreso_id: parseInt(form.querySelector('[name="periodo_ingreso_id"]')?.value) || null,
-      estado: 'activa'
+      id: document.getElementById('generacion-id')?.value || null,
+      clave: document.getElementById('generacion-clave')?.value?.trim(),
+      nombre: document.getElementById('generacion-nombre')?.value?.trim(),
+      plan: document.getElementById('generacion-plan')?.value,
+      periodo_ingreso: document.getElementById('generacion-periodo')?.value,
+      estado: document.getElementById('generacion-estado')?.value
     };
-    
-    if (!datos.clave || !datos.nombre || !datos.plan_id || !datos.periodo_ingreso_id) {
-      alert('Todos los campos son obligatorios'); return;
-    }
-    
+    if(!datos.nombre || !datos.plan) return alert('Nombre y Plan son obligatorios');
+
     try {
       const res = await window.electronAPI.guardarGeneracion(datos);
-      if (res.success) {
-        this.formAutosave?.clear();
-        this.unsavedGuard = null;
-        modal.classList.add('hidden');
+      if(res.success) {
+        onClose();
         await this.loadData();
         this.table?.setData(this.data);
-      } else {
-        alert(`Error: ${res.error}`);
-      }
-    } catch (error) {
-      console.error('[GeneracionModule] Error guardando:', error);
-      alert('Error de conexión');
-    }
+      } else alert(`Error: ${res.error}`);
+    } catch(e) { console.error(e); alert('Error'); }
   }
 
   setupGlobalHelpers() { window.generacionModuleInstance = this; }
   
-  toggleActionMenu(event) {
-    event.stopPropagation();
-    document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
-    const menu = event.target.closest('.action-icon-container')?.previousElementSibling;
-    if (menu?.classList.contains('context-menu')) menu.classList.toggle('hidden');
-  }
-  
-  renderEmptyState() {
-    const tbody = document.getElementById('tabla-generaciones-body');
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted)">
-      <i class="fa-solid fa-users" style="font-size:2.5rem;margin:0 auto 15px;display:block;opacity:0.6"></i>
-      <p style="margin:0">No hay generaciones registradas</p></td></tr>`;
-  }
+  handleRowClick(e) { const r = e.target.closest('.data-row'); if(!r||e.target.closest('.action-icon-container')) return; document.querySelectorAll('.data-row.selected').forEach(x=>x.classList.remove('selected')); r.classList.add('selected'); }
+  toggleActionMenu(e) { e.stopPropagation(); document.querySelectorAll('.context-menu').forEach(m=>m.classList.add('hidden')); const m = e.target.closest('.action-icon-container')?.previousElementSibling; if(m?.classList.contains('context-menu')) m.classList.toggle('hidden'); }
+  renderEmptyState() { document.getElementById('tabla-generaciones-body').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">No hay generaciones registradas</td></tr>'; }
 }

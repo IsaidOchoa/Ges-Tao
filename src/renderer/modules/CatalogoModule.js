@@ -4,7 +4,7 @@
 
 import modalEEHtml from '../views/partials/modals/modal-ee.html';
 import modalTiposHtml from '../views/partials/modals/modal-tipos-constancia.html';
-import modalPeriodoHtml from '../views/partials/modals/modal-periodo.html';
+import modalPeriodoHtml from '../views/partials/modals/modal-periodo.html'; // ✅ Re-agregado
 import modalProgramaHtml from '../views/partials/modals/modal-programa.html';
 import modalAlumnoHtml from '../views/partials/modals/modal-alumno.html';
 import modalPlanHtml from '../views/partials/modals/modal-plan.html';
@@ -15,7 +15,7 @@ import { DocenteModule } from './DocenteModule.js';
 import { EEModule } from './EEModule.js';
 import { AlumnoModule } from './AlumnoModule.js';
 import { TipoConstanciaModule } from './TipoConstanciaModule.js';
-import { PeriodoModule } from './PeriodoModule.js';
+import { PeriodoModule } from './PeriodoModule.js'; // ✅ Re-agregado
 import { ProgramaModule } from './ProgramaModule.js';
 import { PlanModule } from './PlanModule.js';
 import { SemestreModule } from './SemestreModule.js';
@@ -28,7 +28,7 @@ export class CatalogoModule {
     this.eeModule = new EEModule();
     this.alumnoModule = new AlumnoModule();
     this.tipoConstanciaModule = new TipoConstanciaModule();
-    this.periodoModule = new PeriodoModule();
+    this.periodoModule = new PeriodoModule(); // ✅ Re-agregado
     this.programaModule = new ProgramaModule();
     this.planModule = new PlanModule();
     this.semestreModule = new SemestreModule();
@@ -46,7 +46,7 @@ export class CatalogoModule {
       'ee': 'btn-tab-ee',
       'tipos-constancia': 'btn-tab-tipos-constancia',
       'tipos': 'btn-tab-tipos-constancia',
-      'periodos': 'btn-tab-periodos',
+      'periodos': 'btn-tab-periodos', // ✅ Re-agregado
       'programas': 'btn-tab-programas',
       'planes': 'btn-tab-planes',
       'planes-estudio': 'btn-tab-planes',
@@ -57,7 +57,7 @@ export class CatalogoModule {
       'tab-ee': 'btn-tab-ee',
       'tab-tipos-constancia': 'btn-tab-tipos-constancia',
       'tab-tipos': 'btn-tab-tipos-constancia',
-      'tab-periodos': 'btn-tab-periodos',
+      'tab-periodos': 'btn-tab-periodos', // ✅ Re-agregado
       'tab-programas': 'btn-tab-programas',
       'tab-planes': 'btn-tab-planes',
       'tab-planes-estudio': 'btn-tab-planes',
@@ -67,7 +67,7 @@ export class CatalogoModule {
       'btn-tab-alumnos': 'btn-tab-alumnos',
       'btn-tab-ee': 'btn-tab-ee',
       'btn-tab-tipos-constancia': 'btn-tab-tipos-constancia',
-      'btn-tab-periodos': 'btn-tab-periodos',
+      'btn-tab-periodos': 'btn-tab-periodos', // ✅ Re-agregado
       'btn-tab-programas': 'btn-tab-programas',
       'btn-tab-planes': 'btn-tab-planes',
       'btn-tab-semestres': 'btn-tab-semestres',
@@ -80,7 +80,7 @@ export class CatalogoModule {
       'btn-tab-alumnos': () => this.alumnoModule.init(),
       'btn-tab-ee': () => this.eeModule.init(),
       'btn-tab-tipos-constancia': () => this.tipoConstanciaModule.init(),
-      'btn-tab-periodos': () => this.periodoModule.init(),
+      'btn-tab-periodos': () => this.periodoModule.init(), // ✅ Re-agregado
       'btn-tab-programas': () => this.programaModule.init(),
       'btn-tab-planes': () => this.planModule.init(),
       'btn-tab-semestres': () => this.semestreModule.init(),
@@ -121,12 +121,6 @@ export class CatalogoModule {
   // =========================================
   // NORMALIZACIÓN DE ID DE PESTAÑA
   // =========================================
-  /**
-   * Convierte cualquier formato de entrada al ID exacto del botón
-   * Acepta: 'docentes', 'tab-docentes', 'btn-tab-docentes', etc.
-   * @param {string|null} input - Valor recibido del sidebar
-   * @returns {string|null} - ID del botón (.tab-btn) o null si no se reconoce
-   */
   _normalizeTabId(input) {
     if (!input) return null;
     
@@ -188,7 +182,7 @@ export class CatalogoModule {
     const modals = [
       modalEEHtml, 
       modalTiposHtml, 
-      modalPeriodoHtml, 
+      modalPeriodoHtml, // ✅ Re-agregado
       modalProgramaHtml, 
       modalAlumnoHtml,
       modalPlanHtml,
@@ -352,25 +346,19 @@ export class CatalogoModule {
     console.log('✅ Navegación por flechas de pestañas inicializada');
   }
 
-  
-
-/**
- * Actualiza la visibilidad de las flechas según el scroll actual
- */
+  /**
+   * Actualiza la visibilidad de las flechas según el scroll actual
+   */
   updateTabArrows() {
     if (!this.tabsContainer || !this.tabArrowLeft || !this.tabArrowRight) return;
 
     const { scrollLeft, scrollWidth, clientWidth } = this.tabsContainer;
-    const scrollTolerance = 10; // Píxeles de tolerancia
+    const scrollTolerance = 10;
 
-    // Verificar si se puede scrollear a la izquierda
     const canScrollLeft = scrollLeft > scrollTolerance;
-    
-    // Verificar si se puede scrollear a la derecha
     const maxScroll = scrollWidth - clientWidth;
     const canScrollRight = scrollLeft < (maxScroll - scrollTolerance);
 
-    // Mostrar/ocultar flechas con transición suave
     if (canScrollLeft) {
       this.tabArrowLeft.classList.add('visible');
     } else {
@@ -383,39 +371,33 @@ export class CatalogoModule {
       this.tabArrowRight.classList.remove('visible');
     }
 
-    // Actualizar clases del wrapper para gradientes (opcional)
     this.tabsWrapper.classList.toggle('overflow-left', canScrollLeft);
     this.tabsWrapper.classList.toggle('overflow-right', canScrollRight);
   }
 
   /**
- * Verifica si el contenedor tiene overflow horizontal
- * Se llama después de cargar los datos para asegurar que las flechas se muestren
- */
-checkOverflow() {
-  if (!this.tabsContainer || !this.tabArrowLeft || !this.tabArrowRight) return;
+   * Verifica si el contenedor tiene overflow horizontal
+   */
+  checkOverflow() {
+    if (!this.tabsContainer || !this.tabArrowLeft || !this.tabArrowRight) return;
 
-  const hasOverflow = this.tabsContainer.scrollWidth > this.tabsContainer.clientWidth;
-  
-  if (hasOverflow) {
-    // Si hay overflow, mostrar flecha derecha inicialmente
-    this.updateTabArrows();
-  } else {
-    // Si no hay overflow, ocultar ambas flechas
-    this.tabArrowLeft.classList.remove('visible');
-    this.tabArrowRight.classList.remove('visible');
+    const hasOverflow = this.tabsContainer.scrollWidth > this.tabsContainer.clientWidth;
+    
+    if (hasOverflow) {
+      this.updateTabArrows();
+    } else {
+      this.tabArrowLeft.classList.remove('visible');
+      this.tabArrowRight.classList.remove('visible');
+    }
   }
-}
 
   /**
    * Desplaza el contenedor de pestañas hacia izquierda o derecha
-   * @param {string} direction - 'left' o 'right'
    */
   scrollTabs(direction) {
     const container = this.tabsContainer;
     if (!container) return;
 
-    // Calcular cuánto scroll hacer (80% del ancho visible)
     const scrollAmount = container.clientWidth * 0.8;
     const currentScroll = container.scrollLeft;
     let targetScroll;
@@ -429,13 +411,11 @@ checkOverflow() {
       );
     }
 
-    // Scroll suave nativo
     container.scrollTo({
       left: targetScroll,
       behavior: 'smooth'
     });
 
-    // Actualizar flechas después de la animación (~350ms)
     setTimeout(() => this.updateTabArrows(), 400);
   }
 
