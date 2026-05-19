@@ -1,9 +1,12 @@
 // src/renderer/modules/AlumnoModule.js
 // 📍 Arquitectura: Módulo autocontenido para gestión de Alumnos
-// 🔗 DB Schema: alumnos(matricula, nombres, apellido_paterno, correo_contacto, programa_academico, estado, ...)
+// ✅ Incluye: UnsavedChangesGuard, FormAutosave, globalConfirm, cleanup explícito
 
 import { DataTable } from '../components/DataTable/DataTable.js';
 import modalAlumnoHtml from '../views/partials/modals/modal-alumno.html';
+import { FormAutosave } from '../utils/formAutosave.js';
+import { UnsavedChangesGuard } from '../utils/unsavedChanges.js';
+import { globalConfirm } from '../utils/confirmationModal.js';
 
 export class AlumnoModule {
   constructor() {
@@ -11,37 +14,42 @@ export class AlumnoModule {
     this.modalElement = null;
     this.initialized = false;
     this.table = null;
+    this.formAutosave = null;
+    this.unsavedGuard = null;
+    this._modalInjected = false; // ✅ Track para evitar re-inyección
   }
 
   // =========================================
-  // MÉTODO PRINCIPAL DE INICIALIZACIÓN (Re-entrante)
+  // INICIALIZACIÓN PRINCIPAL
   // =========================================
   async init() {
     console.log('📘 [AlumnoModule] Iniciando módulo de Alumnos...');
 
-    // 1. Inyectar Modal en el DOM (si no existe)
-    if (!document.getElementById('modal-alumno')) {
-      const template = document.createElement('div');
-      template.innerHTML = modalAlumnoHtml;
-      document.body.appendChild(template.firstElementChild);
-      this.modalElement = document.getElementById('modal-alumno');
-      console.log('✅ Modal Alumno inyectado');
-    }
+    // 1. Inyectar modal (solo una vez, gestionado por este módulo)
+    this._injectModal();
 
-    // 2. Esperar que el DOM esté listo (crítico para SPA)
-    await this.waitForDOMReady('tabla-alumnos-body');
+    // 2. Esperar que el tbody esté listo en el DOM
+    await this._waitForDOM('tabla-alumnos-body');
 
-    // 3. Cargar datos (Lazy Load: solo si está vacío)
+    // 3. Cargar datos (lazy: solo si está vacío)
     if (!this.data || this.data.length === 0) {
-      await this.loadData();
+      console.log('📡 [AlumnoModule] Cargando datos desde IPC...');
+      await this._loadData();
+    } else {
+      console.log('💾 [AlumnoModule] Usando datos en caché...');
     }
 
-    // 4. Renderizar tabla o estado vacío
-    if (this.data && this.data.length > 0) {
-      // Configurar y renderizar DataTable
+    // 4. Renderizar tabla
+    const tbody = document.getElementById('tabla-alumnos-body');
+    if (!tbody) {
+      console.error('❌ [AlumnoModule] tbody no encontrado');
+      return;
+    }
+
+    if (this.data.length > 0) {
       this.table = new DataTable({
         tbodyId: 'tabla-alumnos-body',
-        columns: this.getColumns(),
+        columns: this._getColumns(),
         expandable: true,
         actions: true,
         onRowClick: 'alumnoModuleInstance.handleRowClick(event)',
@@ -51,24 +59,313 @@ export class AlumnoModule {
       this.table.setData(this.data);
       console.log(`✅ Tabla Alumnos renderizada con ${this.data.length} registros`);
     } else {
-      // ✅ Renderizar estado vacío CENTRADO
-      this.renderEmptyState();
-      console.log('ℹ️ Sin registros de alumnos');
+      this._renderEmptyState();
+      console.log('ℹ️ [AlumnoModule] Sin registros para mostrar');
     }
-    
-    // 5. Configurar eventos (siempre, porque el DOM es nuevo)
-    this.setupSearch();
-    this.setupModalEvents();
-    this.setupGlobalHelpers();
-    
+
+    // 5. Vincular eventos (siempre, porque el DOM puede haber cambiado)
+    this._setupSearch();
+    this._setupModalEvents();
+    this._setupGlobalHelpers();
+
     this.initialized = true;
     console.log('✅ [AlumnoModule] Inicialización completa');
   }
 
   // =========================================
-  // ✅ ESTADO VACÍO CENTRADO (Corrección solicitada)
+  // INYECCIÓN DE MODAL (Auto-gestionada)
   // =========================================
-  renderEmptyState() {
+  _injectModal() {
+    if (this._modalInjected || document.getElementById('modal-alumno')) {
+      this.modalElement = document.getElementById('modal-alumno');
+      this._modalInjected = true;
+      return;
+    }
+
+    const template = document.createElement('div');
+    template.innerHTML = modalAlumnoHtml;
+    document.body.appendChild(template.firstElementChild);
+    
+    this.modalElement = document.getElementById('modal-alumno');
+    this._modalInjected = true;
+    console.log('✅ [AlumnoModule] Modal inyectado');
+  }
+
+  // =========================================
+  // UTILIDAD: Esperar elemento en DOM
+  // =========================================
+  async _waitForDOM(elementId, timeout = 2000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      if (document.getElementById(elementId)) return true;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    console.error(`❌ [AlumnoModule] Timeout: "${elementId}" no encontrado`);
+    return false;
+  }
+
+  // =========================================
+  // CAPA DE DATOS
+  // =========================================
+  async _loadData() {
+    try {
+      const res = await window.electronAPI.listarAlumnos();
+      if (res.success) {
+        this.data = res.rows || res.data;
+        if (this.data.length > 0) {
+          console.log('📄 [AlumnoModule] Primer registro:', this.data[0]);
+          console.log('🔑 [AlumnoModule] Keys disponibles:', Object.keys(this.data[0]));
+        }
+        return true;
+      }
+      console.warn('⚠️ [AlumnoModule] Error en respuesta IPC:', res.error);
+      return false;
+    } catch (error) {
+      console.error('❌ [AlumnoModule] Error cargando datos:', error);
+      return false;
+    }
+  }
+
+  // =========================================
+  // CONFIGURACIÓN DE COLUMNAS
+  // =========================================
+  _getColumns() {
+    return [
+      { 
+        key: 'matricula', 
+        label: 'Matrícula',
+        format: (v) => `<strong style="font-family:monospace;">${v}</strong>` 
+      },
+      { 
+        key: 'nombres', 
+        label: 'Nombre Completo',
+        format: (v, row) => {
+          const partes = [row.apellido_paterno || '', row.apellido_materno || '', v || ''].filter(p => p);
+          return partes.join(' ');
+        }
+      },
+      { key: 'correo_contacto', label: 'Correo' },
+      { key: 'programa_academico', label: 'Programa' },
+      { key: 'estado', label: 'Estado', badge: true }
+    ];
+  }
+
+  // =========================================
+  // BUSCADOR EN TIEMPO REAL
+  // =========================================
+  _setupSearch() {
+    const input = document.getElementById('buscador-alumnos');
+    if (!input) return;
+
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+
+    newInput.addEventListener('input', (e) => {
+      const txt = e.target.value.toLowerCase().trim();
+      if (!txt) {
+        this.table?.setData(this.data);
+        return;
+      }
+      
+      const filtered = this.data.filter(item => {
+        const nombreCompleto = [item.nombres || '', item.apellido_paterno || '', item.apellido_materno || ''].join(' ').toLowerCase();
+        return nombreCompleto.includes(txt) || 
+               (item.matricula || '').toLowerCase().includes(txt) || 
+               (item.correo_contacto || '').toLowerCase().includes(txt);
+      });
+      
+      this.table?.setData(filtered);
+    });
+  }
+
+  // =========================================
+  // EVENTOS DEL MODAL (CON CONFIRMACIÓN GLOBAL)
+  // =========================================
+  _setupModalEvents() {
+    const btnNuevo = document.getElementById('btn-nuevo-alumno');
+    const modal = this.modalElement;
+    
+    if (!btnNuevo || !modal) {
+      console.warn('⚠️ [AlumnoModule] Elementos del modal no encontrados');
+      return;
+    }
+
+    // Abrir modal
+    btnNuevo.onclick = (e) => {
+      e.preventDefault();
+      this._openModal();
+    };
+
+    // ✅ Función de cierre ASÍNCRONA con confirmación global
+    const intentarCerrar = async () => {
+      if (this.unsavedGuard?.hasUnsavedChanges) {
+        const confirmado = await globalConfirm.ask('Tienes cambios sin guardar. ¿Deseas salir sin guardar?');
+        if (!confirmado) return; // Usuario canceló → NO cerrar
+      }
+      this._ejecutarCierre();
+    };
+
+    // ✅ CORRECCIÓN: Usar querySelector por clase para el botón "X"
+    this.modalElement?.querySelector('.btn-close')?.addEventListener('click', intentarCerrar);
+    document.getElementById('btn-cancelar-alumno')?.addEventListener('click', intentarCerrar);
+    
+    // Click en overlay
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        e.preventDefault();
+        intentarCerrar();
+      }
+    });
+
+    // Botón guardar
+    const btnSave = document.getElementById('btn-guardar-alumno');
+    if (btnSave) {
+      const newBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newBtn, btnSave);
+      newBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await this._saveAlumno(modal);
+      });
+    }
+  }
+
+  // ✅ Método privado para ejecutar cierre limpio (reutilizable)
+  _ejecutarCierre() {
+    // 1. Destruir guard PRIMERO (libera listeners y beforeunload)
+    this.unsavedGuard?.destroy();
+    this.unsavedGuard = null;
+    
+    // 2. Limpiar auto-guardado
+    this.formAutosave?.clear();
+    this.formAutosave = null;
+    
+    // 3. Resetear formulario
+    const form = document.getElementById('form-alumno');
+    if (form) form.reset();
+    
+    // 4. Ocultar modal
+    if (this.modalElement) this.modalElement.classList.add('hidden');
+  }
+
+  // =========================================
+  // ABRIR MODAL
+  // =========================================
+  _openModal(alumno = null) {
+    const modal = this.modalElement;
+    const form = document.getElementById('form-alumno');
+    if (!modal || !form) return;
+
+    // ✅ NO resetear si FormAutosave va a restaurar datos (modo nuevo)
+    if (!alumno) {
+      const hasAutosave = localStorage.getItem('autosave:alumno-form');
+      if (!hasAutosave) {
+        form.reset();
+      }
+    } else {
+      // En modo edición, siempre resetear primero
+      form.reset();
+    }
+    
+    // ✅ Helper seguro para setear valores (evita errores de null)
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val ?? '';
+    };
+    
+    setVal('alumno-id', '');
+    setVal('alumno-estado', 'activo'); // Siempre activo
+    
+    // ✅ Inicializar protecciones (FormAutosave restaura AUTOMÁTICAMENTE en su constructor)
+    this.unsavedGuard = new UnsavedChangesGuard('#form-alumno');
+    this.formAutosave = new FormAutosave('form-alumno', 'alumno-form');
+
+    if (alumno) {
+      // Modo edición: precargar datos de BD (sobrescribe cualquier autosave)
+      setVal('alumno-id', alumno.id);
+      setVal('alumno-matricula', alumno.matricula);
+      setVal('alumno-ap-paterno', alumno.apellido_paterno);
+      setVal('alumno-ap-materno', alumno.apellido_materno);
+      setVal('alumno-nombres', alumno.nombres);
+      setVal('alumno-correo', alumno.correo_contacto);
+      setVal('alumno-telefono', alumno.telefono_contacto);
+      setVal('alumno-programa', alumno.programa_academico);
+      setVal('alumno-fecha', alumno.fecha_ingreso ? alumno.fecha_ingreso.split('T')[0] : '');
+      setVal('alumno-tratamiento', alumno.tratamiento || 'Est.');
+      setVal('alumno-articulo', alumno.articulo || 'El');
+      
+      // Limpiar autosave tras precargar datos reales
+      this.formAutosave?.clear();
+    }
+    // ✅ En modo nuevo: si hay autosave, ya se restauró en el constructor de FormAutosave
+    
+    modal.classList.remove('hidden');
+    
+    // Enfocar primer campo con pequeño delay
+    setTimeout(() => document.getElementById('alumno-matricula')?.focus(), 100);
+  }
+
+  // =========================================
+  // GUARDAR ALUMNO
+  // =========================================
+  async _saveAlumno(modal) {
+    // ✅ Helper seguro para obtener valores
+    const getVal = (id) => document.getElementById(id)?.value?.trim();
+    
+    const tratamiento = document.getElementById('alumno-tratamiento')?.value?.trim();
+    
+    if (!tratamiento) {
+      alert('⚠️ Debes seleccionar un tratamiento');
+      return;
+    }
+
+    const tratamientosFemeninos = ['Sra.', 'Lic.'];
+    const esFemenino = tratamiento.endsWith('a.') || tratamientosFemeninos.includes(tratamiento);
+    const articulo = esFemenino ? 'La' : 'El';
+
+    const datos = {
+      id: getVal('alumno-id') ? parseInt(getVal('alumno-id')) : null,
+      matricula: getVal('alumno-matricula'),
+      apellido_paterno: getVal('alumno-ap-paterno'),
+      apellido_materno: getVal('alumno-ap-materno'),
+      nombres: getVal('alumno-nombres'),
+      correo_contacto: getVal('alumno-correo'),
+      telefono_contacto: getVal('alumno-telefono'),
+      programa_academico: document.getElementById('alumno-programa')?.value,
+      periodo_ingreso: document.getElementById('alumno-periodo')?.value,
+      tratamiento: tratamiento,
+      articulo: articulo,
+      estado: 'activo'
+    };
+
+    // Validaciones obligatorias
+    if (!datos.matricula || !datos.apellido_paterno || !datos.nombres || !datos.periodo_ingreso) {
+      alert('⚠️ Campos obligatorios:\n• Matrícula\n• Apellido Paterno\n• Nombres\n• Periodo de Ingreso');
+      return;
+    }
+
+    try {
+      const res = await window.electronAPI.guardarAlumno(datos);
+      
+      if (res.success) {
+        // ✅ Limpiar y cerrar tras guardar exitosamente
+        this._ejecutarCierre();
+        
+        // Refrescar tabla
+        await this._loadData();
+        this.table?.setData(this.data);
+      } else {
+        alert(`❌ Error: ${res.error || 'No se pudo guardar'}`);
+      }
+    } catch (error) {
+      console.error('💥 Error guardando alumno:', error);
+      alert('Error de conexión con la base de datos');
+    }
+  }
+
+  // =========================================
+  // ESTADO VACÍO
+  // =========================================
+  _renderEmptyState() {
     const tbody = document.getElementById('tabla-alumnos-body');
     if (!tbody) return;
     
@@ -84,294 +381,42 @@ export class AlumnoModule {
   }
 
   // =========================================
-  // UTILIDAD: Esperar que el tbody exista en el DOM
+  // HELPERS GLOBALES
   // =========================================
-  async waitForDOMReady(tbodyId, timeout = 2000) {
-    const start = Date.now();
-    while (Date.now() - start < timeout) {
-      const tbody = document.getElementById(tbodyId);
-      if (tbody) {
-        console.log(`🔍 [AlumnoModule] tbody "${tbodyId}" encontrado en DOM`);
-        return true;
-      }
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-    console.error(`❌ [AlumnoModule] Timeout: tbody "${tbodyId}" no encontrado`);
-    return false;
-  }
-
-  // =========================================
-  // CAPA DE DATOS
-  // =========================================
-  async loadData() {
-    try {
-      console.log('📡 [AlumnoModule] Solicitando datos a IPC...');
-      const res = await window.electronAPI.listarAlumnos();
-      
-      console.log('📦 [AlumnoModule] Respuesta IPC:', { 
-        success: res.success, 
-        count: res.data?.length || res.rows?.length 
-      });
-      
-      if (res.success) {
-        this.data = res.rows || res.data;
-        
-        if (this.data.length > 0) {
-          console.log('📄 [AlumnoModule] Primer registro:', this.data[0]);
-          console.log('🔑 [AlumnoModule] Keys disponibles:', Object.keys(this.data[0]));
-        }
-        
-        return true;
-      } else {
-        console.warn('⚠️ [AlumnoModule] Error en respuesta IPC:', res.error);
-        return false;
-      }
-    } catch (error) {
-      console.error('❌ [AlumnoModule] Error crítico cargando datos:', error);
-      return false;
-    }
-  }
-
-  // =========================================
-  // CONFIGURACIÓN DE COLUMNAS (Alineada con tu BD)
-  // =========================================
-  getColumns() {
-    return [
-      { 
-        key: 'matricula', 
-        label: 'Matrícula',
-        format: (v) => `<strong style="font-family:monospace;">${v}</strong>` 
-      },
-      { 
-        key: 'nombres', 
-        label: 'Nombre Completo',
-        // Combina apellidos y nombres
-        format: (v, row) => {
-          const partes = [
-            row.apellido_paterno || '',
-            row.apellido_materno || '',
-            v || ''
-          ].filter(p => p);
-          return partes.join(' ');
-        }
-      },
-      { 
-        key: 'correo_contacto', 
-        label: 'Correo' 
-      },
-      { 
-        key: 'programa_academico', 
-        label: 'Programa' 
-      },
-      { 
-        key: 'estado', 
-        label: 'Estado',
-        badge: true 
-      }
-    ];
-  }
-
-  // =========================================
-  // BUSCADOR EN TIEMPO REAL
-  // =========================================
-  setupSearch() {
-    const input = document.getElementById('buscador-alumnos');
-    if (!input) {
-      console.warn('⚠️ [AlumnoModule] Input buscador no encontrado');
-      return;
-    }
-
-    const newInput = input.cloneNode(true);
-    input.parentNode.replaceChild(newInput, input);
-
-    newInput.addEventListener('input', (e) => {
-      const txt = e.target.value.toLowerCase().trim();
-      
-      if (!txt) {
-        if (this.data?.length) {
-          this.table?.setData(this.data);
-        } else {
-          this.renderEmptyState();
-        }
-        return;
-      }
-      
-      const filtered = this.data.filter(item => {
-        const nombreCompleto = [
-          item.nombres || '',
-          item.apellido_paterno || '',
-          item.apellido_materno || ''
-        ].join(' ').toLowerCase();
-        
-        return nombreCompleto.includes(txt) || 
-               (item.matricula || '').toLowerCase().includes(txt) || 
-               (item.correo_contacto || '').toLowerCase().includes(txt);
-      });
-      
-      if (filtered.length === 0) {
-        this.renderEmptyState();
-      } else {
-        this.table?.setData(filtered);
-      }
-    });
-  }
-
-  // =========================================
-  // GESTIÓN DE MODALES
-  // =========================================
-  setupModalEvents() {
-    const btnNuevo = document.getElementById('btn-nuevo-alumno');
-    const modal = document.getElementById('modal-alumno');
-    if (!btnNuevo || !modal) {
-      console.warn('⚠️ [AlumnoModule] Elementos del modal no encontrados');
-      return;
-    }
-
-    btnNuevo.onclick = (e) => {
-      e.preventDefault();
-      this.openModal();
-    };
-
-    const cerrarModal = () => modal.classList.add('hidden');
-    document.getElementById('btn-cerrar-modal-alumno')?.addEventListener('click', cerrarModal);
-    document.getElementById('btn-cancelar-alumno')?.addEventListener('click', cerrarModal);
-    modal.addEventListener('click', (e) => { if(e.target === modal) cerrarModal(); });
-
-    const btnSave = document.getElementById('btn-guardar-alumno');
-    if (btnSave) {
-      const newBtn = btnSave.cloneNode(true);
-      btnSave.parentNode.replaceChild(newBtn, btnSave);
-      newBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        await this.saveAlumno(modal);
-      });
-    }
-  }
-
-  openModal(alumno = null) {
-    const modal = document.getElementById('modal-alumno');
-    const form = document.getElementById('form-alumno');
-    if (!modal || !form) return;
-
-    form.reset();
-    document.getElementById('alumno-id').value = '';
-    document.getElementById('alumno-estado').value = 'activo'; // Siempre activo
-    
-    if (alumno) {
-      // Modo edición: prellenar formulario
-      document.getElementById('alumno-id').value = alumno.id || '';
-      document.getElementById('alumno-matricula').value = alumno.matricula || '';
-      document.getElementById('alumno-ap-paterno').value = alumno.apellido_paterno || '';
-      document.getElementById('alumno-ap-materno').value = alumno.apellido_materno || '';
-      document.getElementById('alumno-nombres').value = alumno.nombres || '';
-      document.getElementById('alumno-correo').value = alumno.correo_contacto || '';
-      document.getElementById('alumno-telefono').value = alumno.telefono_contacto || '';
-      document.getElementById('alumno-programa').value = alumno.programa_academico || '';
-      document.getElementById('alumno-fecha').value = alumno.fecha_ingreso ? alumno.fecha_ingreso.split('T')[0] : '';
-      
-      // ✅ NUEVO: Cargar tratamiento y artículo
-      document.getElementById('alumno-tratamiento').value = alumno.tratamiento || 'Est.';
-      document.getElementById('alumno-articulo').value = alumno.articulo || 'El';
-      
-      // ❌ NO cargar estado: siempre es 'activo' al editar desde modal
-    }
-    
-    modal.classList.remove('hidden');
-    document.getElementById('alumno-matricula')?.focus();
-  }
-
-  async saveAlumno(modal) {
-    const tratamiento = document.getElementById('alumno-tratamiento')?.value?.trim();
-    
-    if (!tratamiento) {
-      alert('⚠️ Debes seleccionar un tratamiento');
-      return;
-    }
-
-    const tratamientosFemeninos = ['Sra.', 'Lic.'];
-    const esFemenino = tratamiento.endsWith('a.') || tratamientosFemeninos.includes(tratamiento);
-    const articulo = esFemenino ? 'La' : 'El';
-
-    const datos = {
-      id: document.getElementById('alumno-id')?.value || null,
-      matricula: document.getElementById('alumno-matricula')?.value?.trim(),
-      apellido_paterno: document.getElementById('alumno-ap-paterno')?.value?.trim(),
-      apellido_materno: document.getElementById('alumno-ap-materno')?.value?.trim(),
-      nombres: document.getElementById('alumno-nombres')?.value?.trim(),
-      correo_contacto: document.getElementById('alumno-correo')?.value?.trim(),
-      telefono_contacto: document.getElementById('alumno-telefono')?.value?.trim(),
-      programa_academico: document.getElementById('alumno-programa')?.value,
-      periodo_ingreso: document.getElementById('alumno-periodo')?.value,  // ✅ CAMBIO
-      tratamiento: tratamiento,
-      articulo: articulo,
-      estado: 'activo'
-    };
-
-    if (!datos.matricula || !datos.apellido_paterno || !datos.nombres || !datos.periodo_ingreso) {
-      alert('⚠️ Campos obligatorios:\n• Matrícula\n• Apellido Paterno\n• Nombres\n• Periodo de Ingreso');
-      return;
-    }
-
-    try {
-      const res = await window.electronAPI.guardarAlumno(datos);
-      
-      if (res.success) {
-        alert('✅ Alumno guardado correctamente');
-        modal.classList.add('hidden');
-        await this.loadData();
-        
-        if (this.data?.length) {
-          this.table?.setData(this.data);
-        } else {
-          this.renderEmptyState();
-        }
-      } else {
-        alert(`❌ Error: ${res.error || 'No se pudo guardar'}`);
-      }
-    } catch (error) {
-      console.error('Error guardando alumno:', error);
-      alert('Error de conexión con la base de datos');
-    }
-  }
-
-  // =========================================
-  // UTILIDADES GLOBALES (Para onclick en HTML inyectado)
-  // =========================================
-  setupGlobalHelpers() {
+  _setupGlobalHelpers() {
     window.alumnoModuleInstance = this;
   }
 
   // =========================================
-  // INTERACCIÓN DE FILAS: EXPANSIÓN
+  // INTERACCIÓN DE FILAS
   // =========================================
   handleRowClick(event) {
     const row = event.target.closest('.data-row');
     if (!row) return;
     
-    if (event.target.closest('.btn-action-menu') || event.target.closest('.context-menu')) {
-      return;
-    }
+    if (event.target.closest('.btn-action-menu') || event.target.closest('.context-menu')) return;
     
     row.classList.toggle('expanded');
     const detailsRow = row.nextElementSibling;
+    
     if (detailsRow?.classList.contains('sub-row-details')) {
       detailsRow.classList.toggle('hidden');
       if (!detailsRow.classList.contains('hidden')) {
-        this.loadRowSummary(row.dataset.id, detailsRow);
+        this._loadRowSummary(row.dataset.id, detailsRow);
       }
     }
+    
     document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
     row.classList.add('selected');
   }
 
-  async loadRowSummary(rowId, container) {
+  async _loadRowSummary(rowId, container) {
     const chips = container.querySelector('.summary-chips');
     if (!chips) return;
     
     chips.innerHTML = '<span class="chip">⏳ Cargando...</span>';
     
     try {
-      // 🔄 Futuro: Consultar tutor asignado desde BD (tabla tutor_alumno)
       setTimeout(() => {
         chips.innerHTML = `
           <span class="chip accent">👨‍🏫 Tutor: Dr. Pérez</span>
@@ -384,23 +429,37 @@ export class AlumnoModule {
   }
 
   // =========================================
-  // MENÚ CONTEXTUAL (3 PUNTOS)
+  // MENÚ CONTEXTUAL
   // =========================================
   toggleActionMenu(event) {
     event.stopPropagation();
     document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
     
     const menu = event.target.closest('.action-icon-container')?.previousElementSibling;
-    if (menu?.classList.contains('context-menu')) {
-      menu.classList.toggle('hidden');
-    }
+    if (menu?.classList.contains('context-menu')) menu.classList.toggle('hidden');
   }
 
   // =========================================
-  // ACCESO AL MEGA MODAL DE ASIGNACIONES
+  // MODAL DE ASIGNACIONES (Placeholder)
   // =========================================
   openAssignmentModal(alumnoId) {
     console.log(`🔗 [AlumnoModule] Abrir asignaciones para Alumno ID: ${alumnoId}`);
     alert(`🚧 Función en desarrollo:\nAsignar Tutor y ver EE cursadas.`);
+  }
+
+  // =========================================
+  // CLEANUP (Para liberar recursos si se destruye el módulo)
+  // =========================================
+  destroy() {
+    this.unsavedGuard?.destroy();
+    this.unsavedGuard = null;
+    this.formAutosave?.clear();
+    this.formAutosave = null;
+    
+    this.modalElement = null;
+    this._modalInjected = false;
+    this.table = null;
+    
+    console.log('🧹 [AlumnoModule] Recursos liberados');
   }
 }

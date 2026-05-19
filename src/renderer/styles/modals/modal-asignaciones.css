@@ -1,0 +1,37 @@
+/* src/renderer/styles/modals/modal-asignaciones.css */
+#asig-tabs-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+}
+
+#asig-tabs-container .tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: var(--bg-light);
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+#asig-tabs-container .tab-btn.active {
+  background: var(--accent-color);
+  color: white;
+  font-weight: 600;
+}
+
+#asig-tabs-container .tab-btn:hover:not(.active) {
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+}
+
+.tab-content-area {
+  min-height: 200px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px 0;
+}

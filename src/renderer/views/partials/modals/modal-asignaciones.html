@@ -1,0 +1,23 @@
+<!-- Modal genérico de asignaciones -->
+<div id="modal-asignaciones" class="modal-overlay hidden">
+  <div class="modal-content modal-lg">
+    <div class="modal-header">
+      <h3 id="asig-modal-title">Gestionar Asignaciones</h3>
+      <button class="btn-close" id="btn-cerrar-asig">&times;</button>
+    </div>
+    
+    <!-- Contenedor dinámico de pestañas -->
+    <div id="asig-tabs-container" class="tabs-container">
+      <!-- Se generan dinámicamente con JS -->
+    </div>
+    
+    <!-- Contenido dinámico -->
+    <div id="asig-content-area" class="tab-content-area">
+      <div class="empty-state" id="asig-loading">Cargando...</div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-cancel" id="btn-cancelar-asig">Cerrar</button>
+    </div>
+  </div>
+</div>

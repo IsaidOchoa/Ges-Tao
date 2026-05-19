@@ -1,11 +1,12 @@
 // src/renderer/modules/TipoConstanciaModule.js
 // 📍 Arquitectura: Módulo autocontenido para gestión de Tipos de Constancia
-// 🔗 DB Schema: tipos_constancia(clave, nombre, descripcion, requiere_ee, requiere_periodo, estado)
+// ✅ Incluye: UnsavedChangesGuard, FormAutosave, globalConfirm, cleanup explícito
 
 import { DataTable } from '../components/DataTable/DataTable.js';
 import modalTiposHtml from '../views/partials/modals/modal-tipos-constancia.html';
-import { FormAutosave } from '../utils/formAutosave.js';           // ✅ Auto-guardado
-import { UnsavedChangesGuard } from '../utils/unsavedChanges.js';  // ✅ Advertencia de salida
+import { FormAutosave } from '../utils/formAutosave.js';
+import { UnsavedChangesGuard } from '../utils/unsavedChanges.js';
+import { globalConfirm } from '../utils/confirmationModal.js';
 
 export class TipoConstanciaModule {
   constructor() {
@@ -13,100 +14,122 @@ export class TipoConstanciaModule {
     this.modalElement = null;
     this.initialized = false;
     this.table = null;
-    
-    // ✅ Para auto-guardado y protección de cambios
     this.formAutosave = null;
     this.unsavedGuard = null;
+    this._modalInjected = false; // ✅ Track para evitar re-inyección
   }
 
   // =========================================
-  // MÉTODO PRINCIPAL DE INICIALIZACIÓN (Re-entrante)
+  // INICIALIZACIÓN PRINCIPAL
   // =========================================
   async init() {
     console.log('📘 [TipoConstanciaModule] Sincronizando módulo...');
 
-    // 1. Inyectar Modal (solo si no existe)
-    if (!document.getElementById('modal-tipo-constancia')) {
-      const template = document.createElement('div');
-      template.innerHTML = modalTiposHtml;
-      document.body.appendChild(template.firstElementChild);
-      this.modalElement = document.getElementById('modal-tipo-constancia');
-      console.log('✅ Modal Tipos inyectado');
-    }
+    // 1. Inyectar modal (solo una vez, gestionado por este módulo)
+    this._injectModal();
 
-    // 2. Esperar que el tbody exista (crítico para SPA)
-    await this.waitForDOMReady('tabla-tipos-constancia-body');
+    // 2. Esperar que el tbody esté listo en el DOM
+    await this._waitForDOM('tabla-tipos-constancia-body');
 
-    // 3. Cargar datos SOLO si está vacío (Lazy Load)
+    // 3. Cargar datos (lazy: solo si está vacío)
     if (!this.data || this.data.length === 0) {
-      console.log('📡 [TipoConstanciaModule] Cargando datos...');
-      await this.loadData();
+      console.log('📡 [TipoConstanciaModule] Cargando datos desde IPC...');
+      await this._loadData();
+    } else {
+      console.log('💾 [TipoConstanciaModule] Usando datos en caché...');
     }
 
-    // 4. Renderizar: Tabla con datos O estado vacío
+    // 4. Renderizar tabla
     const tbody = document.getElementById('tabla-tipos-constancia-body');
-    if (!tbody) return;
+    if (!tbody) {
+      console.error('❌ [TipoConstanciaModule] tbody no encontrado');
+      return;
+    }
 
-    if (this.data && this.data.length > 0) {
+    if (this.data.length > 0) {
       this.table = new DataTable({
         tbodyId: 'tabla-tipos-constancia-body',
-        columns: this.getColumns(),
+        columns: this._getColumns(),
         expandable: false,
         actions: true,
         onRowClick: 'tipoConstanciaModuleInstance.handleRowClick(event)',
         onAction: 'tipoConstanciaModuleInstance.toggleActionMenu(event)',
         onExpand: false,
-        hideExpandColumn: true  // ✅ Ocultar columna de flecha (tabla simple)
+        hideExpandColumn: true
       });
       this.table.setData(this.data);
       console.log(`✅ Tabla Tipos renderizada con ${this.data.length} registros`);
     } else {
-      this.renderEmptyState();
+      this._renderEmptyState();
       console.log('ℹ️ [TipoConstanciaModule] Sin registros para mostrar');
     }
 
-    // 5. Re-vincular eventos (SIEMPRE, porque el DOM es nuevo)
-    this.setupSearch();
-    this.setupModalEvents();
-    this.setupGlobalHelpers();
+    // 5. Vincular eventos (siempre, porque el DOM puede haber cambiado)
+    this._setupSearch();
+    this._setupModalEvents();
+    this._setupGlobalHelpers();
 
+    this.initialized = true;
     console.log('✅ [TipoConstanciaModule] Listo');
   }
 
   // =========================================
-  // UTILIDAD: Esperar que el tbody exista en el DOM
+  // INYECCIÓN DE MODAL (Auto-gestionada)
   // =========================================
-  async waitForDOMReady(tbodyId, timeout = 2000) {
+  _injectModal() {
+    if (this._modalInjected || document.getElementById('modal-tipo-constancia')) {
+      this.modalElement = document.getElementById('modal-tipo-constancia');
+      this._modalInjected = true;
+      return;
+    }
+
+    const template = document.createElement('div');
+    template.innerHTML = modalTiposHtml;
+    document.body.appendChild(template.firstElementChild);
+    
+    this.modalElement = document.getElementById('modal-tipo-constancia');
+    this._modalInjected = true;
+    console.log('✅ [TipoConstanciaModule] Modal inyectado');
+  }
+
+  // =========================================
+  // UTILIDAD: Esperar elemento en DOM
+  // =========================================
+  async _waitForDOM(elementId, timeout = 2000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
-      if (document.getElementById(tbodyId)) return true;
+      if (document.getElementById(elementId)) return true;
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    console.error(`❌ [TipoConstanciaModule] Timeout: tbody "${tbodyId}" no encontrado`);
+    console.error(`❌ [TipoConstanciaModule] Timeout: "${elementId}" no encontrado`);
     return false;
   }
 
   // =========================================
   // CAPA DE DATOS
   // =========================================
-  async loadData() {
+  async _loadData() {
     try {
       const res = await window.electronAPI.listarTiposConstancia();
       if (res.success) {
         this.data = res.rows || res.data;
+        if (this.data.length > 0) {
+          console.log('📄 [TipoConstanciaModule] Primer registro:', this.data[0]);
+        }
         return true;
       }
+      console.warn('⚠️ [TipoConstanciaModule] Error en respuesta IPC:', res.error);
       return false;
     } catch (error) {
-      console.error('❌ Error cargando tipos:', error);
+      console.error('❌ [TipoConstanciaModule] Error cargando datos:', error);
       return false;
     }
   }
 
   // =========================================
-  // CONFIGURACIÓN DE COLUMNAS (Sin clave visible, alineación correcta)
+  // CONFIGURACIÓN DE COLUMNAS
   // =========================================
-  getColumns() {
+  _getColumns() {
     return [
       { 
         key: 'nombre', 
@@ -153,19 +176,15 @@ export class TipoConstanciaModule {
   // =========================================
   // BUSCADOR EN TIEMPO REAL
   // =========================================
-  setupSearch() {
+  _setupSearch() {
     const input = document.getElementById('buscador-tipos-constancia');
-    if (!input) {
-      console.warn('⚠️ [TipoConstanciaModule] Input buscador no encontrado');
-      return;
-    }
+    if (!input) return;
 
     const newInput = input.cloneNode(true);
     input.parentNode.replaceChild(newInput, input);
 
     newInput.addEventListener('input', (e) => {
       const txt = e.target.value.toLowerCase().trim();
-      
       if (!txt) {
         this.table?.setData(this.data);
         return;
@@ -182,71 +201,115 @@ export class TipoConstanciaModule {
   }
 
   // =========================================
-  // GESTIÓN DE MODALES (Con auto-guardado y sin estado visible)
+  // EVENTOS DEL MODAL (CON CONFIRMACIÓN GLOBAL)
   // =========================================
-  setupModalEvents() {
+  _setupModalEvents() {
     const btnNuevo = document.getElementById('btn-nuevo-tipo-constancia');
-    const modal = document.getElementById('modal-tipo-constancia');
+    const modal = this.modalElement;
+    
     if (!btnNuevo || !modal) {
       console.warn('⚠️ [TipoConstanciaModule] Elementos del modal no encontrados');
       return;
     }
 
+    // Abrir modal
     btnNuevo.onclick = (e) => {
       e.preventDefault();
-      this.openModal();
+      this._openModal();
     };
-    
-    const cerrar = () => {
-      // ✅ Limpiar auto-guardado y guard al cerrar
-      this.formAutosave?.clear();
-      this.unsavedGuard = null;
-      modal.classList.add('hidden');
-    };
-    
-    document.getElementById('btn-cerrar-modal-tipo')?.addEventListener('click', cerrar);
-    document.getElementById('btn-cancelar-tipo')?.addEventListener('click', cerrar);
-    modal.addEventListener('click', (e) => { if(e.target === modal) cerrar(); });
 
+    // ✅ Función de cierre ASÍNCRONA con confirmación global
+    const intentarCerrar = async () => {
+      if (this.unsavedGuard?.hasUnsavedChanges) {
+        const confirmado = await globalConfirm.ask('Tienes cambios sin guardar. ¿Deseas salir sin guardar?');
+        if (!confirmado) return; // Usuario canceló → NO cerrar
+      }
+      this._ejecutarCierre();
+    };
+
+    // ✅ CORRECCIÓN: Usar querySelector por clase para el botón "X"
+    this.modalElement?.querySelector('.btn-close')?.addEventListener('click', intentarCerrar);
+    document.getElementById('btn-cancelar-tipo')?.addEventListener('click', intentarCerrar);
+    
+    // Click en overlay
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        e.preventDefault();
+        intentarCerrar();
+      }
+    });
+
+    // Botón guardar
     const btnSave = document.getElementById('btn-guardar-tipo-constancia');
     if (btnSave) {
       const newBtn = btnSave.cloneNode(true);
       btnSave.parentNode.replaceChild(newBtn, btnSave);
       newBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        await this.saveTipo(modal);
+        await this._saveTipo(modal);
       });
     }
   }
 
-  // ✅ openModal CORREGIDO: Sin campo estado, con auto-guardado
-  openModal(tipo = null) {
-    const modal = document.getElementById('modal-tipo-constancia');
+  // ✅ Método privado para ejecutar cierre limpio (reutilizable)
+  _ejecutarCierre() {
+    // 1. Destruir guard PRIMERO (libera listeners y beforeunload)
+    this.unsavedGuard?.destroy();
+    this.unsavedGuard = null;
+    
+    // 2. Limpiar auto-guardado
+    this.formAutosave?.clear();
+    this.formAutosave = null;
+    
+    // 3. Resetear formulario
+    const form = document.getElementById('form-tipo-constancia');
+    if (form) form.reset();
+    
+    // 4. Ocultar modal
+    if (this.modalElement) this.modalElement.classList.add('hidden');
+  }
+
+  // =========================================
+  // ABRIR MODAL
+  // =========================================
+  _openModal(tipo = null) {
+    const modal = this.modalElement;
     const form = document.getElementById('form-tipo-constancia');
     if (!modal || !form) return;
 
-    form.reset();
+    // ✅ NO resetear si FormAutosave va a restaurar datos (modo nuevo)
+    if (!tipo) {
+      const hasAutosave = localStorage.getItem('autosave:tipo-constancia-form');
+      if (!hasAutosave) {
+        form.reset();
+      }
+    } else {
+      // En modo edición, siempre resetear primero
+      form.reset();
+    }
     
-    // ✅ Limpiar campos ocultos con null checks
-    const idField = document.getElementById('tipo-id');
-    const claveField = document.getElementById('tipo-clave');
-    const claveOrigField = document.getElementById('tipo-clave-original');
+    // ✅ Helper seguro para setear valores (evita errores de null)
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val ?? '';
+    };
     
-    if (idField) idField.value = '';
-    if (claveField) claveField.value = '';
-    if (claveOrigField) claveOrigField.value = '';
+    // Limpiar campos ocultos
+    setVal('tipo-id', '');
+    setVal('tipo-clave', '');
+    setVal('tipo-clave-original', '');
     
+    // ✅ Inicializar protecciones (FormAutosave restaura AUTOMÁTICAMENTE en su constructor)
+    this.unsavedGuard = new UnsavedChangesGuard('#form-tipo-constancia');
+    this.formAutosave = new FormAutosave('form-tipo-constancia', 'tipo-constancia-form');
+
     if (tipo) {
-      // Modo edición
-      if (idField) idField.value = tipo.id || '';
-      if (claveField) claveField.value = tipo.clave || '';
-      if (claveOrigField) claveOrigField.value = tipo.clave || '';
-      
-      const nombreField = document.getElementById('tipo-nombre');
-      if (nombreField) nombreField.value = tipo.nombre || '';
-      
-      const descField = document.getElementById('tipo-descripcion');
-      if (descField) descField.value = tipo.descripcion || '';
+      // Modo edición: precargar datos de BD (sobrescribe cualquier autosave)
+      setVal('tipo-id', tipo.id);
+      setVal('tipo-clave', tipo.clave);
+      setVal('tipo-clave-original', tipo.clave);
+      setVal('tipo-nombre', tipo.nombre);
+      setVal('tipo-descripcion', tipo.descripcion);
       
       const eeField = document.getElementById('tipo-requiere-ee');
       if (eeField) eeField.checked = !!tipo.requiere_ee;
@@ -254,36 +317,33 @@ export class TipoConstanciaModule {
       const perField = document.getElementById('tipo-requiere-periodo');
       if (perField) perField.checked = !!tipo.requiere_periodo;
       
-      // ✅ NO cargar estado: siempre es 'activo' desde modal
-      // El estado solo se cambia desde el menú contextual de la tabla
-      
       // Actualizar título del modal
       const tituloEl = document.getElementById('modal-titulo-tipo');
       if (tituloEl) tituloEl.textContent = `Editar: ${tipo.nombre}`;
+      
+      // Limpiar autosave tras precargar datos reales
+      this.formAutosave?.clear();
     } else {
-      // Modo nuevo
+      // Modo nuevo: título por defecto
       const tituloEl = document.getElementById('modal-titulo-tipo');
       if (tituloEl) tituloEl.textContent = 'Nuevo Tipo de Constancia';
     }
-    
-    // ✅ Iniciar auto-guardado y protección de cambios
-    this.formAutosave = new FormAutosave('form-tipo-constancia', 'tipo-constancia-form');
-    this.unsavedGuard = new UnsavedChangesGuard('#form-tipo-constancia');
+    // ✅ En modo nuevo: si hay autosave, ya se restauró en el constructor de FormAutosave
     
     modal.classList.remove('hidden');
     
-    const focusField = document.getElementById('tipo-nombre');
-    if (focusField) focusField.focus();
+    // Enfocar primer campo con pequeño delay
+    setTimeout(() => document.getElementById('tipo-nombre')?.focus(), 100);
   }
 
-  // ✅ saveTipo CORREGIDO: estado siempre 'activo', con limpieza de auto-guardado
-  async saveTipo(modal) {
-    const id = document.getElementById('tipo-id')?.value;
-    const nombre = document.getElementById('tipo-nombre')?.value?.trim();
-    const descripcion = document.getElementById('tipo-descripcion')?.value?.trim();
+  // =========================================
+  // GUARDAR TIPO DE CONSTANCIA
+  // =========================================
+  async _saveTipo(modal) {
+    // ✅ Helper seguro para obtener valores
+    const getVal = (id) => document.getElementById(id)?.value?.trim();
     
-    let clave = document.getElementById('tipo-clave')?.value?.trim();
-    
+    const nombre = getVal('tipo-nombre');
     if (!nombre) {
       alert('⚠️ El nombre es obligatorio');
       document.getElementById('tipo-nombre')?.focus();
@@ -291,6 +351,9 @@ export class TipoConstanciaModule {
     }
 
     // Generar clave automática si es nuevo y está vacía
+    let clave = getVal('tipo-clave');
+    const id = getVal('tipo-id');
+    
     if (!id && !clave) {
       const palabras = nombre.toUpperCase().split(' ').filter(p => p.length > 2);
       clave = palabras.slice(0, 2).map(p => p.substring(0, 4)).join('-');
@@ -299,26 +362,23 @@ export class TipoConstanciaModule {
 
     const datos = {
       id: id ? parseInt(id) : null,
-      clave: clave, 
+      clave: clave,
       nombre: nombre,
-      descripcion: descripcion,
+      descripcion: getVal('tipo-descripcion'),
       requiere_ee: document.getElementById('tipo-requiere-ee')?.checked ? 1 : 0,
       requiere_periodo: document.getElementById('tipo-requiere-periodo')?.checked ? 1 : 0,
-      estado: 'activo'  // ✅ Siempre activo al crear/editar desde modal
+      estado: 'activo' // ✅ Siempre activo al crear/editar desde modal
     };
 
     try {
       const res = await window.electronAPI.guardarTipoConstancia(datos);
       
       if (res.success) {
-        alert('✅ Tipo de Constancia guardado correctamente');
+        // ✅ Limpiar y cerrar tras guardar exitosamente
+        this._ejecutarCierre();
         
-        // ✅ Limpiar auto-guardado y guard al guardar exitosamente
-        this.formAutosave?.clear();
-        this.unsavedGuard = null;
-        
-        modal.classList.add('hidden');
-        await this.loadData();
+        // Refrescar tabla
+        await this._loadData();
         this.table?.setData(this.data);
       } else {
         alert(`❌ Error: ${res.error || 'No se pudo guardar'}`);
@@ -332,7 +392,7 @@ export class TipoConstanciaModule {
   // =========================================
   // ESTADO VACÍO
   // =========================================
-  renderEmptyState() {
+  _renderEmptyState() {
     const tbody = document.getElementById('tabla-tipos-constancia-body');
     if (!tbody) return;
     
@@ -348,9 +408,9 @@ export class TipoConstanciaModule {
   }
 
   // =========================================
-  // UTILIDADES GLOBALES
+  // HELPERS GLOBALES
   // =========================================
-  setupGlobalHelpers() {
+  _setupGlobalHelpers() {
     window.tipoConstanciaModuleInstance = this;
   }
 
@@ -366,10 +426,32 @@ export class TipoConstanciaModule {
     row.classList.add('selected');
   }
 
+  // =========================================
+  // MENÚ CONTEXTUAL
+  // =========================================
   toggleActionMenu(event) {
     event.stopPropagation();
     document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
+    
     const menu = event.target.closest('.action-icon-container')?.previousElementSibling;
     if (menu?.classList.contains('context-menu')) menu.classList.toggle('hidden');
+  }
+
+  // =========================================
+  // CLEANUP (Para liberar recursos si se destruye el módulo)
+  // =========================================
+  destroy() {
+    // Destruir guard y autosave
+    this.unsavedGuard?.destroy();
+    this.unsavedGuard = null;
+    this.formAutosave?.clear();
+    this.formAutosave = null;
+    
+    // Liberar referencias
+    this.modalElement = null;
+    this._modalInjected = false;
+    this.table = null;
+    
+    console.log('🧹 [TipoConstanciaModule] Recursos liberados');
   }
 }

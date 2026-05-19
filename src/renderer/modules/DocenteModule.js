@@ -45,7 +45,7 @@ export class DocenteModule {
       actions: true,
       onRowClick: 'docenteModuleInstance.handleRowClick(event)',
       onAction: 'docenteModuleInstance.toggleActionMenu(event)',
-      onExpand: true
+      onExpand: 'docenteModuleInstance.loadRowSummary(event)'
     });
 
     if (this.data.length > 0) {
@@ -232,7 +232,17 @@ export class DocenteModule {
     const form = document.getElementById('form-docente');
     if (!modal || !form) return;
 
-    form.reset();
+    // NO resetear si FormAutosave va a restaurar datos
+    if (!doc) {
+      // Solo resetear en modo "nuevo" si NO hay autosave previo
+      const hasAutosave = localStorage.getItem('autosave:docente-form');
+      if (!hasAutosave) {
+        form.reset();
+      }
+    } else {
+      // En modo edición, siempre resetear primero
+      form.reset();
+    }
     
     const setVal = (id, val) => {
       const el = document.getElementById(id);
@@ -241,11 +251,12 @@ export class DocenteModule {
 
     setVal('doc-id', '');
     
-    // ✅ Inicializar protecciones
+    // Inicializar protecciones (FormAutosave restaura AUTOMÁTICAMENTE en su constructor)
     this.unsavedGuard = new UnsavedChangesGuard('#form-docente');
     this.formAutosave = new FormAutosave('form-docente', 'docente-form');
 
     if (doc) {
+      // Modo edición: sobrescribir cualquier autosave con datos reales de BD
       setVal('doc-id', doc.id);
       setVal('doc-codigo', doc.codigo);
       setVal('doc-ap-paterno', doc.apellido_paterno);
@@ -257,10 +268,11 @@ export class DocenteModule {
       setVal('doc-tratamiento', doc.tratamiento);
       setVal('doc-articulo', doc.articulo || 'El');
       setVal('doc-estado', doc.estado || 'activo');
-    } else {
-      setVal('doc-estado', 'activo');
-      setVal('doc-articulo', 'El');
+      
+      // Limpiar autosave tras precargar datos reales
+      this.formAutosave?.clear();
     }
+    // ✅ En modo nuevo: si hay autosave, ya se restauró en el constructor de FormAutosave
     
     modal.classList.remove('hidden');
     setTimeout(() => document.getElementById('doc-codigo')?.focus(), 100);
@@ -356,7 +368,7 @@ export class DocenteModule {
     if (detailsRow?.classList.contains('sub-row-details')) {
       detailsRow.classList.toggle('hidden');
       if (!detailsRow.classList.contains('hidden')) {
-        this._loadRowSummary(row.dataset.id, detailsRow);
+        this.loadRowSummary(row.dataset.id, detailsRow);
       }
     }
     
@@ -364,13 +376,25 @@ export class DocenteModule {
     row.classList.add('selected');
   }
 
-  async _loadRowSummary(rowId, container) {
-    const chips = container.querySelector('.summary-chips');
+  loadRowSummary(event) {
+    // 1. Obtener la fila que fue expandida desde el evento
+    const row = event.target?.closest('.data-row');
+    if (!row) return;
+    
+    // 2. La fila de detalles es la siguiente hermana con clase específica
+    const detailsRow = row.nextElementSibling;
+    if (!detailsRow?.classList.contains('sub-row-details')) return;
+    
+    // 3. Ahora sí buscamos el contenedor dentro de la fila de detalles
+    const chips = detailsRow.querySelector('.summary-chips');
     if (!chips) return;
     
+    // 4. Mostrar estado de carga
     chips.innerHTML = '<span class="chip">⏳ Cargando...</span>';
     
     try {
+      // 🔄 Futuro: Consultar asignaciones reales desde BD vía IPC
+      // Por ahora, simulamos con timeout
       setTimeout(() => {
         chips.innerHTML = `
           <span class="chip accent">📚 3 EE</span>
@@ -379,8 +403,44 @@ export class DocenteModule {
         `;
       }, 300);
     } catch (error) {
+      console.error('Error cargando resumen:', error);
       chips.innerHTML = '<span class="chip" style="color:var(--danger-color)">Error</span>';
     }
+  }
+
+  openAssignmentModal(buttonEl) {
+    // 1. Obtener la fila padre para extraer datos
+    const row = buttonEl?.closest('.data-row');
+    if (!row) {
+      console.warn('⚠️ [DocenteModule] No se encontró la fila padre');
+      return;
+    }
+    
+    // 2. Extraer ID y nombre del docente desde la fila
+    const docenteId = row.dataset.id;
+    
+    // Opción A: Si tienes el nombre en un data attribute (recomendado)
+    const docenteName = row.dataset.nombre || 
+    // Opción B: Extraer del texto de la celda de nombre (ajusta el selector según tu tabla)
+    row.querySelector('td:nth-child(2)')?.textContent?.trim() || 
+    'Docente';
+    
+    console.log(`🔗 [DocenteModule] Abriendo asignaciones para ID: ${docenteId}, Nombre: ${docenteName}`);
+    
+    // 3. Verificar que assignmentModal esté disponible
+    if (!window.assignmentModal) {
+      console.error('❌ [DocenteModule] assignmentModal no está disponible en window');
+      alert('Error: El módulo de asignaciones no está cargado');
+      return;
+    }
+    
+    // 4. Abrir el modal con contexto específico
+    window.assignmentModal.open({
+      entityType: 'docente',
+      entityId: docenteId,
+      entityName: docenteName,
+      tabs: ['tutorados', 'ee_asignadas', 'periodos_activos'] // Solo las relevantes para docentes
+    });
   }
 
   // =========================================
