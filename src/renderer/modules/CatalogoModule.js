@@ -4,7 +4,7 @@
 
 import modalEEHtml from '../views/partials/modals/modal-ee.html';
 import modalTiposHtml from '../views/partials/modals/modal-tipos-constancia.html';
-import modalPeriodoHtml from '../views/partials/modals/modal-periodo.html'; // ✅ Re-agregado
+import modalPeriodoHtml from '../views/partials/modals/modal-periodo.html';
 import modalProgramaHtml from '../views/partials/modals/modal-programa.html';
 import modalAlumnoHtml from '../views/partials/modals/modal-alumno.html';
 import modalPlanHtml from '../views/partials/modals/modal-plan.html';
@@ -15,7 +15,7 @@ import { DocenteModule } from './DocenteModule.js';
 import { EEModule } from './EEModule.js';
 import { AlumnoModule } from './AlumnoModule.js';
 import { TipoConstanciaModule } from './TipoConstanciaModule.js';
-import { PeriodoModule } from './PeriodoModule.js'; // ✅ Re-agregado
+import { PeriodoModule } from './PeriodoModule.js';
 import { ProgramaModule } from './ProgramaModule.js';
 import { PlanModule } from './PlanModule.js';
 import { SemestreModule } from './SemestreModule.js';
@@ -28,7 +28,7 @@ export class CatalogoModule {
     this.eeModule = new EEModule();
     this.alumnoModule = new AlumnoModule();
     this.tipoConstanciaModule = new TipoConstanciaModule();
-    this.periodoModule = new PeriodoModule(); // ✅ Re-agregado
+    this.periodoModule = new PeriodoModule();
     this.programaModule = new ProgramaModule();
     this.planModule = new PlanModule();
     this.semestreModule = new SemestreModule();
@@ -39,6 +39,9 @@ export class CatalogoModule {
     this.tabContents = [];
     this.initialized = false;
     
+    // ✅ NUEVO: Rastrear módulos ya inicializados (Lazy Load)
+    this.initializedModules = new Set();
+    
     // Mapeo: entrada → ID de botón
     this.tabMap = {
       'docentes': 'btn-tab-docentes',
@@ -46,7 +49,7 @@ export class CatalogoModule {
       'ee': 'btn-tab-ee',
       'tipos-constancia': 'btn-tab-tipos-constancia',
       'tipos': 'btn-tab-tipos-constancia',
-      'periodos': 'btn-tab-periodos', // ✅ Re-agregado
+      'periodos': 'btn-tab-periodos',
       'programas': 'btn-tab-programas',
       'planes': 'btn-tab-planes',
       'planes-estudio': 'btn-tab-planes',
@@ -57,7 +60,7 @@ export class CatalogoModule {
       'tab-ee': 'btn-tab-ee',
       'tab-tipos-constancia': 'btn-tab-tipos-constancia',
       'tab-tipos': 'btn-tab-tipos-constancia',
-      'tab-periodos': 'btn-tab-periodos', // ✅ Re-agregado
+      'tab-periodos': 'btn-tab-periodos',
       'tab-programas': 'btn-tab-programas',
       'tab-planes': 'btn-tab-planes',
       'tab-planes-estudio': 'btn-tab-planes',
@@ -67,7 +70,7 @@ export class CatalogoModule {
       'btn-tab-alumnos': 'btn-tab-alumnos',
       'btn-tab-ee': 'btn-tab-ee',
       'btn-tab-tipos-constancia': 'btn-tab-tipos-constancia',
-      'btn-tab-periodos': 'btn-tab-periodos', // ✅ Re-agregado
+      'btn-tab-periodos': 'btn-tab-periodos',
       'btn-tab-programas': 'btn-tab-programas',
       'btn-tab-planes': 'btn-tab-planes',
       'btn-tab-semestres': 'btn-tab-semestres',
@@ -80,7 +83,7 @@ export class CatalogoModule {
       'btn-tab-alumnos': () => this.alumnoModule.init(),
       'btn-tab-ee': () => this.eeModule.init(),
       'btn-tab-tipos-constancia': () => this.tipoConstanciaModule.init(),
-      'btn-tab-periodos': () => this.periodoModule.init(), // ✅ Re-agregado
+      'btn-tab-periodos': () => this.periodoModule.init(),
       'btn-tab-programas': () => this.programaModule.init(),
       'btn-tab-planes': () => this.planModule.init(),
       'btn-tab-semestres': () => this.semestreModule.init(),
@@ -109,6 +112,8 @@ export class CatalogoModule {
     let buttonId = this._normalizeTabId(targetTab) || 'btn-tab-docentes';
     
     console.log(`🔄 Pestaña objetivo normalizada: ${buttonId}`);
+    
+    // ✅ Inicializar SOLO el módulo de la pestaña activa (Lazy Load)
     setTimeout(() => this.initializeModuleByTab(buttonId), 50);
 
     this.setupGlobalHelpers();
@@ -182,7 +187,7 @@ export class CatalogoModule {
     const modals = [
       modalEEHtml, 
       modalTiposHtml, 
-      modalPeriodoHtml, // ✅ Re-agregado
+      modalPeriodoHtml,
       modalProgramaHtml, 
       modalAlumnoHtml,
       modalPlanHtml,
@@ -242,14 +247,25 @@ export class CatalogoModule {
   }
 
   // =========================================
-  // INICIALIZACIÓN DE MÓDULO POR PESTAÑA
+  // INICIALIZACIÓN DE MÓDULO POR PESTAÑA (LAZY LOAD)
   // =========================================
   async initializeModuleByTab(buttonId) {
+    // ✅ Si ya se inicializó este módulo, solo activar visualmente (sin re-ejecutar)
+    if (this.initializedModules.has(buttonId)) {
+      this.activateTab(buttonId);
+      console.log(`💾 [CatalogoModule] Módulo "${buttonId}" ya cargado, usando caché`);
+      return;
+    }
+
     const initFn = this.moduleMap[buttonId];
     if (initFn) {
       this.activateTab(buttonId);
       await new Promise(resolve => requestAnimationFrame(resolve));
       await initFn();
+      
+      // ✅ Marcar como inicializado para futuras navegaciones
+      this.initializedModules.add(buttonId);
+      console.log(`✅ [CatalogoModule] Módulo "${buttonId}" inicializado`);
       
       const tabBtn = document.getElementById(buttonId);
       if (tabBtn && this.tabsContainer) {

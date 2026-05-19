@@ -19,6 +19,7 @@ import { CatalogoModule } from './modules/CatalogoModule.js';
 import { EmisionModule } from './modules/EmisionModule.js';
 import { HistorialModule } from './modules/HistorialModule.js';
 import { BibliotecaModule } from './modules/BibliotecaModule.js';
+import { globalConfirm } from './utils/confirmationModal.js';
 
 // Mapa de vistas
 const views = {
@@ -73,6 +74,7 @@ function applyDarkMode(isDark) {
 // INICIALIZACIÓN DOM
 // =======================================================
 document.addEventListener('DOMContentLoaded', () => {
+  globalConfirm.init();
   updateConnectionStatus();
   window.addEventListener('online', updateConnectionStatus);
   window.addEventListener('offline', updateConnectionStatus);

@@ -1,47 +1,46 @@
-<div id="modal-generacion" class="modal-overlay hidden" data-module="GeneracionModule">
-  <div class="modal-container modal-lg">
+<!-- src/renderer/views/partials/modals/modal-generacion.html -->
+<div id="modal-generacion" class="modal-overlay hidden">
+  <div class="modal-content">
     <div class="modal-header">
       <h3 id="modal-generacion-title">Nueva Generación</h3>
-      <button class="modal-close" title="Cerrar">&times;</button>
+      <button class="btn-close" id="btn-cerrar-modal-generacion">&times;</button>
     </div>
-    <div class="modal-body">
-      <form id="form-generacion" class="form-grid">
-        <div class="form-group">
-          <label for="generacion-nombre">Nombre *</label>
-          <input type="text" id="generacion-nombre" name="nombre" class="form-control" 
-                 placeholder="Ej: Generación Feb 2024 - Maestría" required>
-        </div>
-
-        <div class="form-group">
-          <label for="generacion-plan-id">Plan de Estudio *</label>
-          <select id="generacion-plan-id" name="plan_id" class="form-control" required>
-            <option value="">Cargando planes...</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="generacion-periodo-ingreso-id">Periodo de Ingreso *</label>
-          <select id="generacion-periodo-ingreso-id" name="periodo_ingreso_id" class="form-control" required>
-            <option value="">Cargando periodos...</option>
-          </select>
-        </div>
-
-        <!-- Clave auto-generada -->
-        <div class="form-group">
-          <label>Clave de Generación</label>
-          <input type="text" name="clave" class="form-control" readonly 
-                 placeholder="Se generará automáticamente (Ej: GEN-2024A)" 
-                 style="background: var(--bg-light); cursor: not-allowed;">
-        </div>
-      </form>
-    </div>
+    
+    <form id="form-generacion">
+      <input type="hidden" id="generacion-id">
+      
+      <div class="form-group">
+        <label>Clave *</label>
+        <input type="text" id="generacion-clave" required placeholder="Ej: GEN-2024-A">
+      </div>
+      
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="generacion-nombre" required placeholder="Ej: Generación 2024-2028">
+      </div>
+      
+      <div class="form-group">
+        <label>Plan de Estudio *</label>
+        <select id="generacion-plan" required>
+          <option value="">Seleccionar...</option>
+          <!-- Se llena dinámicamente -->
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Periodo de Ingreso *</label>
+        <select id="generacion-periodo" required>
+          <option value="">Seleccionar...</option>
+          <!-- Se llena dinámicamente -->
+        </select>
+      </div>
+      
+      <input type="hidden" id="generacion-estado" value="activa">
+    </form>
+    
     <div class="modal-footer">
-      <button type="button" class="btn btn-cancel" id="btn-cancel-generacion">
-        <i class="fa-solid fa-xmark"></i> Cancelar
-      </button>
-      <button type="submit" form="form-generacion" class="btn btn-primary" id="btn-save-generacion">
-        <i class="fa-solid fa-check"></i> Guardar Generación
-      </button>
+      <button class="btn btn-cancel" id="btn-cancelar-generacion">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-generacion">Guardar Generación</button>
     </div>
   </div>
 </div>
