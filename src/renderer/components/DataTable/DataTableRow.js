@@ -89,24 +89,33 @@ export class DataTableRow {
             </td>`;
   }
 
-  renderExpandableRow() {
-    return `<tr class="sub-row-details hidden" id="details-${this.rowId}">
-              <td colspan="100%" class="expansion-cell">
-                <div class="expansion-content">
-                  <div class="info-panel">
-                    <h5>Resumen de Asignaciones</h5>
-                    <div class="summary-chips" id="summary-${this.rowId}">
-                      <span class="chip">⏳ Cargando...</span>
-                    </div>
-                  </div>
-                  <div class="action-panel">
-                    <button class="btn-manage" onclick="${this.config.onExpandAction || ''}">
-                      <i class="fa-solid fa-diagram-project"></i> Gestionar Asignaciones
-                    </button>
-                    <p class="hint">Abre el panel completo para editar relaciones.</p>
+  // src/renderer/components/DataTable/DataTableRow.js
+
+renderExpandableRow() {
+  // ✅ Aseguramos que use onExpandAction. Si está vacío, fallback seguro
+  const action = this.config.onExpandAction || 'docenteModuleInstance.openAssignmentModal(this)';
+  
+  // 🐛 DEBUG: Descomenta la siguiente línea para verificar que Webpack lee ESTE archivo
+  console.log('🔄 [DataTableRow] Renderizando fila. onExpandAction:', action);
+
+  return `<tr class="sub-row-details hidden" id="details-${this.rowId}">
+            <td colspan="100%" class="expansion-cell">
+              <div class="expansion-content">
+                <div class="info-panel">
+                  <h5>Resumen de Asignaciones</h5>
+                  <div class="summary-chips" id="summary-${this.rowId}">
+                    <span class="chip">⏳ Cargando...</span>
                   </div>
                 </div>
-              </td>
-            </tr>`;
-  }
+                <div class="action-panel">
+                  <!-- ✅ onclick forzado correctamente -->
+                  <button class="btn-manage" onclick="${action}" type="button">
+                    <i class="fa-solid fa-diagram-project"></i> Gestionar Asignaciones
+                  </button>
+                  <p class="hint">Abre el panel completo para editar relaciones.</p>
+                </div>
+              </div>
+            </td>
+          </tr>`;
+}
 }

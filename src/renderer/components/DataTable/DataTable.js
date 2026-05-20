@@ -1,3 +1,4 @@
+// src/renderer/components/DataTable/DataTable.js
 // Contenedor principal de tabla
 import { DataTableRow } from './DataTableRow.js';
 
@@ -8,9 +9,14 @@ export class DataTable {
     this.expandable = config.expandable ?? true;
     this.actions = config.actions ?? true;
     this.data = [];
+    
+    // Callbacks desde configuración
     this.onRowClick = config.onRowClick ?? null;
     this.onExpand = config.onExpand ?? null;
     this.onAction = config.onAction ?? null;
+    
+    // ✅ NUEVO: Callback para el botón "Gestionar" en fila expandible
+    this.onExpandAction = config.onExpandAction ?? null;
   }
 
   setData(data) {
@@ -32,14 +38,15 @@ export class DataTable {
       return;
     }
 
-    // Configurar cada fila
+    // ✅ Configurar cada fila PASANDO onExpandAction correctamente
     const rowConfig = {
       columns: this.columns,
       expandable: this.expandable,
       actions: this.actions,
       onRowClick: this.onRowClick,
       onAction: this.onAction,
-      onExpandAction: this.onExpand ? `docenteModuleInstance.loadRowSummary('${this.tbodyId}', event)` : ''
+      onExpand: this.onExpand,
+      onExpandAction: this.onExpandAction  // ✅ USAR la config que viene del módulo, NO hardcodear
     };
 
     // Renderizar filas

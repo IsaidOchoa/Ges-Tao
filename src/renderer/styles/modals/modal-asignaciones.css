@@ -1,37 +1,313 @@
-/* src/renderer/styles/modals/modal-asignaciones.css */
-#asig-tabs-container {
+/* =========================================
+   MEGA MODAL DE ASIGNACIONES - ESTILOS
+   ========================================= */
+
+/* Overlay base */
+#modal-asignaciones.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  border-bottom: 2px solid var(--border-color);
-  margin-bottom: 16px;
-  padding-bottom: 8px;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-#asig-tabs-container .tab-btn {
-  padding: 8px 16px;
+#modal-asignaciones.modal-overlay:not(.hidden) {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Contenedor principal - ANCHO GRANDE pero responsivo */
+#modal-asignaciones .modal-content {
+  width: min(95vw, 1400px);
+  max-height: min(90vh, 900px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-white, #fff);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  transform: translateY(10px);
+  transition: transform 0.2s ease;
+}
+
+#modal-asignaciones.modal-overlay:not(.hidden) .modal-content {
+  transform: translateY(0);
+}
+
+/* Header fijo */
+#modal-asignaciones .modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  background: var(--bg-light, #f8f9fa);
+}
+
+#modal-asignaciones .modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+  color: var(--text-dark, #333);
+}
+
+/* Botón cerrar */
+#modal-asignaciones .btn-close {
+  background: none;
   border: none;
-  background: var(--bg-light);
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-muted, #666);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+
+#modal-asignaciones .btn-close:hover {
+  background: var(--bg-hover, #e9ecef);
+  color: var(--text-dark, #333);
+}
+
+/* Tabs con scroll horizontal en móvil */
+#modal-asignaciones .tabs-container {
+  display: flex;
+  gap: 4px;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color, #e0e0e0) transparent;
+  background: var(--bg-white, #fff);
+}
+
+#modal-asignaciones .tabs-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+#modal-asignaciones .tabs-container::-webkit-scrollbar-thumb {
+  background: var(--border-color, #e0e0e0);
+  border-radius: 2px;
+}
+
+#modal-asignaciones .tabs-container .tab-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: var(--bg-light, #f8f9fa);
   border-radius: 6px 6px 0 0;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-muted, #666);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  flex-shrink: 0;
 }
 
-#asig-tabs-container .tab-btn.active {
-  background: var(--accent-color);
+#modal-asignaciones .tabs-container .tab-btn:hover {
+  background: var(--bg-hover, #e9ecef);
+  color: var(--text-dark, #333);
+}
+
+#modal-asignaciones .tabs-container .tab-btn.active {
+  background: var(--accent-color, #3498db);
   color: white;
   font-weight: 600;
 }
 
-#asig-tabs-container .tab-btn:hover:not(.active) {
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
+#modal-asignaciones .tabs-container .tab-btn:active {
+  transform: scale(0.98);
 }
 
-.tab-content-area {
-  min-height: 200px;
-  max-height: 60vh;
+/* Área de contenido con scroll interno */
+#modal-asignaciones .tab-content-area {
+  flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  overflow-x: hidden;
+  padding: 1rem 1.5rem;
+  contain: content; /* ✅ Optimización de renderizado */
+  background: var(--bg-white, #fff);
+}
+
+/* Footer fijo */
+#modal-asignaciones .modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  background: var(--bg-light, #f8f9fa);
+}
+
+/* =========================================
+   RESPONSIVE BREAKPOINTS
+   ========================================= */
+
+/* Tablet (≤1024px) */
+@media (max-width: 1024px) {
+  #modal-asignaciones .modal-content {
+    width: min(98vw, 1100px);
+    max-height: 95vh;
+  }
+  
+  #modal-asignaciones .modal-header h3 {
+    font-size: 1rem;
+    max-width: 60%;
+  }
+  
+  #modal-asignaciones .tabs-container {
+    padding: 0.5rem 0.75rem;
+    gap: 2px;
+  }
+  
+  #modal-asignaciones .tabs-container .tab-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Móvil (≤768px) */
+@media (max-width: 768px) {
+  #modal-asignaciones.modal-overlay {
+    padding: 0;
+    align-items: flex-end; /* Modal desde abajo en móvil */
+  }
+  
+  #modal-asignaciones .modal-content {
+    width: 100vw;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+    margin: 0;
+  }
+  
+  #modal-asignaciones .modal-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  #modal-asignaciones .modal-header h3 {
+    font-size: 0.95rem;
+    max-width: 50%;
+  }
+  
+  #modal-asignaciones .tabs-container {
+    padding: 0.25rem 0.5rem;
+    gap: 2px;
+  }
+  
+  #modal-asignaciones .tabs-container .tab-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  #modal-asignaciones .tab-content-area {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  #modal-asignaciones .modal-footer {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+  
+  #modal-asignaciones .modal-footer .btn {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+/* =========================================
+   OPTIMIZACIONES DE RENDIMIENTO
+   ========================================= */
+
+/* Evitar repaints innecesarios */
+#modal-asignaciones .tab-content-area > * {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Transiciones suaves solo en hover */
+#modal-asignaciones .tab-btn {
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Tablas optimizadas para scroll */
+#modal-asignaciones .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+#modal-asignaciones .data-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-light, #f8f9fa);
+  z-index: 1;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color, #e0e0e0);
+}
+
+#modal-asignaciones .data-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+#modal-asignaciones .data-table tr:hover {
+  background: var(--bg-hover, #f8f9fa);
+}
+
+/* Estados vacíos */
+#modal-asignaciones .empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted, #666);
+  font-size: 0.95rem;
+}
+
+#modal-asignaciones .empty-state i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+  display: block;
+}
+
+/* Chips de resumen */
+#modal-asignaciones .summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+#modal-asignaciones .summary-chips .chip {
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-light, #f8f9fa);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-dark, #333);
+}
+
+#modal-asignaciones .summary-chips .chip.accent {
+  background: var(--accent-color, #3498db);
+  color: white;
 }
