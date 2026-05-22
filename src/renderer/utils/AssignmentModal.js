@@ -1,6 +1,4 @@
 // src/renderer/utils/AssignmentModal.js
-// 🎯 Mega Modal Universal de Asignaciones
-// ✅ Features: Caché de contenido, lazy loading, tabs universales, responsive-ready
 
 export class AssignmentModal {
   constructor() {
@@ -16,20 +14,16 @@ export class AssignmentModal {
     this._activeTab = null;
     
     // ✅ Track de listeners para cleanup de eventos dinámicos
+    // Formato: Map<cacheKey, Array<{ type, target, handler, options? }>>
     this._tabEventListeners = new Map();
   }
 
   // =========================================
   // INICIALIZACIÓN PEREZOSA (Lazy Init)
   // =========================================
-  /**
-   * Inicializa el modal solo cuando se usa por primera vez
-   * Evita inyección de DOM innecesaria al cargar la app
-   */
   _ensureInitialized() {
     if (this._initialized) return;
     
-    // 1. Inyectar HTML si no existe en el DOM
     if (!document.getElementById('modal-asignaciones')) {
       this._injectModalHtml();
     }
@@ -40,34 +34,21 @@ export class AssignmentModal {
     console.log('✅ [AssignmentModal] Inicializado correctamente');
   }
 
-  /**
-   * Inyecta el HTML base del modal en el body
-   * Usa clases CSS para estilos (ver styles/modals/modal-asignaciones.css)
-   */
   _injectModalHtml() {
     const html = `
       <div id="modal-asignaciones" class="modal-overlay hidden">
         <div class="modal-content modal-lg">
-          
-          <!-- Header: Título + Botón cerrar -->
           <div class="modal-header">
             <h3 id="asig-modal-title">Gestionar Asignaciones</h3>
             <button class="btn-close" id="btn-cerrar-asig" type="button" aria-label="Cerrar">&times;</button>
           </div>
-          
-          <!-- Tabs de navegación con scroll horizontal en móvil -->
           <div id="asig-tabs-container" class="tabs-container" role="tablist"></div>
-          
-          <!-- Área de contenido con scroll interno -->
           <div id="asig-content-area" class="tab-content-area" role="tabpanel">
             <div class="empty-state" id="asig-loading">Cargando...</div>
           </div>
-          
-          <!-- Footer: Acciones globales -->
           <div class="modal-footer">
             <button class="btn btn-cancel" id="btn-cancelar-asig" type="button">Cerrar</button>
           </div>
-          
         </div>
       </div>
     `;
@@ -80,27 +61,21 @@ export class AssignmentModal {
   _bindEvents() {
     if (!this.modal) return;
     
-    // Función centralizada de cierre
     const close = () => {
       this.modal?.classList.add('hidden');
       this.currentContext = null;
       this._activeTab = null;
-      // ✅ Limpiar contenido pero NO el caché (para navegación rápida)
       document.getElementById('asig-content-area').innerHTML = '';
-      // ✅ Limpiar listeners de pestañas anteriores
       this._cleanupTabListeners();
     };
     
-    // Botones de cierre
     document.getElementById('btn-cerrar-asig')?.addEventListener('click', close);
     document.getElementById('btn-cancelar-asig')?.addEventListener('click', close);
     
-    // Click en overlay (fuera del modal)
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) close();
     });
     
-    // Tecla Escape
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.modal && !this.modal.classList.contains('hidden')) {
         e.preventDefault();
@@ -112,17 +87,11 @@ export class AssignmentModal {
   // =========================================
   // REGISTRO DE PESTAÑAS
   // =========================================
-  /**
-   * Registra una pestaña para un tipo de entidad
-   * @param {string} entityType - 'docente', 'alumno', 'ee', etc.
-   * @param {object} config - { tabId, label, loadData(), render(), visible()? }
-   */
   registerTab(entityType, config) {
     if (!this.tabRegistry.has(entityType)) {
       this.tabRegistry.set(entityType, []);
     }
     
-    // Validar configuración mínima
     if (!config.tabId || !config.label || typeof config.loadData !== 'function') {
       console.warn(`⚠️ [AssignmentModal] Configuración inválida para ${entityType}.${config.tabId}`);
       return;
@@ -130,7 +99,6 @@ export class AssignmentModal {
     
     this.tabRegistry.get(entityType).push({
       ...config,
-      // Default: visible para todos si no se especifica
       visible: config.visible || (() => true)
     });
     
@@ -140,14 +108,9 @@ export class AssignmentModal {
   // =========================================
   // APERTURA DEL MODAL
   // =========================================
-  /**
-   * Abre el modal con contexto específico
-   * @param {object} context - { entityType, entityId, entityName, tabs: [] }
-   */
   open(context) {
     this._ensureInitialized();
     
-    // Validar contexto mínimo
     if (!context?.entityType || !context?.entityId) {
       console.error('❌ [AssignmentModal] Contexto inválido: requiere entityType y entityId');
       return;
@@ -155,23 +118,18 @@ export class AssignmentModal {
     
     this.currentContext = { ...context, activeTab: null };
     
-    // Actualizar título dinámico
     const titleEl = document.getElementById('asig-modal-title');
     if (titleEl) {
       titleEl.textContent = `Asignaciones: ${context.entityName || context.entityType.toUpperCase()}`;
     }
     
-    // Renderizar pestañas disponibles para este contexto
     this._renderTabs(context.tabs || []);
     
-    // Mostrar modal con animación suave
     if (this.modal) {
       this.modal.classList.remove('hidden');
-      // ✅ Forzar reflow para evitar glitches de animación CSS
       void this.modal.offsetWidth;
     }
     
-    // Activar primera pestaña disponible (con pequeño delay para permitir render)
     if (context.tabs?.length > 0) {
       setTimeout(() => this._activateTab(context.tabs[0]), 50);
     }
@@ -192,7 +150,6 @@ export class AssignmentModal {
     const { entityType } = this.currentContext;
     const available = this.tabRegistry.get(entityType) || [];
     
-    // Filtrar pestañas por: 1) lista permitida, 2) función visible()
     const tabsToShow = available.filter(tab => 
       allowedTabIds.includes(tab.tabId) && 
       (typeof tab.visible !== 'function' || tab.visible(this.currentContext))
@@ -219,10 +176,8 @@ export class AssignmentModal {
   // ACTIVACIÓN DE PESTAÑAS CON CACHÉ
   // =========================================
   _activateTab(tabId) {
-    // ✅ Evitar re-render si ya está activa
     if (this._activeTab === tabId) return;
     
-    // Actualizar UI de botones (sin animaciones pesadas)
     document.querySelectorAll('#asig-tabs-container .tab-btn').forEach(btn => {
       const isActive = btn.dataset.tabId === tabId;
       btn.classList.toggle('active', isActive);
@@ -232,23 +187,17 @@ export class AssignmentModal {
     this._activeTab = tabId;
     this.currentContext.activeTab = tabId;
     
-    // ✅ Cargar contenido con sistema de caché
     this._loadTabContentCached(tabId);
     
     console.log(`🔄 [AssignmentModal] Pestaña activada: ${tabId}`);
   }
 
-  /**
-   * Carga contenido de pestaña con caché + lazy loading
-   * Prioriza velocidad: muestra caché inmediatamente, carga en background si es necesario
-   */
   async _loadTabContentCached(tabId) {
     const area = document.getElementById('asig-content-area');
     if (!area) return;
     
     const cacheKey = `${this.currentContext.entityType}:${this.currentContext.entityId}:${tabId}`;
     
-    // ✅ CASO 1: Contenido ya en caché → mostrar inmediatamente (sin loading)
     if (this._contentCache.has(cacheKey)) {
       area.innerHTML = this._contentCache.get(cacheKey);
       this._bindTabEvents(tabId, area);
@@ -256,7 +205,6 @@ export class AssignmentModal {
       return;
     }
     
-    // ✅ CASO 2: No hay caché → mostrar loading mínimo y cargar
     area.innerHTML = '<div class="empty-state" style="padding:2rem;text-align:center"><i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem;margin-bottom:0.5rem"></i><br>Cargando...</div>';
     
     const { entityType, entityId } = this.currentContext;
@@ -268,22 +216,20 @@ export class AssignmentModal {
     }
     
     try {
-      // ✅ Usar requestIdleCallback para no bloquear el hilo principal (si está disponible)
       if ('requestIdleCallback' in window) {
         await new Promise(resolve => {
           requestIdleCallback(async () => {
             const data = await tabConfig.loadData(entityId, entityType);
-            const html = tabConfig.render?.(data) || '<div class="empty-state">Sin registros</div>';
+            const html = tabConfig.render?.(data, this.currentContext) || '<div class="empty-state">Sin registros</div>';
             this._contentCache.set(cacheKey, html);
             area.innerHTML = html;
             this._bindTabEvents(tabId, area);
             resolve();
-          }, { timeout: 2000 }); // Fallback a 2s si no hay idle time
+          }, { timeout: 2000 });
         });
       } else {
-        // Fallback para navegadores antiguos
         const data = await tabConfig.loadData(entityId, entityType);
-        const html = tabConfig.render?.(data) || '<div class="empty-state">Sin registros</div>';
+        const html = tabConfig.render?.(data, this.currentContext) || '<div class="empty-state">Sin registros</div>';
         this._contentCache.set(cacheKey, html);
         area.innerHTML = html;
         this._bindTabEvents(tabId, area);
@@ -298,12 +244,8 @@ export class AssignmentModal {
   }
 
   // =========================================
-  // EVENTOS DINÁMICOS POR PESTAÑA
+  // ✅ CORREGIDO: EVENTOS DINÁMICOS POR PESTAÑA
   // =========================================
-  /**
-   * Vincula eventos específicos para contenido dinámico de una pestaña
-   * Usa delegación de eventos para eficiencia
-   */
   _bindTabEvents(tabId, container) {
     if (!container) return;
     
@@ -311,43 +253,193 @@ export class AssignmentModal {
     this._cleanupTabListeners(tabId);
     
     const listeners = [];
+    const { entityType, entityId } = this.currentContext;
     
-    // ✅ Ejemplo 1: Delegación para botones con data-action
-    container.addEventListener('click', (e) => {
+    // ✅ 1. Delegación para botones con [data-action] (ej: eliminar, editar)
+    const delegationHandler = (e) => {
       const actionBtn = e.target.closest('[data-action]');
       if (!actionBtn) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
       
       const action = actionBtn.dataset.action;
       const id = actionBtn.dataset.id;
       
-      console.log(`🎯 [AssignmentModal] Acción "${action}" en ID: ${id}`);
+      console.log(`🎯 [AssignmentModal] Acción "${action}" en ID: ${id}, Tab: ${tabId}`);
       
-      // Aquí iría la lógica específica por acción
-      // Ejemplo: this._handleAction(action, id, this.currentContext);
-    });
-    listeners.push({ type: 'click', handler: container.querySelector('[data-action]')?.parentNode });
+      // Aquí se puede expandir con lógica específica por acción
+      // Ejemplo: this._handleAction(action, id, { entityType, entityId, tabId });
+    };
     
-    // ✅ Ejemplo 2: Botones de editar/eliminar con confirmación
-    container.querySelectorAll('[data-confirm]').forEach(btn => {
-      const handler = (e) => {
+    container.addEventListener('click', delegationHandler, { capture: true });
+    listeners.push({ 
+      type: 'click', 
+      target: container, 
+      handler: delegationHandler,
+      options: { capture: true }
+    });
+    
+    // ✅ 2. Botón específico: #btn-add-tutor (para asignar tutoría)
+    const btnAddTutor = container.querySelector('#btn-add-tutor');
+    if (btnAddTutor) {
+      const addHandler = async (e) => {
         e.preventDefault();
-        const message = btn.dataset.confirm || '¿Estás seguro?';
-        if (confirm(message)) {
-          // Lógica de confirmación aquí
-          console.log(`✅ Confirmado: ${btn.dataset.action}`);
+        e.stopPropagation();
+        
+        const selectEl = container.querySelector('#select-alumno-target');
+        const targetId = selectEl?.value;
+        
+        if (!targetId) {
+          if (typeof window.toast !== 'undefined') {
+            window.toast.warning?.('Selecciona un elemento del dropdown');
+          } else {
+            alert('⚠️ Selecciona un elemento del dropdown');
+          }
+          return;
+        }
+        
+        // Confirmación de seguridad (siempre, como pediste)
+        const confirmed = await this._showConfirmation(
+          '¿Confirmar asignación?', 
+          'Esta acción creará una relación entre las entidades. Puedes modificarla después.'
+        );
+        
+        if (!confirmed) return;
+        
+        try {
+          // Botón en estado de carga
+          btnAddTutor.disabled = true;
+          const originalText = btnAddTutor.textContent;
+          btnAddTutor.textContent = '⏳ Procesando...';
+          
+          // Llamar al endpoint IPC correspondiente
+          // NOTA: Ajusta el nombre del endpoint según tu backend
+          const res = await window.electronAPI?.asignarTutor?.({
+            docenteId: entityType === 'docente' ? entityId : null,
+            alumnoId: entityType === 'alumno' ? entityId : null,
+            targetId: targetId,
+            periodoId: this.currentContext.periodId || null
+          });
+          
+          if (res?.success) {
+            if (typeof window.toast !== 'undefined') {
+              window.toast.success?.('✅ Asignación realizada');
+            } else {
+              alert('✅ Asignación realizada');
+            }
+            // Recargar contenido para reflejar cambios
+            this._loadTabContentCached(tabId);
+          } else {
+            throw new Error(res?.error || 'Error al asignar');
+          }
+        } catch (error) {
+          console.error('❌ Error en asignación:', error);
+          if (typeof window.toast !== 'undefined') {
+            window.toast.error?.(`❌ ${error.message}`);
+          } else {
+            alert(`❌ Error: ${error.message}`);
+          }
+        } finally {
+          if (btnAddTutor) {
+            btnAddTutor.disabled = false;
+            btnAddTutor.textContent = originalText || '✨ Asignar';
+          }
         }
       };
-      btn.addEventListener('click', handler);
-      listeners.push({ type: 'click', target: btn, handler });
+      
+      btnAddTutor.addEventListener('click', addHandler);
+      listeners.push({ type: 'click', target: btnAddTutor, handler: addHandler });
+    }
+    
+    // ✅ 3. Botones de remover con [data-action="remove"]
+    container.querySelectorAll('[data-action="remove"]').forEach(btn => {
+      const removeHandler = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const id = btn.dataset.id;
+        if (!id) return;
+        
+        const confirmed = await this._showConfirmation(
+          '¿Quitar asignación?', 
+          'Esta acción eliminará la relación. Los datos originales no se borrarán.'
+        );
+        
+        if (!confirmed) return;
+        
+        try {
+          const res = await window.electronAPI?.removerTutor?.({
+            docenteId: entityType === 'docente' ? entityId : null,
+            alumnoId: entityType === 'alumno' ? entityId : null,
+            targetId: id
+          });
+          
+          if (res?.success) {
+            if (typeof window.toast !== 'undefined') {
+              window.toast.success?.('✅ Asignación removida');
+            }
+            this._loadTabContentCached(tabId);
+          } else {
+            throw new Error(res?.error || 'Error al remover');
+          }
+        } catch (error) {
+          console.error('❌ Error removiendo:', error);
+          if (typeof window.toast !== 'undefined') {
+            window.toast.error?.(`❌ ${error.message}`);
+          }
+        }
+      };
+      
+      btn.addEventListener('click', removeHandler);
+      listeners.push({ type: 'click', target: btn, handler: removeHandler });
     });
     
+    // ✅ 4. Selector de periodo dinámico (si la pestaña lo requiere)
+    const periodSelector = container.querySelector('#modal-period-selector');
+    if (periodSelector) {
+      const periodChangeHandler = async (e) => {
+        const newPeriodId = e.target.value;
+        if (!newPeriodId) return;
+        
+        // Actualizar contexto con nuevo periodo
+        this.currentContext.periodId = newPeriodId;
+        
+        // Recargar contenido de esta pestaña con el nuevo periodo
+        // Usamos _loadTabContentCached directamente para forzar recarga (ignorar caché)
+        const area = document.getElementById('asig-content-area');
+        if (area) {
+          area.innerHTML = '<div class="empty-state" style="padding:2rem;text-align:center"><i class="fa-solid fa-spinner fa-spin"></i><br>Cargando...</div>';
+          await this._loadTabContentCached(tabId);
+        }
+      };
+      
+      periodSelector.addEventListener('change', periodChangeHandler);
+      listeners.push({ type: 'change', target: periodSelector, handler: periodChangeHandler });
+    }
+    
     // Guardar listeners para cleanup futuro
-    this._tabEventListeners.set(`${this.currentContext.entityType}:${tabId}`, listeners);
+    const cacheKey = `${entityType}:${tabId}`;
+    this._tabEventListeners.set(cacheKey, listeners);
+    
+    console.log(`🔗 [AssignmentModal] ${listeners.length} listeners vinculados para ${cacheKey}`);
   }
 
-  /**
-   * Limpia listeners de eventos dinámicos para evitar memory leaks
-   */
+  // =========================================
+  // UTILIDAD: Mostrar confirmación (compatible con toast o alert)
+  // =========================================
+  async _showConfirmation(title, message) {
+    // Si existe globalConfirm, usarlo (más elegante)
+    if (typeof globalConfirm !== 'undefined' && globalConfirm.ask) {
+      return await globalConfirm.ask(`${title}\n\n${message}`);
+    }
+    // Fallback a confirm nativo
+    return confirm(`${title}\n\n${message}`);
+  }
+
+  // =========================================
+  // ✅ CORREGIDO: Limpieza de listeners
+  // =========================================
   _cleanupTabListeners(tabId = null) {
     const prefix = tabId 
       ? `${this.currentContext?.entityType}:${tabId}` 
@@ -355,30 +447,27 @@ export class AssignmentModal {
     
     for (const [key, listeners] of this._tabEventListeners) {
       if (key.startsWith(prefix)) {
-        listeners.forEach(({ type, target, handler }) => {
-          target?.removeEventListener?.(type, handler);
+        listeners.forEach(({ type, target, handler, options }) => {
+          if (target && typeof handler === 'function') {
+            target.removeEventListener(type, handler, options);
+          }
         });
         this._tabEventListeners.delete(key);
+        console.log(`🧹 [AssignmentModal] Listeners limpiados: ${key}`);
       }
     }
   }
 
   // =========================================
-  // GESTIÓN DE MEMORIA (Opcional)
+  // GESTIÓN DE MEMORIA
   // =========================================
-  /**
-   * Limpia el caché de contenido para liberar memoria
-   * Útil si el modal se usa con muchas entidades diferentes
-   */
   clearCache(entityType = null, tabId = null) {
     if (!entityType && !tabId) {
-      // Limpieza total
       this._contentCache.clear();
       console.log('🧹 [AssignmentModal] Caché completo limpiado');
       return;
     }
     
-    // Limpieza selectiva
     for (const key of this._contentCache.keys()) {
       if (key.startsWith(`${entityType}:`) && (!tabId || key.endsWith(`:${tabId}`))) {
         this._contentCache.delete(key);
@@ -387,26 +476,26 @@ export class AssignmentModal {
     }
   }
 
-  /**
-   * Destruye el modal y libera todos los recursos
-   * Útil si se quiere eliminar completamente el modal del DOM
-   */
   destroy() {
     if (!this._initialized) return;
     
-    // Cerrar modal si está abierto
     this.modal?.classList.add('hidden');
-    
-    // Limpiar caché y listeners
     this._contentCache.clear();
     this._cleanupTabListeners();
     this._tabEventListeners.clear();
     
-    // Remover listeners globales
-    document.getElementById('btn-cerrar-asig')?.removeEventListener('click', () => {});
-    document.getElementById('btn-cancelar-asig')?.removeEventListener('click', () => {});
+    // Remover listeners globales (referencias directas)
+    const btnCerrar = document.getElementById('btn-cerrar-asig');
+    const btnCancelar = document.getElementById('btn-cancelar-asig');
+    if (btnCerrar) {
+      const clone = btnCerrar.cloneNode(true);
+      btnCerrar.parentNode.replaceChild(clone, btnCerrar);
+    }
+    if (btnCancelar) {
+      const clone = btnCancelar.cloneNode(true);
+      btnCancelar.parentNode.replaceChild(clone, btnCancelar);
+    }
     
-    // Resetear estado
     this.modal = null;
     this.currentContext = null;
     this._activeTab = null;

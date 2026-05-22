@@ -257,49 +257,42 @@ export class DocenteModule {
     } catch (error) { console.error('Error cargando resumen:', error); chips.innerHTML = '<span class="chip" style="color:var(--danger-color)">Error</span>'; }
   }
 
-  openAssignmentModal(buttonEl) {
-  // 1. Subir hasta encontrar la fila de detalles (sub-row-details)
+// src/renderer/modules/DocenteModule.js
+openAssignmentModal(buttonEl) {
+  // 🎯 1. Navegación DOM robusta (tu lógica, preservada)
   const expandedRow = buttonEl?.closest('.sub-row-details');
+  const row = expandedRow 
+    ? expandedRow.previousElementSibling 
+    : buttonEl?.closest('.data-row');
   
-  if (!expandedRow) {
-    console.warn('⚠️ [DocenteModule] No se encontró el contenedor expandido');
+  if (!row?.classList.contains('data-row')) {
+    console.warn('⚠️ [DocenteModule] No se encontró fila de datos');
     return;
   }
   
-  // 2. La fila principal (data-row) es la hermana anterior
-  const row = expandedRow.previousElementSibling;
-  
-  // Verificar que efectivamente sea una fila de datos
-  if (!row || !row.classList.contains('data-row')) {
-    console.warn('⚠️ [DocenteModule] No se encontró la fila de datos asociada');
-    return;
-  }
-  
-  // 3. Extraer ID y nombre del docente desde la fila principal
+  // 🎯 2. Extracción de datos con fallbacks
   const docenteId = row.dataset.id;
-  
-  // Obtener nombre (fallback a la celda de texto si no hay data-attribute)
-  // Ajusta el nth-child si tu columna de nombre está en otra posición
   const docenteName = row.dataset.nombre || 
     row.querySelector('td:nth-child(2)')?.textContent?.trim() || 
     'Docente';
   
-  console.log(`🔗 [DocenteModule] Abriendo asignaciones para ID: ${docenteId}, Nombre: ${docenteName}`);
-  
-  // 4. Verificar que assignmentModal esté disponible
+  // 🎯 3. Verificación de dependencia global
   if (!window.assignmentModal) {
-    console.error('❌ [DocenteModule] assignmentModal no está disponible en window');
-    alert('Error: El módulo de asignaciones no está cargado');
+    console.error('❌ [DocenteModule] assignmentModal no disponible');
     return;
   }
   
-  // 5. Abrir el modal con contexto específico
+  // 🎯 4. Apertura con contexto EXPLÍCITO
   window.assignmentModal.open({
     entityType: 'docente',
     entityId: docenteId,
     entityName: docenteName,
+    periodId: null,
+    // Opcional: Filtrar pestañas (descomenta si quieres limitar)
     tabs: ['tutorados', 'ee_asignadas', 'periodos_activos']
   });
+  
+  console.log(`🔗 [DocenteModule] Modal abierto para ${docenteName} (#${docenteId})`);
 }
 
   toggleActionMenu(event) {

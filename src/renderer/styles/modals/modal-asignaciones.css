@@ -1,20 +1,19 @@
 /* =========================================
-   MEGA MODAL DE ASIGNACIONES - ESTILOS
+   MEGA MODAL - ESTILO PANORÁMICO (Desktop)
    ========================================= */
 
-/* Overlay base */
+/* 1. Overlay Base */
 #modal-asignaciones.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  padding: 1rem;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -25,289 +24,217 @@
   visibility: visible;
 }
 
-/* Contenedor principal - ANCHO GRANDE pero responsivo */
+/* 2. Contenedor Principal: ANCHO Y ALTO CONTROLADO */
 #modal-asignaciones .modal-content {
-  width: min(95vw, 1400px);
-  max-height: min(90vh, 900px);
+  /* ✅ Ancho forzado: 92% de la pantalla, máximo 1600px */
+  width: 60vw;
+  max-width: 1600px;
+  min-width: 1000px; /* Asegura que no se estreche en laptops pequeñas */
+  
+  /* ✅ Altura fija: 85% de la altura, para que sea "caja" y no "lista" */
+  height: 85vh;
+  max-height: 85vh;
+  
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  background: var(--bg-white, #fff);
+  background: var(--bg-white, #1e1e1e);
   border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   overflow: hidden;
-  transform: translateY(10px);
-  transition: transform 0.2s ease;
 }
 
-#modal-asignaciones.modal-overlay:not(.hidden) .modal-content {
-  transform: translateY(0);
-}
-
-/* Header fijo */
+/* 3. Header Fijo */
 #modal-asignaciones .modal-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid var(--border-color, #444);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0;
-  background: var(--bg-light, #f8f9fa);
+  flex-shrink: 0; /* No se encoge */
+  background: var(--bg-light, #252525);
+  height: 70px; /* Altura fija para el header */
 }
 
 #modal-asignaciones .modal-header h3 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 70%;
-  color: var(--text-dark, #333);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-dark, #e0e0e0);
 }
 
-/* Botón cerrar */
-#modal-asignaciones .btn-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--text-muted, #666);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  transition: background 0.2s, color 0.2s;
-}
+/* =========================================
+   PESTAÑAS (TABS) - COMPACTAS
+   ========================================= */
 
-#modal-asignaciones .btn-close:hover {
-  background: var(--bg-hover, #e9ecef);
-  color: var(--text-dark, #333);
-}
-
-/* Tabs con scroll horizontal en móvil */
+/* Contenedor de tabs: altura fija y controlada */
 #modal-asignaciones .tabs-container {
   display: flex;
+  align-items: flex-end; /* Alinea los botones abajo */
   gap: 4px;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
-  overflow-x: auto;
-  overflow-y: hidden;
+  padding: 0 2rem;
+  border-bottom: 2px solid var(--border-color, #444);
   flex-shrink: 0;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-color, #e0e0e0) transparent;
-  background: var(--bg-white, #fff);
+  background: var(--bg-light, #252525);
+  min-height: 50px; /* Altura mínima controlada */
+  max-height: 40px; /* Altura máxima para evitar que se expanda con muchas pestañas */
 }
 
-#modal-asignaciones .tabs-container::-webkit-scrollbar {
-  height: 4px;
-}
-
-#modal-asignaciones .tabs-container::-webkit-scrollbar-thumb {
-  background: var(--border-color, #e0e0e0);
-  border-radius: 2px;
-}
-
+/* Botón de pestaña individual */
 #modal-asignaciones .tabs-container .tab-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.25rem;
   border: none;
-  background: var(--bg-light, #f8f9fa);
+  background: transparent;
   border-radius: 6px 6px 0 0;
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 50;
+  color: var(--text-muted, #888);
+  transition: all 0.2s;
   white-space: nowrap;
-  color: var(--text-muted, #666);
-  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+  height: 40px; /* ✅ Altura fija para todas las pestañas */
   flex-shrink: 0;
 }
 
+/* Hover: ligero fondo */
 #modal-asignaciones .tabs-container .tab-btn:hover {
-  background: var(--bg-hover, #e9ecef);
-  color: var(--text-dark, #333);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dark, #e0e0e0);
 }
 
+/* Pestaña ACTIVA: azul y destacada */
 #modal-asignaciones .tabs-container .tab-btn.active {
   background: var(--accent-color, #3498db);
   color: white;
   font-weight: 600;
+  border-bottom: 2px solid var(--bg-light, #252525); /* Tapar la línea del contenedor */
+  margin-bottom: -2px;
 }
 
-#modal-asignaciones .tabs-container .tab-btn:active {
-  transform: scale(0.98);
+/* Icono/emoji dentro de la pestaña */
+#modal-asignaciones .tabs-container .tab-btn i,
+#modal-asignaciones .tabs-container .tab-btn span:first-child {
+  font-size: 1rem;
+  line-height: 1;
 }
 
-/* Área de contenido con scroll interno */
+/* Ajuste específico para el emoji */
+#modal-asignaciones .tabs-container .tab-btn::before {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* 5. Área de Contenido (Scroll Interno) */
 #modal-asignaciones .tab-content-area {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1; /* Ocupa todo el espacio vertical restante */
+  overflow-y: auto; /* ✅ SCROLL AQUÍ */
   overflow-x: hidden;
-  padding: 1rem 1.5rem;
-  contain: content; /* ✅ Optimización de renderizado */
-  background: var(--bg-white, #fff);
-}
-
-/* Footer fijo */
-#modal-asignaciones .modal-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--border-color, #e0e0e0);
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  flex-shrink: 0;
-  background: var(--bg-light, #f8f9fa);
-}
-
-/* =========================================
-   RESPONSIVE BREAKPOINTS
-   ========================================= */
-
-/* Tablet (≤1024px) */
-@media (max-width: 1024px) {
-  #modal-asignaciones .modal-content {
-    width: min(98vw, 1100px);
-    max-height: 95vh;
-  }
-  
-  #modal-asignaciones .modal-header h3 {
-    font-size: 1rem;
-    max-width: 60%;
-  }
-  
-  #modal-asignaciones .tabs-container {
-    padding: 0.5rem 0.75rem;
-    gap: 2px;
-  }
-  
-  #modal-asignaciones .tabs-container .tab-btn {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.85rem;
-  }
-}
-
-/* Móvil (≤768px) */
-@media (max-width: 768px) {
-  #modal-asignaciones.modal-overlay {
-    padding: 0;
-    align-items: flex-end; /* Modal desde abajo en móvil */
-  }
-  
-  #modal-asignaciones .modal-content {
-    width: 100vw;
-    max-height: 95vh;
-    border-radius: 16px 16px 0 0;
-    margin: 0;
-  }
-  
-  #modal-asignaciones .modal-header {
-    padding: 0.75rem 1rem;
-  }
-  
-  #modal-asignaciones .modal-header h3 {
-    font-size: 0.95rem;
-    max-width: 50%;
-  }
-  
-  #modal-asignaciones .tabs-container {
-    padding: 0.25rem 0.5rem;
-    gap: 2px;
-  }
-  
-  #modal-asignaciones .tabs-container .tab-btn {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.8rem;
-  }
-  
-  #modal-asignaciones .tab-content-area {
-    padding: 0.75rem 1rem;
-    font-size: 0.9rem;
-  }
-  
-  #modal-asignaciones .modal-footer {
-    padding: 0.75rem 1rem;
-    flex-wrap: wrap;
-  }
-  
-  #modal-asignaciones .modal-footer .btn {
-    flex: 1;
-    min-width: 120px;
-  }
-}
-
-/* =========================================
-   OPTIMIZACIONES DE RENDIMIENTO
-   ========================================= */
-
-/* Evitar repaints innecesarios */
-#modal-asignaciones .tab-content-area > * {
-  will-change: transform;
-  backface-visibility: hidden;
-}
-
-/* Transiciones suaves solo en hover */
-#modal-asignaciones .tab-btn {
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-/* Tablas optimizadas para scroll */
-#modal-asignaciones .data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-#modal-asignaciones .data-table th {
-  position: sticky;
-  top: 0;
-  background: var(--bg-light, #f8f9fa);
-  z-index: 1;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  font-weight: 600;
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 2px solid var(--border-color, #e0e0e0);
-}
-
-#modal-asignaciones .data-table td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
-}
-
-#modal-asignaciones .data-table tr:hover {
-  background: var(--bg-hover, #f8f9fa);
-}
-
-/* Estados vacíos */
-#modal-asignaciones .empty-state {
-  text-align: center;
   padding: 2rem;
-  color: var(--text-muted, #666);
-  font-size: 0.95rem;
+  contain: content;
+  background: var(--bg-white, #1e1e1e);
 }
 
-#modal-asignaciones .empty-state i {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.6;
-  display: block;
+/* Scrollbar personalizado */
+#modal-asignaciones .tab-content-area::-webkit-scrollbar {
+  width: 8px;
+}
+#modal-asignaciones .tab-content-area::-webkit-scrollbar-thumb {
+  background-color: var(--border-color, #444);
+  border-radius: 4px;
 }
 
-/* Chips de resumen */
-#modal-asignaciones .summary-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
+/* 6. Layout de 2 Columnas (Aprovechando el ancho panorámico) */
+#modal-asignaciones .grid-2-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Siempre 2 columnas */
+  gap: 4rem; /* Separación amplia para que respire */
+  width: 100%;
 }
 
-#modal-asignaciones .summary-chips .chip {
-  padding: 0.35rem 0.75rem;
-  background: var(--bg-light, #f8f9fa);
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-dark, #333);
+/* 7. Estilos de Componentes (Selectores, Botones, Listas) */
+#modal-asignaciones .form-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color, #444);
+  border-radius: 6px;
+  background: var(--bg-input, #2c2c2c);
+  color: var(--text-color, #e0e0e0);
+  font-size: 0.95rem; /* Un poco más grande para escritorio */
+  cursor: pointer;
 }
 
-#modal-asignaciones .summary-chips .chip.accent {
+#modal-asignaciones #btn-assign {
+  width: 100%;
+  padding: 0.85rem;
   background: var(--accent-color, #3498db);
   color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+  font-size: 1rem;
+}
+
+#modal-asignaciones #btn-assign:hover {
+  background: var(--accent-color-dark, #2980b9);
+}
+
+#modal-asignaciones .assigned-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--bg-card, #252525);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent-color, #3498db);
+  margin-bottom: 0.5rem;
+}
+
+#modal-asignaciones .btn-remove {
+  background: none;
+  border: none;
+  color: var(--danger-color, #e74c3c);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 4px;
+  opacity: 0.6;
+}
+#modal-asignaciones .btn-remove:hover { opacity: 1; }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+.badge-success { background: var(--success-color, #2ecc71); color: #fff; }
+.badge-secondary { background: var(--bg-muted, #444); color: var(--text-muted, #aaa); }
+
+/* Nota Informativa */
+#modal-asignaciones .info-note {
+  margin-top: 2rem;
+  font-size: 0.85rem;
+  color: var(--text-muted, #aaa);
+  text-align: center;
+  padding: 1rem;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 6px;
+}
+
+/* Footer Fijo */
+#modal-asignaciones .modal-footer {
+  padding: 1rem 2rem;
+  border-top: 1px solid var(--border-color, #444);
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  background: var(--bg-light, #252525);
 }

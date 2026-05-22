@@ -11,6 +11,7 @@ const alumnoHandlers = require('./alumnoHandlers');
 const planHandlers = require('./planHandlers');
 const semestreHandlers = require('./semestreHandlers');
 const generacionHandlers = require('./generacionHandlers');
+const relacionHandlers = require('./relacionHandlers');
 
 module.exports = () => {
   authHandlers();
@@ -25,6 +26,7 @@ module.exports = () => {
   planHandlers();
   semestreHandlers();
   generacionHandlers();
+  relacionHandlers();
   
   console.log('[HANDLERS] Todos los handlers IPC registrados correctamente.');
 };
