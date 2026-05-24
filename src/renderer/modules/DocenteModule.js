@@ -257,43 +257,49 @@ export class DocenteModule {
     } catch (error) { console.error('Error cargando resumen:', error); chips.innerHTML = '<span class="chip" style="color:var(--danger-color)">Error</span>'; }
   }
 
-// src/renderer/modules/DocenteModule.js
-openAssignmentModal(buttonEl) {
-  // 🎯 1. Navegación DOM robusta (tu lógica, preservada)
-  const expandedRow = buttonEl?.closest('.sub-row-details');
-  const row = expandedRow 
-    ? expandedRow.previousElementSibling 
-    : buttonEl?.closest('.data-row');
-  
-  if (!row?.classList.contains('data-row')) {
-    console.warn('⚠️ [DocenteModule] No se encontró fila de datos');
-    return;
+    openAssignmentModal(buttonEl) {
+    const row = buttonEl?.closest('.sub-row-details')?.previousElementSibling 
+             || buttonEl?.closest('.data-row');
+    
+    if (!row?.classList.contains('data-row')) return;
+    
+    const identificador = row.dataset.id?.trim();
+    if (!identificador || !this.data?.length) return;
+
+    const docente = this.data.find(d => d.codigo === identificador);
+
+    if (!docente) {
+      console.error(`❌ Docente no encontrado: ${identificador}`);
+      return;
+    }
+
+    // ✅ DEBUG: Verificar qué datos llegaron
+    console.log('🔍 [Docente Data]:', {
+      nombres: docente.nombres,
+      apellido_paterno: docente.apellido_paterno,
+      apellido_materno: docente.apellido_materno,
+      codigo: docente.codigo
+    });
+
+    // ✅ Construcción ROBUSTA del nombre completo
+    const partes = [
+      docente.nombres?.trim(),
+      docente.apellido_paterno?.trim(),
+      docente.apellido_materno?.trim()
+    ].filter(p => p && p.length > 0); // Filtrar vacíos o undefined
+
+    const nombreCompleto = partes.join(' ');
+
+    console.log('✅ [Nombre construido]:', nombreCompleto);
+
+    // ✅ Abrir modal
+    window.assignmentModal.open({
+      entityType: 'docente',
+      entityId: docente.id,
+      entityName: nombreCompleto,  // ← Aquí va el nombre completo validado
+      codigo: docente.codigo
+    });
   }
-  
-  // 🎯 2. Extracción de datos con fallbacks
-  const docenteId = row.dataset.id;
-  const docenteName = row.dataset.nombre || 
-    row.querySelector('td:nth-child(2)')?.textContent?.trim() || 
-    'Docente';
-  
-  // 🎯 3. Verificación de dependencia global
-  if (!window.assignmentModal) {
-    console.error('❌ [DocenteModule] assignmentModal no disponible');
-    return;
-  }
-  
-  // 🎯 4. Apertura con contexto EXPLÍCITO
-  window.assignmentModal.open({
-    entityType: 'docente',
-    entityId: docenteId,
-    entityName: docenteName,
-    periodId: null,
-    // Opcional: Filtrar pestañas (descomenta si quieres limitar)
-    tabs: ['tutorados', 'ee_asignadas', 'periodos']
-  });
-  
-  console.log(`🔗 [DocenteModule] Modal abierto para ${docenteName} (#${docenteId})`);
-}
 
   toggleActionMenu(event) {
     event.stopPropagation();

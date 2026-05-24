@@ -96,49 +96,132 @@ export class AssignmentModal {
     }
   }
 
-  async _loadPeriodsIntoSidebar() {
-    const select = this.elements.sidebarPeriodSelect;
-    // Aquí usamos tu API real
-    try {
-      const res = await window.electronAPI.listarPeriodosSelect();
-      const periodos = res?.success ? res.data : [];
-      
-      select.innerHTML = '<option value="">Todos los periodos (Histórico)</option>';
-      periodos.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = `${p.clave} - ${p.descripcion}`;
-        select.appendChild(opt);
-      });
+  // src/renderer/utils/AssignmentModal.js
 
-      // Listener para cambio de periodo (Refresca todo)
-      select.onchange = (e) => {
-        this.state.activePeriod = e.target.value || null;
-        this._handlePeriodChange();
-      };
-    } catch (err) {
-      select.innerHTML = '<option>Error cargando</option>';
+async _loadPeriodsIntoSidebar() {
+  const select = this.elements.sidebarPeriodSelect;
+  if (!select) return;
+
+  try {
+    console.log('📡 [Modal] Solicitando periodos...');
+    
+    // ✅ Llama al método expuesto en preload
+    const res = await window.electronAPI.listarPeriodos();
+    
+    console.log('📥 [Modal] Respuesta:', res);
+
+    if (!res?.success) {
+      throw new Error(res?.error || 'Error desconocido al cargar periodos');
     }
-  }
 
-  _renderSidebarContext() {
-    const { entityName, entityType, entityId } = this.state.context;
+    const periodos = res.data || [];
+    
+    // Limpiar y poner opción por defecto
+    select.innerHTML = '<option value="">Todos los periodos (Histórico)</option>';
+    
+    if (periodos.length === 0) {
+      select.innerHTML += '<option value="" disabled>No hay periodos registrados</option>';
+      return;
+    }
+
+    // Llenar opciones
+    periodos.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id; // ID numérico para consultas DB
+      opt.textContent = `${p.clave} - ${p.descripcion}`;
+      select.appendChild(opt);
+    });
+
+    // Listener de cambio
+    select.onchange = (e) => {
+      this.state.activePeriod = e.target.value || null;
+      console.log(`🔄 [Modal] Periodo activo: ${this.state.activePeriod || 'Global'}`);
+      this._handlePeriodChange();
+    };
+
+  } catch (error) {
+    console.error('❌ [Modal] Error cargando periodos:', error);
+    select.innerHTML = `<option value="">⚠️ ${error.message}</option>`;
+  }
+}
+
+    _renderSidebarContext() {
+    const { entityName, entityType, entityId, matricula, clave } = this.state.context;
     const container = this.elements.sidebarContextInfo;
     
-    // HTML simple para la info fija
+    // Construir etiquetas meta según el tipo
+    let metaTags = `<span class="meta-item">🎓 ${entityType.toUpperCase()}</span>`;
+    if (entityType === 'alumno' && matricula) metaTags += `<span class="meta-item">🆔 ${matricula}</span>`;
+    if (entityType === 'ee' && clave) metaTags += `<span class="meta-item">🔑 ${clave}</span>`;
+
     container.innerHTML = `
       <div class="entity-badge ${entityType}">
-        <span class="icon">👤</span>
+        <span class="icon">${this._getEntityIcon(entityType)}</span>
         <div>
           <strong>${entityName}</strong>
           <small>ID: ${entityId}</small>
         </div>
       </div>
-      <div class="entity-meta">
-        <span class="meta-item">🎓 ${entityType.toUpperCase()}</span>
-      </div>
+      <div class="entity-meta">${metaTags}</div>
     `;
   }
+
+    // MÉTODO NUEVO: Devuelve HTML del icono correcto
+  _getEntityIcon(type) {
+    if (type === 'docente') return '<i class="fa-solid fa-chalkboard-user"></i>';
+    if (type === 'alumno')  return '<i class="fa-solid fa-user-graduate"></i>';
+    if (type === 'ee')      return '<i class="fa-solid fa-book-open"></i>';
+    return '<i class="fa-solid fa-user"></i>'; // Default
+  }
+
+  _renderSidebarContext() {
+  const { entityName, entityType, entityId } = this.state.context;
+  const container = this.elements.sidebarContextInfo;
+  
+  //Configuración dinámica por entidad
+  const entityConfig = {
+    docente: {
+      label: 'Código',
+      value: this.state.context.codigo,
+      icon: '<i class="fa-solid fa-chalkboard-user"></i>',
+      meta: 'DOCENTE'
+    },
+    alumno: {
+      label: 'Matrícula',
+      value: this.state.context.matricula,
+      icon: '<i class="fa-solid fa-user-graduate"></i>',
+      meta: 'ALUMNO'
+    },
+    ee: {
+      label: 'NRC',
+      value: this.state.context.clave_ee,
+      icon: '<i class="fa-solid fa-book-open"></i>',
+      meta: 'EXPERIENCIA EDUCATIVA'
+    }
+  };
+  
+  //Obtener configuración o fallback seguro
+  const config = entityConfig[entityType] || {
+    label: 'ID',
+    value: entityId,
+    icon: '<i class="fa-solid fa-user"></i>',
+    meta: entityType.toUpperCase()
+  };
+  
+  // ✅ Renderizar con datos dinámicos
+  container.innerHTML = `
+    <div class="entity-badge ${entityType}">
+      <span class="icon">${config.icon}</span>
+      <div>
+        <strong>${entityName}</strong>
+        <small>${config.label}: ${config.value || entityId}</small>
+      </div>
+    </div>
+    <div class="entity-meta">
+      <span class="meta-item">${config.meta}</span>
+    </div>
+  `;
+}
 
   // ==========================================
   // 3. GESTIÓN DE TABS Y WORKSPACE

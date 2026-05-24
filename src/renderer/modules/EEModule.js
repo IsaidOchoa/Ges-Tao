@@ -19,10 +19,10 @@ export class EEModule {
   // =========================================
   // INICIALIZACIÓN PRINCIPAL
   // =========================================
-  async init() {
+    async init() {
     console.log('📘 [EEModule] Sincronizando módulo...');
 
-    // 1. Inyectar modal (solo una vez, gestionado por este módulo)
+    // 1. Inyectar modal (solo una vez)
     this._injectModal();
 
     // 2. Esperar que el tbody esté listo en el DOM
@@ -49,9 +49,12 @@ export class EEModule {
         columns: this._getColumns(),
         expandable: true,
         actions: true,
+        // ✅ Callbacks para interacción
         onRowClick: 'eeModuleInstance.handleRowClick(event)',
         onAction: 'eeModuleInstance.toggleActionMenu(event)',
-        onExpand: true
+        onExpand: 'eeModuleInstance.loadRowSummary(event)', // ✅ Corregido: era 'true'
+        // ✅ NUEVO: Acción del botón "Gestionar" en fila expandible
+        onExpandAction: 'eeModuleInstance.openAssignmentModal(this)'
       });
       this.table.setData(this.data);
       console.log(`✅ Tabla EE renderizada con ${this.data.length} registros`);
@@ -60,10 +63,13 @@ export class EEModule {
       console.log('ℹ️ [EEModule] Sin registros para mostrar');
     }
 
-    // 5. Vincular eventos (siempre, porque el DOM puede haber cambiado)
+    // 5. Vincular eventos
     this._setupSearch();
     this._setupModalEvents();
     this._setupGlobalHelpers();
+
+    // ✅ EXPONER INSTANCIA GLOBAL (CRÍTICO para que funcione el onclick del HTML)
+    window.eeModuleInstance = this;
 
     this.initialized = true;
     console.log('✅ [EEModule] Inicialización completa');
@@ -453,12 +459,69 @@ export class EEModule {
     }
   }
 
-  // =========================================
-  // MODAL DE ASIGNACIONES (Placeholder)
-  // =========================================
-  openAssignmentModal(eeId) {
-    console.log(`🔗 [EEModule] Abrir asignaciones para EE ID: ${eeId}`);
-    alert(`🚧 Función en desarrollo:\nGestionar docentes, periodos y contenidos para esta Experiencia Educativa.`);
+    // src/renderer/modules/EEModule.js
+  
+  openAssignmentModal(buttonEl) {
+    // 1. Navegación DOM para encontrar la fila principal
+    const expandedRow = buttonEl?.closest('.sub-row-details');
+    const row = expandedRow 
+      ? expandedRow.previousElementSibling 
+      : buttonEl?.closest('.data-row');
+    
+    if (!row?.classList.contains('data-row')) {
+      console.warn('⚠️ [EEModule] No se encontró fila de datos válida');
+      return;
+    }
+    
+    // 2. Obtener identificador (clave_ee) desde el dataset de la fila
+    const identificador = row.dataset.id?.trim();
+    if (!identificador) {
+      console.error('❌ [EEModule] La fila no tiene dataset.id');
+      return;
+    }
+
+    // 3. Validar que tenemos datos cargados
+    if (!this.data || this.data.length === 0) {
+      console.error('❌ [EEModule] No hay datos cargados en la tabla (this.data está vacío)');
+      return;
+    }
+
+    // 4. Buscar la EE en los datos locales por su clave única (clave_ee)
+    const ee = this.data.find(e => e.clave_ee === identificador);
+
+    // Fallback: si no encuentra por clave_ee, intentar por id numérico
+    const eeFallback = !ee ? this.data.find(e => e.id == identificador) : null;
+    const eeCompleto = ee || eeFallback;
+
+    if (!eeCompleto) {
+      console.error(`❌ [EEModule] EE no encontrada con clave: ${identificador}`);
+      console.warn('💡 Pista: Revisa si el identificador en el HTML es clave_ee o id');
+      console.log('🔍 [Debug] Primeras EE en this.data:', this.data.slice(0, 2).map(e => ({ id: e.id, clave_ee: e.clave_ee, nombre: e.nombre })));
+      return;
+    }
+
+    // 5. Debug opcional (puedes quitarlo en producción)
+    console.log('🔍 [EEModule] Datos encontrados:', {
+      id: eeCompleto.id,
+      clave_ee: eeCompleto.clave_ee,
+      nombre: eeCompleto.nombre,
+      tipo: eeCompleto.tipo,
+      creditos: eeCompleto.creditos
+    });
+
+    // 6. Abrir modal con contexto completo de EE
+    window.assignmentModal.open({
+      entityType: 'ee',                    // 🔑 Clave: define qué cards mostrar
+      entityId: eeCompleto.id,             // ID interno para backend (número)
+      entityName: eeCompleto.nombre,       // Nombre visual para el sidebar
+      clave_ee: eeCompleto.clave_ee,       // Clave visible para UI (ej: "PROG-101")
+      // Campos extra opcionales para futuras cards:
+      tipo: eeCompleto.tipo,
+      creditos: eeCompleto.creditos,
+      area: eeCompleto.area
+    });
+    
+    console.log(`✅ [EEModule] Modal abierto para EE: ${eeCompleto.nombre} (${eeCompleto.clave_ee})`);
   }
 
   // =========================================

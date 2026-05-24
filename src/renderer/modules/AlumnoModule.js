@@ -22,10 +22,10 @@ export class AlumnoModule {
   // =========================================
   // INICIALIZACIÓN PRINCIPAL
   // =========================================
-  async init() {
+    async init() {
     console.log('📘 [AlumnoModule] Iniciando módulo de Alumnos...');
 
-    // 1. Inyectar modal (solo una vez, gestionado por este módulo)
+    // 1. Inyectar modal (solo una vez)
     this._injectModal();
 
     // 2. Esperar que el tbody esté listo en el DOM
@@ -52,9 +52,12 @@ export class AlumnoModule {
         columns: this._getColumns(),
         expandable: true,
         actions: true,
+        // ✅ Callbacks para interacción
         onRowClick: 'alumnoModuleInstance.handleRowClick(event)',
         onAction: 'alumnoModuleInstance.toggleActionMenu(event)',
-        onExpand: true
+        onExpand: 'alumnoModuleInstance.loadRowSummary(event)', // ✅ Corregido: era 'true'
+        // ✅ NUEVO: Acción del botón "Gestionar" en fila expandible
+        onExpandAction: 'alumnoModuleInstance.openAssignmentModal(this)'
       });
       this.table.setData(this.data);
       console.log(`✅ Tabla Alumnos renderizada con ${this.data.length} registros`);
@@ -63,10 +66,13 @@ export class AlumnoModule {
       console.log('ℹ️ [AlumnoModule] Sin registros para mostrar');
     }
 
-    // 5. Vincular eventos (siempre, porque el DOM puede haber cambiado)
+    // 5. Vincular eventos
     this._setupSearch();
     this._setupModalEvents();
     this._setupGlobalHelpers();
+
+    // ✅ EXPONER INSTANCIA GLOBAL (CRÍTICO para que funcione el onclick del HTML)
+    window.alumnoModuleInstance = this;
 
     this.initialized = true;
     console.log('✅ [AlumnoModule] Inicialización completa');
@@ -439,12 +445,66 @@ export class AlumnoModule {
     if (menu?.classList.contains('context-menu')) menu.classList.toggle('hidden');
   }
 
-  // =========================================
-  // MODAL DE ASIGNACIONES (Placeholder)
-  // =========================================
-  openAssignmentModal(alumnoId) {
-    console.log(`🔗 [AlumnoModule] Abrir asignaciones para Alumno ID: ${alumnoId}`);
-    alert(`🚧 Función en desarrollo:\nAsignar Tutor y ver EE cursadas.`);
+    // src/renderer/modules/AlumnoModule.js
+  
+  openAssignmentModal(buttonEl) {
+    // 1. Navegación DOM para encontrar la fila principal
+    const expandedRow = buttonEl?.closest('.sub-row-details');
+    const row = expandedRow 
+      ? expandedRow.previousElementSibling 
+      : buttonEl?.closest('.data-row');
+    
+    if (!row?.classList.contains('data-row')) {
+      console.warn('⚠️ [AlumnoModule] No se encontró fila de datos válida');
+      return;
+    }
+    
+    // 2. Obtener ID numérico desde el dataset de la fila
+    const alumnoId = row.dataset.id?.trim();
+    if (!alumnoId) {
+      console.error('❌ [AlumnoModule] La fila no tiene dataset.id');
+      return;
+    }
+
+    // 3. Validar que tenemos datos cargados
+    if (!this.data || this.data.length === 0) {
+      console.error('❌ [AlumnoModule] No hay datos cargados en la tabla');
+      return;
+    }
+
+    // 4. Buscar el alumno por ID numérico (coincide con data-id del HTML)
+    const alumno = this.data.find(a => a.id == alumnoId);
+
+    if (!alumno) {
+      console.error(`❌ [AlumnoModule] Alumno no encontrado con ID: ${alumnoId}`);
+      console.warn('💡 Pista: this.data[0] =', this.data[0]);
+      return;
+    }
+
+    // 5. Debug opcional
+    console.log('🔍 [AlumnoModule] Datos encontrados:', {
+      id: alumno.id,
+      matricula: alumno.matricula,
+      nombres: alumno.nombres,
+      apellido_paterno: alumno.apellido_paterno
+    });
+
+    // 6. Construir nombre completo robusto
+    const nombreCompleto = [
+      alumno.nombres,
+      alumno.apellido_paterno,
+      alumno.apellido_materno
+    ].filter(p => p?.trim()).map(p => p.trim()).join(' ');
+
+    // 7. Abrir modal con contexto de ALUMNO
+    window.assignmentModal.open({
+      entityType: 'alumno',              // 🔑 Define qué cards mostrar
+      entityId: alumno.id,               // ID interno para backend
+      entityName: nombreCompleto,        // Nombre visual para sidebar
+      matricula: alumno.matricula        // ✅ Matrícula visible para UI
+    });
+    
+    console.log(`✅ [AlumnoModule] Modal abierto para: ${nombreCompleto} (${alumno.matricula})`);
   }
 
   // =========================================

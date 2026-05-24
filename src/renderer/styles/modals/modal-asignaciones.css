@@ -516,6 +516,12 @@
   font-size: 0.9rem;
 }
 
+/* Ajuste para Iconos FontAwesome en el Sidebar */
+#modal-asignaciones .entity-badge .icon i {
+  font-size: 1.4rem; /* Ajusta tamaño */
+  color: var(--accent-color); /* Hereda color del tema */
+}
+
 /* --- RESPONSIVE & SCALING --- */
 @media (max-width: 1180px) {
   #modal-asignaciones .modal-content {

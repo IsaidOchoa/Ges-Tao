@@ -89,14 +89,21 @@ export class DataTableRow {
             </td>`;
   }
 
-  // src/renderer/components/DataTable/DataTableRow.js
-
 renderExpandableRow() {
-  // ✅ Aseguramos que use onExpandAction. Si está vacío, fallback seguro
-  const action = this.config.onExpandAction || 'docenteModuleInstance.openAssignmentModal(this)';
+  // ✅ SIN FALLBACK: Si no hay onExpandAction, el botón se deshabilita o muestra advertencia
+  const action = this.config.onExpandAction;
   
-  // 🐛 DEBUG: Descomenta la siguiente línea para verificar que Webpack lee ESTE archivo
-  console.log('🔄 [DataTableRow] Renderizando fila. onExpandAction:', action);
+  // 🐛 DEBUG: Para verificar que se está leyendo la config correcta
+  console.log('🔄 [DataTableRow] onExpandAction:', action || '⚠️ NO DEFINIDA');
+
+  // Si no hay acción definida, mostramos botón deshabilitado con tooltip
+  const buttonContent = action 
+    ? `<button class="btn-manage" onclick="${action}" type="button">
+         <i class="fa-solid fa-diagram-project"></i> Gestionar Asignaciones
+       </button>`
+    : `<button class="btn-manage" disabled title="Acción no configurada" type="button">
+         <i class="fa-solid fa-diagram-project"></i> Gestionar
+       </button>`;
 
   return `<tr class="sub-row-details hidden" id="details-${this.rowId}">
             <td colspan="100%" class="expansion-cell">
@@ -108,10 +115,7 @@ renderExpandableRow() {
                   </div>
                 </div>
                 <div class="action-panel">
-                  <!-- ✅ onclick forzado correctamente -->
-                  <button class="btn-manage" onclick="${action}" type="button">
-                    <i class="fa-solid fa-diagram-project"></i> Gestionar Asignaciones
-                  </button>
+                  ${buttonContent}
                   <p class="hint">Abre el panel completo para editar relaciones.</p>
                 </div>
               </div>
