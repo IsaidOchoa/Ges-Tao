@@ -1,3 +1,4 @@
+/* /renderer/modules/AuthModule.js */
 export class AuthModule {
   constructor() {
     this.currentUser = null;

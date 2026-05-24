@@ -1,0 +1,95 @@
+<!-- src/renderer/config/relationships/templates/periodos-form.html -->
+<div class="periodos-container">
+  
+  <!-- ==========================================
+       SECCIÓN SUPERIOR: 2 COLUMNAS
+       ========================================== -->
+  <div class="top-section grid-2-col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+    
+    <!-- COLUMNA IZQUIERDA: Info General -->
+    <div class="card-info" style="background: var(--bg-card, #252525); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color, #444);">
+      <h5 style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--text-muted);">👤 Estado del Docente</h5>
+      
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+        <div style="font-size: 2rem;">👨‍🏫</div>
+        <div>
+          <p style="margin: 0; font-weight: bold; color: var(--text-light);">{{entityName}}</p>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Docente Activo</p>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-muted, #333); padding: 0.75rem; border-radius: 6px; font-size: 0.9rem;">
+        <span style="color: var(--text-muted);">Total Periodos Activos:</span>
+        <strong style="float: right; color: var(--accent-color);">{{assignedCount}}</strong>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: Vincular a Periodo -->
+    <div class="card-actions" style="background: var(--bg-card, #252525); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color, #444);">
+      <h5 style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--text-muted);">➕ Vincular Nuevo Periodo</h5>
+      
+      <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Seleccionar Periodo:</label>
+      <select id="select-periodo" class="form-select" style="width: 100%; margin-bottom: 1rem;">
+        <option value="">-- Seleccionar Periodo Académico... --</option>
+        {{#each available}}
+        <option value="{{value}}">{{label}}</option>
+        {{/each}}
+      </select>
+      
+      <button id="btn-assign" class="btn btn-primary" style="width: 100%;">
+        ✅ Vincular Docente a este Periodo
+      </button>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       SECCIÓN INFERIOR: TABLA DE PERIODOS
+       ========================================== -->
+  <div class="table-section">
+    <h4 style="margin-bottom: 1rem; font-size: 1.1rem;">📅 Periodos Vinculados</h4>
+    
+    <div class="table-responsive" style="overflow-x: auto;">
+      <table class="data-table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: var(--bg-light, #252525); text-align: left; border-bottom: 2px solid var(--accent-color, #3498db);">
+            <th style="padding: 1rem; font-weight: 600; width: 150px;">Clave Periodo</th>
+            <th style="padding: 1rem; font-weight: 600;">Descripción</th>
+            <th style="padding: 1rem; font-weight: 600; width: 120px;">Estado</th>
+            <th style="padding: 1rem; font-weight: 600; width: 100px; text-align: center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#if hasAssigned}}
+            {{#each assigned}}
+            <tr style="border-bottom: 1px solid var(--border-color, #444); transition: background 0.2s;" onmouseover="this.style.background='var(--bg-hover, #333)'" onmouseout="this.style.background='transparent'">
+              <td style="padding: 1rem; font-family: monospace; color: var(--accent-color, #3498db); font-weight: bold;">{{clave}}</td>
+              <td style="padding: 1rem; font-weight: 500;">{{descripcion}}</td>
+              <td style="padding: 1rem;">
+                {{#if isActive}}
+                  <span class="badge badge-success">Activo</span>
+                {{else}}
+                  <span class="badge badge-secondary">Inactivo</span>
+                {{/if}}
+              </td>
+              <td style="padding: 1rem; text-align: center;">
+                <button data-action="remove" data-id="{{id}}" style="background: none; border: none; color: #e74c3c; cursor: pointer;" title="Desvincular">🔗❌</button>
+              </td>
+            </tr>
+            {{/each}}
+          {{else}}
+            <tr>
+              <td colspan="4" style="padding: 3rem; text-align: center; color: var(--text-muted); font-style: italic;">
+                El docente no está vinculado a ningún periodo aún.
+              </td>
+            </tr>
+          {{/if}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Nota -->
+  <p class="info-note" style="margin-top: 2rem; font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 0.75rem; background: rgba(52, 152, 219, 0.1); border-radius: 6px;">
+    💡 Vincula al docente a un periodo para poder asignarle Tutores o Experiencias Educativas.
+  </p>
+</div>

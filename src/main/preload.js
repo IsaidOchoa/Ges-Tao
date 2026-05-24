@@ -183,6 +183,21 @@ try {
       console.log('[PRELOAD] Obteniendo datos para selects de generación...');
       return ipcRenderer.invoke('obtener-datos-selects-generacion');
     },
+
+      listarPeriodosSelect: () => ipcRenderer.invoke('listarPeriodosSelect'),
+      listarDocentesSelect: (params) => ipcRenderer.invoke('listarDocentesSelect', params),
+      listarAlumnosDisponibles: (params) => ipcRenderer.invoke('listarAlumnosDisponibles', params),
+      listarEEDisponibles: (params) => ipcRenderer.invoke('listarEEDisponibles', params),
+      
+      // Tutoría
+      asignarTutor: (data) => ipcRenderer.invoke('asignarTutor', data),
+      removerTutor: (data) => ipcRenderer.invoke('removerTutor', data),
+      obtenerTutorados: (params) => ipcRenderer.invoke('obtenerTutorados', params),
+      
+      // Docente-EE
+      asignarDocenteEE: (data) => ipcRenderer.invoke('asignarDocenteEE', data),
+      removerDocenteEE: (data) => ipcRenderer.invoke('removerDocenteEE', data),
+      obtenerEEDelDocente: (params) => ipcRenderer.invoke('obtenerEEDelDocente', params),
   });
   
   console.log('[PRELOAD] electronAPI expuesto correctamente con todos los modulos.');

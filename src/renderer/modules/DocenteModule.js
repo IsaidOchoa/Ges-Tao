@@ -289,7 +289,7 @@ openAssignmentModal(buttonEl) {
     entityName: docenteName,
     periodId: null,
     // Opcional: Filtrar pestañas (descomenta si quieres limitar)
-    tabs: ['tutorados', 'ee_asignadas', 'periodos_activos']
+    tabs: ['tutorados', 'ee_asignadas', 'periodos']
   });
   
   console.log(`🔗 [DocenteModule] Modal abierto para ${docenteName} (#${docenteId})`);

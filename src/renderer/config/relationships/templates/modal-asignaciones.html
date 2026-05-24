@@ -1,0 +1,66 @@
+<!-- modal-asignaciones.html -->
+<div id="modal-asignaciones" class="modal-overlay hidden">
+  <div class="modal-content">
+
+    <!-- TOPBAR -->
+    <header class="modal-topbar">
+      <div class="topbar-left">
+        <h2>Gestión Académica</h2>
+        <span class="topbar-subtitle">Workspace contextual de relaciones</span>
+      </div>
+      <div class="topbar-right">
+        <button id="btn-close-modal" class="btn-icon-close" aria-label="Cerrar">&times;</button>
+      </div>
+    </header>
+
+    <!-- MAIN LAYOUT -->
+    <div class="modal-main-layout">
+
+      <!-- SIDEBAR -->
+      <aside class="modal-sidebar">
+        <div class="sidebar-body">
+          
+          <!-- CONTEXTO -->
+          <section class="context-section">
+            <div id="ctx-context-info" class="context-info"></div>
+          </section>
+
+          <!-- PERIODO -->
+          <section class="context-section">
+            <div class="section-label">Contexto activo</div>
+            <div class="sidebar-controls">
+              <label class="control-label">Periodo académico</label>
+              <select id="ctx-period-selector" class="form-select">
+                <option value="">Cargando periodos...</option>
+              </select>
+            </div>
+          </section>
+
+        </div>
+        
+        <!-- FOOTER -->
+        <div class="sidebar-footer">
+          <button class="btn btn-secondary btn-block" id="btn-cancelar-asig">Cerrar workspace</button>
+        </div>
+      </aside>
+
+      <!-- WORKSPACE -->
+      <main class="modal-workspace">
+        
+        <!-- NAV -->
+        <nav class="workspace-nav" id="workspace-tabs">
+          <button class="tab-btn active" data-tab="gestionar">
+            <i class="fa-solid fa-screwdriver-wrench"></i> Gestionar
+          </button>
+          <button class="tab-btn" data-tab="consultar">
+            <i class="fa-solid fa-book-open"></i> Consultar
+          </button>
+        </nav>
+
+        <!-- BODY -->
+        <section id="workspace-content" class="workspace-body"></section>
+      </main>
+
+    </div>
+  </div>
+</div>
