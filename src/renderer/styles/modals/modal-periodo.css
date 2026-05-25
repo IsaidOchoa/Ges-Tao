@@ -1,281 +1,288 @@
-/* =========================================
-   MODAL PERIODO - ESTILOS AISLADOS
-   Override de reglas globales con !important
-   ========================================= */
-
 /* --- CONTENEDOR PRINCIPAL --- */
-#modal-periodo .modal-content {
-  max-width: 950px !important;
+#modal-periodo .modal-content.modal-periodo-2col {
+  max-width: 900px !important;
   width: 95% !important;
   padding: 24px !important;
-  max-height: 90vh !important;
+  max-height: 85vh !important;
   overflow-y: auto;
 }
 
-/* --- GRID DE 2 COLUMNAS (Override global flex) --- */
-#modal-periodo .periodo-grid {
+/* --- GRID DE 2 COLUMNAS --- */
+.periodo-grid-2col {
   display: grid !important;
-  grid-template-columns: 320px 1fr !important;
-  gap: 24px !important;
+  grid-template-columns: 300px 1fr !important; /* Columna izq fija, der flexible */
+  gap: 30px !important;
   margin-bottom: 16px !important;
 }
 
-/* --- COLUMNAS --- */
-#modal-periodo .periodo-col-left {
-  border-right: 1px solid var(--border-color, #dee2e6) !important;
+.periodo-col-left {
+  border-right: 1px solid var(--border-color, #444) !important;
   padding-right: 20px !important;
+  display: flex;
+  flex-direction: column;
 }
 
-#modal-periodo .periodo-col-right {
-  padding-left: 8px !important;
+.periodo-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* --- FORM ROW FLEX (Override global) --- */
-#modal-periodo .form-row-flex {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 12px !important;
-  margin-bottom: 12px !important;
-  flex-wrap: nowrap !important;
-}
-
-#modal-periodo .form-group {
-  margin-bottom: 12px !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-#modal-periodo .flex-1 {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
-}
-
-#modal-periodo .flex-2 {
-  flex: 2 1 0 !important;
-  min-width: 0 !important;
-}
-
-/* --- TARJETAS DE PLANTILLA --- */
-#modal-periodo .template-options-vertical {
+/* --- PLANTILLAS VERTICALES (Full Width + Radio Visible) --- */
+.template-options-vertical {
   display: flex !important;
   flex-direction: column !important;
   gap: 10px !important;
+  margin-top: 10px !important;
+  flex: 1; /* Ocupar espacio disponible */
 }
 
-#modal-periodo .template-card-option {
+.template-card-full {
   cursor: pointer !important;
+  width: 100% !important; /* CRÍTICO: Ancho completo */
 }
 
-#modal-periodo .template-card-option input[type="radio"] {
+.template-card-full input[type="radio"] {
   display: none !important;
 }
 
-#modal-periodo .template-card-content {
-  display: flex !important;
-  align-items: flex-start !important;
-  gap: 12px !important;
-  padding: 14px 16px !important;
-  background: var(--bg-light, #f8f9fa) !important;
-  border: 2px solid transparent !important;
-  border-radius: 8px !important;
-  transition: all 0.2s ease !important;
-}
-
-#modal-periodo .template-card-option:hover .template-card-content {
-  background: var(--bg-white, #ffffff) !important;
-  border-color: var(--border-color, #dee2e6) !important;
-}
-
-#modal-periodo .template-card-option input[type="radio"]:checked + .template-card-content {
-  background: rgba(52, 152, 219, 0.08) !important;
-  border-color: var(--accent-color, #3498db) !important;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15) !important;
-}
-
-#modal-periodo .template-radio-indicator {
-  width: 18px !important;
-  height: 18px !important;
-  border: 2px solid var(--border-color, #dee2e6) !important;
-  border-radius: 50% !important;
-  margin-top: 2px !important;
-  flex-shrink: 0 !important;
-  transition: all 0.2s !important;
-}
-
-#modal-periodo .template-card-option input[type="radio"]:checked + .template-card-content .template-radio-indicator {
-  border-color: var(--accent-color, #3498db) !important;
-  background: var(--accent-color, #3498db) !important;
-  box-shadow: inset 0 0 0 4px white !important;
-}
-
-#modal-periodo .template-info strong {
-  display: block !important;
-  color: var(--text-dark, #2c3e50) !important;
-  font-size: 0.95rem !important;
-  margin-bottom: 2px !important;
-  font-weight: 600 !important;
-}
-
-#modal-periodo .template-info small {
-  color: var(--text-muted, #95a5a6) !important;
-  font-size: 0.82rem !important;
-  line-height: 1.3 !important;
-}
-
-/* --- SECCIÓN DE FECHAS --- */
-#modal-periodo .fechas-section {
-  margin-bottom: 16px !important;
-  padding: 14px !important;
-  background: rgba(241, 196, 15, 0.08) !important;
-  border: 1px dashed var(--warning-color, #f39c12) !important;
-  border-radius: 8px !important;
-  animation: fadeIn 0.3s ease !important;
-}
-
-#modal-periodo .fechas-section.hidden {
-  display: none !important;
-}
-
-/* --- INPUTS Y SELECTS --- */
-#modal-periodo input[type="text"],
-#modal-periodo input[type="date"],
-#modal-periodo select {
-  width: 100% !important;
-  padding: 8px 12px !important;
-  border: 1px solid var(--border-color, #dee2e6) !important;
-  border-radius: 6px !important;
-  font-size: 0.95rem !important;
-  background: var(--bg-white, #ffffff) !important;
-  color: var(--text-dark, #2c3e50) !important;
-}
-
-#modal-periodo .form-control-readonly {
-  background: var(--bg-light, #f8f9fa) !important;
-  cursor: not-allowed !important;
-  font-weight: 600 !important;
-  color: var(--accent-color, #3498db) !important;
-  font-family: 'Courier New', monospace !important;
-}
-
-/* --- VISTA PREVIA --- */
-#modal-periodo .periodo-preview-box {
-  background: linear-gradient(135deg, rgba(52, 152, 219, 0.08) 0%, rgba(52, 152, 219, 0.02) 100%) !important;
-  border-left: 4px solid var(--accent-color, #3498db) !important;
-  padding: 14px 16px !important;
-  border-radius: 8px !important;
-  margin-top: 8px !important;
-}
-
-#modal-periodo .preview-label {
-  display: block !important;
-  color: var(--text-muted, #95a5a6) !important;
-  font-size: 0.8rem !important;
-  margin-bottom: 8px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-}
-
-#modal-periodo .preview-content {
+.template-card-content {
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
-  flex-wrap: wrap !important;
+  padding: 14px 16px !important;
+  background: var(--bg-light, #2a2a2a) !important;
+  border: 2px solid transparent !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-#modal-periodo .preview-content strong {
-  color: var(--text-dark, #2c3e50) !important;
-  font-size: 1rem !important;
-  font-family: 'Courier New', monospace !important;
-  font-weight: 600 !important;
+.template-info {
+  display: flex;
+  flex-direction: column;
 }
 
-#modal-periodo .preview-badge {
-  font-size: 0.85rem !important;
-  color: var(--success-color, #27ae60) !important;
-  font-weight: 500 !important;
+.template-info strong {
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  margin-bottom: 2px;
 }
 
-/* --- LABELS --- */
-#modal-periodo label {
-  font-size: 0.9rem !important;
-  font-weight: 500 !important;
-  margin-bottom: 6px !important;
-  color: var(--text-dark, #2c3e50) !important;
+.template-info small {
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
+
+/* Radio Button Personalizado (Círculo) */
+.radio-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color, #555);
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radio-custom::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  transform: scale(0);
+  transition: transform 0.2s;
+}
+
+/* Estado Hover */
+.template-card-full:hover .template-card-content {
+  background: var(--bg-white, #333) !important;
+  border-color: var(--border-color, #666) !important;
+}
+
+/* Estado Checked (Seleccionado) */
+.template-card-full input[type="radio"]:checked + .template-card-content {
+  background: rgba(52, 152, 219, 0.1) !important;
+  border-color: var(--accent-color, #3498db) !important;
+  box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.template-card-full input[type="radio"]:checked + .template-card-content .radio-custom {
+  border-color: var(--accent-color);
+}
+
+.template-card-full input[type="radio"]:checked + .template-card-content .radio-custom::after {
+  transform: scale(1);
+}
+
+.template-card-full input[type="radio"]:checked + .template-card-content .template-info strong {
+  color: var(--accent-color);
+}
+
+/* --- CLAVE BADGE --- */
+.clave-badge-container {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg-light, #2a2a2a);
+  border: 2px solid var(--border-color, #444);
+  border-radius: 8px;
+  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.clave-badge {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+  word-break: break-all;
+}
+
+/* --- FECHAS --- */
+.custom-dates-section {
+  margin: 10px 0;
+  padding: 14px;
+  background: rgba(241, 196, 15, 0.08);
+  border: 1px dashed var(--warning-color, #f39c12);
+  border-radius: 8px;
+  animation: fadeIn 0.3s ease;
+}
+
+.custom-dates-section.hidden { display: none; }
+
+.section-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--warning-color);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.auto-dates-section { margin: 10px 0; }
+
+.date-display {
+  padding: 10px 12px;
+  background: var(--bg-light, #2a2a2a);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  font-weight: 500;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- PANEL DE ESTADO (Validación Final) --- */
+.status-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: auto; /* Empujar al fondo si hay espacio */
+  margin-bottom: 10px;
+  animation: fadeIn 0.3s ease;
+}
+
+.status-panel.status-valid { 
+  background: rgba(39, 174, 96, 0.1); 
+  border: 1px solid var(--success-color, #2ecc71);
+}
+.status-panel.status-warning { 
+  background: rgba(241, 196, 15, 0.1); 
+  border: 1px solid var(--warning-color, #f39c12);
+}
+.status-panel.status-error { 
+  background: rgba(231, 76, 60, 0.1); 
+  border: 1px solid var(--danger-color, #e74c3c);
+}
+
+.status-icon { 
+  font-size: 1.5rem; 
+  font-weight: 700; 
+  flex-shrink: 0;
+  line-height: 1;
+}
+.status-valid .status-icon { color: var(--success-color); }
+.status-warning .status-icon { color: var(--warning-color); }
+.status-error .status-icon { color: var(--danger-color); }
+
+.status-content { flex: 1; }
+.status-title { 
+  font-weight: 700; 
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+.status-valid .status-title { color: var(--success-color); }
+.status-warning .status-title { color: var(--warning-color); }
+.status-error .status-title { color: var(--danger-color); }
+
+.status-message { font-size: 0.9rem; color: var(--text-muted); }
+
+/* --- FORMULARIO BASE --- */
+#modal-periodo .form-group { margin-bottom: 12px; }
+#modal-periodo .form-label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: var(--text-dark); }
+#modal-periodo .form-select, #modal-periodo .form-control {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border-color);
+  border-radius: 6px; font-size: 0.95rem; background: var(--bg-white); color: var(--text-dark);
+}
+#modal-periodo .form-row-flex { display: flex; gap: 12px; margin-bottom: 10px; }
+#modal-periodo .flex-1 { flex: 1; min-width: 0; }
+#modal-periodo .flex-2 { flex: 2; min-width: 0; }
 
 /* --- FOOTER --- */
 #modal-periodo .modal-footer {
-  display: flex !important;
-  justify-content: flex-end !important;
-  gap: 12px !important;
-  margin-top: 20px !important;
-  padding-top: 20px !important;
-  border-top: 1px solid var(--border-color, #dee2e6) !important;
+  display: flex; justify-content: flex-end; gap: 12px;
+  margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);
 }
 
-/* --- BOTONES --- */
-#modal-periodo .btn {
-  padding: 10px 20px !important;
-  border: none !important;
-  border-radius: 6px !important;
-  font-size: 0.95rem !important;
-  font-weight: 500 !important;
-  cursor: pointer !important;
-  transition: all 0.2s !important;
+/* --- SELECTOR DE AÑOS CON SCROLL LIMITADO --- */
+#modal-periodo #periodo-anio-base {
+  max-height: 200px !important; /* Aprox 8 opciones de 25px c/u */
+  overflow-y: auto !important;
 }
 
-#modal-periodo .btn-cancel {
-  background: var(--danger-color, #e74c3c) !important;
-  color: white !important;
+/* Estilizar scrollbar del select (Webkit) */
+#modal-periodo #periodo-anio-base::-webkit-scrollbar {
+  width: 6px;
 }
 
-#modal-periodo .btn-cancel:hover {
-  background: #c0392b !important;
-  transform: translateY(-1px) !important;
+#modal-periodo #periodo-anio-base::-webkit-scrollbar-track {
+  background: var(--bg-light, #2a2a2a);
+  border-radius: 3px;
 }
 
-#modal-periodo .btn-primary {
-  background: var(--primary-color, #3498db) !important;
-  color: white !important;
+#modal-periodo #periodo-anio-base::-webkit-scrollbar-thumb {
+  background: var(--border-color, #555);
+  border-radius: 3px;
 }
 
-#modal-periodo .btn-primary:hover {
-  background: #2980b9 !important;
-  transform: translateY(-1px) !important;
+#modal-periodo #periodo-anio-base::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color, #3498db);
 }
 
-/* --- ANIMACIONES --- */
-@keyframes fadeIn {
-  from {
-    opacity: 0 !important;
-    transform: translateY(-8px) !important;
-  }
-  to {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-  }
-}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* --- RESPONSIVE --- */
 @media (max-width: 768px) {
-  #modal-periodo .periodo-grid {
+  .periodo-grid-2col {
     grid-template-columns: 1fr !important;
-    gap: 16px !important;
+    gap: 20px !important;
   }
-  
-  #modal-periodo .periodo-col-left {
+  .periodo-col-left {
     border-right: none !important;
-    border-bottom: 1px solid var(--border-color, #dee2e6) !important;
+    border-bottom: 1px solid var(--border-color) !important;
     padding-right: 0 !important;
-    padding-bottom: 16px !important;
+    padding-bottom: 20px !important;
   }
-  
-  #modal-periodo .periodo-col-right {
-    padding-left: 0 !important;
-  }
-  
-  #modal-periodo .form-row-flex {
-    flex-direction: column !important;
-    gap: 12px !important;
-  }
+  .periodo-col-right { padding-left: 0 !important; }
 }

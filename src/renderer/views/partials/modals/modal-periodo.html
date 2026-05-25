@@ -1,56 +1,54 @@
-<!-- MODAL PERIODO ESCOLAR - Layout 2 Columnas -->
+<!-- MODAL PERIODO - Layout Corregido UX -->
 <div id="modal-periodo" class="modal-overlay hidden">
-  <div class="modal-content modal-periodo-lg">
+  <div class="modal-content modal-periodo-2col">
     
     <!-- Header -->
     <div class="modal-header">
-      <h3 id="modal-titulo-periodo">Nuevo Periodo Escolar</h3>
+      <h3>Nuevo Periodo Escolar</h3>
       <button class="btn-close" id="btn-cerrar-modal-periodo">&times;</button>
     </div>
     
-    <!-- Formulario en 2 columnas -->
     <form id="form-periodo">
       <input type="hidden" id="periodo-id">
       
-      <div class="periodo-grid">
+      <!-- GRID DE 2 COLUMNAS -->
+      <div class="periodo-grid-2col">
         
-        <!-- COLUMNA IZQUIERDA: Plantillas -->
+        <!-- COLUMNA IZQUIERDA: Plantillas (Full Width) -->
         <div class="periodo-col-left">
-          <label style="font-weight:600; margin-bottom:12px; display:block; color:var(--text-dark);">
-            Plantillas *
-          </label>
+          <label class="form-label">Tipo de Periodo</label>
           
           <div class="template-options-vertical">
             
-            <label class="template-card-option">
+            <label class="template-card-full">
               <input type="radio" name="plantilla" value="semestre-a" checked>
               <div class="template-card-content">
-                <div class="template-radio-indicator"></div>
+                <div class="radio-custom"></div>
                 <div class="template-info">
-                  <strong>Semestre A</strong>
-                  <small>Feb - Jul (mismo año)</small>
+                  <strong>Feb - Jul</strong>
+                  <small>Mismo año</small>
                 </div>
               </div>
             </label>
             
-            <label class="template-card-option">
+            <label class="template-card-full">
               <input type="radio" name="plantilla" value="semestre-b">
               <div class="template-card-content">
-                <div class="template-radio-indicator"></div>
+                <div class="radio-custom"></div>
                 <div class="template-info">
-                  <strong>Semestre B</strong>
-                  <small>Ago - Ene (cruza años)</small>
+                  <strong>Ago - Ene</strong>
+                  <small>Cruza años</small>
                 </div>
               </div>
             </label>
             
-            <label class="template-card-option">
+            <label class="template-card-full">
               <input type="radio" name="plantilla" value="personalizado">
               <div class="template-card-content">
-                <div class="template-radio-indicator"></div>
+                <div class="radio-custom"></div>
                 <div class="template-info">
                   <strong>Personalizado</strong>
-                  <small>Configuración manual de fechas</small>
+                  <small>Fechas manuales</small>
                 </div>
               </div>
             </label>
@@ -61,56 +59,70 @@
         <!-- COLUMNA DERECHA: Campos -->
         <div class="periodo-col-right">
           
-          <!-- Año Base y Clave -->
+          <!-- CAMPOS PRINCIPALES -->
           <div class="form-row-flex">
+            <!-- Año Base -->
             <div class="form-group flex-1">
               <label>Año Base *</label>
-              <select id="periodo-anio-base">
-                <!-- Se llena dinámicamente -->
-              </select>
+              <select id="periodo-anio-base" class="form-select"></select>
             </div>
+            <!-- Clave Generada (Visual Badge) -->
             <div class="form-group flex-2">
-              <label>Clave Generada</label>
-              <input type="text" id="periodo-clave" readonly 
-                     class="form-control-readonly"
-                     placeholder="Ej: FEB-JUL24">
+              <label>Clave del Periodo</label>
+              <div class="clave-badge-container">
+                <span class="clave-badge" id="display-clave">FEB-JUL26</span>
+              </div>
+              <input type="hidden" id="periodo-clave">
             </div>
           </div>
-          
-          <!-- Fechas (Solo en modo personalizado) -->
-          <div id="section-fechas" class="fechas-section hidden">
-            <label style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px; display:block;">
-              Fechas Personalizadas *
-            </label>
+
+          <!-- FECHAS PERSONALIZADAS (Solo modo personalizado) -->
+          <div id="section-fechas-personalizadas" class="custom-dates-section hidden">
+            <div class="section-alert">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>Modo personalizado: define manualmente las fechas</span>
+            </div>
             <div class="form-row-flex">
               <div class="form-group flex-1">
-                <label style="font-size:0.8rem;">Inicio</label>
-                <input type="date" id="periodo-fecha-inicio">
+                <label>Fecha de Inicio *</label>
+                <input type="date" id="periodo-fecha-inicio" class="form-control">
               </div>
               <div class="form-group flex-1">
-                <label style="font-size:0.8rem;">Fin</label>
-                <input type="date" id="periodo-fecha-fin">
+                <label>Fecha de Fin *</label>
+                <input type="date" id="periodo-fecha-fin" class="form-control">
               </div>
             </div>
           </div>
-          
-          <!-- Descripción -->
-          <div class="form-group">
-            <label>Descripción *</label>
-            <input type="text" id="periodo-descripcion" required 
-                   class="form-control-readonly"
-                   placeholder="Se genera automáticamente" readonly>
-          </div>
-          
-          <!-- Vista Previa -->
-          <div class="periodo-preview-box">
-            <small class="preview-label">Vista previa:</small>
-            <div class="preview-content">
-              <strong id="preview-descripcion">-</strong>
-              <span id="preview-duracion" class="preview-badge">✓ Válido</span>
+
+          <!-- FECHAS AUTOMÁTICAS (Visualización para plantillas) -->
+          <div id="section-fechas-automaticas" class="auto-dates-section">
+            <div class="form-row-flex">
+              <div class="form-group flex-1">
+                <label>Fecha de Inicio</label>
+                <div class="date-display" id="display-fecha-inicio">01/02/2026</div>
+                <input type="hidden" id="periodo-fecha-inicio-hidden">
+              </div>
+              <div class="form-group flex-1">
+                <label>Fecha de Fin</label>
+                <div class="date-display" id="display-fecha-fin">31/07/2026</div>
+                <input type="hidden" id="periodo-fecha-fin-hidden">
+              </div>
             </div>
           </div>
-          
+
+          <!-- PANEL DE ESTADO/VALIDACIÓN (Ahora al final) -->
+          <div id="panel-estado" class="status-panel status-valid">
+            <div class="status-icon">✓</div>
+            <div class="status-content">
+              <div class="status-title" id="status-title">Periodo válido</div>
+              <div class="status-message" id="status-message">Listo para guardar</div>
+            </div>
+          </div>
+
+          <!-- Campos ocultos -->
+          <input type="hidden" id="periodo-descripcion">
+          <input type="hidden" id="periodo-estado" value="abierto">
+
         </div>
       </div>
     </form>

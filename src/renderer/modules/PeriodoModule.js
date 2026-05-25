@@ -116,43 +116,75 @@ export class PeriodoModule {
     ];
   }
 
+    // =========================================
+  // FORMATO DE FECHA (Timezone-Safe)
+  // =========================================
+  
   formatDate(dateStr) {
     if (!dateStr) return '-';
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+    
+    // ✅ Parseo manual para evitar problemas de zona horaria
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // Mes es 0-based en JS
+    
+    return date.toLocaleDateString('es-MX', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  }
+
+
+  formatDateDisplay(dateStr) {
+    if (!dateStr) return '-';
+    
+    // ✅ Mismo parseo manual seguro
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    return date.toLocaleDateString('es-MX', { 
+      day: 'numeric',    // Sin '2-digit' para que se vea "1" no "01"
+      month: 'short', 
+      year: 'numeric' 
+    });
+  }
+
+  formatMes(monthIndex) {
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return meses[monthIndex];
   }
 
   // =========================================
   // BUSCADOR
   // =========================================
-    setupSearch() {
-        const input = document.getElementById('buscador-periodos');
-        if (!input) return;
-        
-        const newInput = input.cloneNode(true);
-        input.parentNode.replaceChild(newInput, input);
+  setupSearch() {
+    const input = document.getElementById('buscador-periodos');
+    if (!input) return;
+    
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
 
-        newInput.addEventListener('input', (e) => {
-        const txt = e.target.value.toLowerCase().trim();
-        if (!txt) { this.table?.setData(this.data); return; }
-        
-        const filtered = this.data.filter(item => 
-            (item.clave || '').toLowerCase().includes(txt) || 
-            (item.descripcion || '').toLowerCase().includes(txt)
-        );
-        this.table?.setData(filtered);
-        });
-    }
+    newInput.addEventListener('input', (e) => {
+      const txt = e.target.value.toLowerCase().trim();
+      if (!txt) { this.table?.setData(this.data); return; }
+      
+      const filtered = this.data.filter(item => 
+        (item.clave || '').toLowerCase().includes(txt) || 
+        (item.descripcion || '').toLowerCase().includes(txt)
+      );
+      this.table?.setData(filtered);
+    });
+  }
 
-    // =========================================
-    // EVENTOS DEL MODAL
-    // =========================================
-    setupModalEvents() {
+  // =========================================
+  // EVENTOS DEL MODAL
+  // =========================================
+  setupModalEvents() {
     const btnNuevo = document.getElementById('btn-nuevo-periodo');
     const modal = document.getElementById('modal-periodo');
     if (!btnNuevo || !modal) {
-        console.warn('⚠️ [PeriodoModule] Elementos del modal no encontrados');
-        return;
+      console.warn('⚠️ [PeriodoModule] Elementos del modal no encontrados');
+      return;
     }
 
     // Abrir modal
@@ -167,54 +199,71 @@ export class PeriodoModule {
     // Guardar
     const btnSave = document.getElementById('btn-guardar-periodo');
     if (btnSave) {
-        const newBtn = btnSave.cloneNode(true);
-        btnSave.parentNode.replaceChild(newBtn, btnSave);
-        newBtn.addEventListener('click', async (e) => {
+      const newBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newBtn, btnSave);
+      newBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         await this.savePeriodo(modal);
-        });
+      });
     }
 
-    // ✅ Listeners para radios - CORREGIDO: Mostrar/ocultar fechas
+    // Listeners para radios de plantilla
     modal.querySelectorAll('input[name="plantilla"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
+      radio.addEventListener('change', (e) => {
         const val = e.target.value;
         if (val === 'personalizado') {
-            this.activarModoPersonalizado();
+          this.activarModoPersonalizado();
         } else {
-            this.ocultarFechasPersonalizadas(); // ✅ NUEVO: Ocultar al cambiar
-            this.actualizarFechasDesdePlantilla();
+          this.ocultarFechasPersonalizadas();
+          this.actualizarFechasDesdePlantilla();
         }
-        });
+      });
     });
     
     // Listeners para año y fechas
     document.getElementById('periodo-anio-base')?.addEventListener('change', () => this.actualizarFechasDesdePlantilla());
     document.getElementById('periodo-fecha-inicio')?.addEventListener('change', () => this.validarYActualizarClave());
     document.getElementById('periodo-fecha-fin')?.addEventListener('change', () => this.validarYActualizarClave());
-    }
+  }
 
   // =========================================
   // LÓGICA DE PLANTILLAS
+  // =========================================
+    // =========================================
+  // INICIALIZAR SELECTOR DE AÑOS (Dinámico)
   // =========================================
   initAnioSelector() {
     const select = document.getElementById('periodo-anio-base');
     if (!select) return;
     
     const currentYear = new Date().getFullYear();
-    const startYear = currentYear - 10;
-    const endYear = currentYear + 10;
+    
+    // Rango dinámico: 60 años atrás hasta 2 años adelante
+    const minYear = currentYear - 60;  // Ej: 2026 - 60 = 1966
+    const maxYear = currentYear + 1;   // Ej: 2026 + 1 = 2027
     
     select.innerHTML = '';
-    for (let year = startYear; year <= endYear; year++) {
+    
+    // ✅ Generar opciones en orden descendente (más reciente primero)
+    for (let year = maxYear; year >= minYear; year--) {
       const option = document.createElement('option');
       option.value = year;
       option.textContent = year;
-      if (year === currentYear) option.selected = true;
+      
+      // Seleccionar el año actual por defecto
+      if (year === currentYear) {
+        option.selected = true;
+      }
+      
       select.appendChild(option);
     }
+    
+    console.log(`✅ [PeriodoModule] Selector de años: ${minYear} - ${maxYear} (actual: ${currentYear})`);
   }
 
+    // =========================================
+  // ACTUALIZAR FECHAS DESDE PLANTILLA (Corregido)
+  // =========================================
   actualizarFechasDesdePlantilla() {
     const plantilla = document.querySelector('input[name="plantilla"]:checked')?.value;
     const anioEl = document.getElementById('periodo-anio-base');
@@ -228,217 +277,340 @@ export class PeriodoModule {
     try {
       const { fechaInicio, fechaFin, clave, descripcion } = generarFechasDesdePlantilla(plantilla, anio);
       
-      document.getElementById('periodo-fecha-inicio').value = fechaInicio;
-      document.getElementById('periodo-fecha-fin').value = fechaFin;
-      document.getElementById('periodo-clave').value = clave;
-      document.getElementById('periodo-descripcion').value = descripcion;
+      // ✅ Actualizar inputs HIDDEN con validación
+      const inicioHidden = document.getElementById('periodo-fecha-inicio-hidden');
+      const finHidden = document.getElementById('periodo-fecha-fin-hidden');
+      const claveInput = document.getElementById('periodo-clave');
+      const descInput = document.getElementById('periodo-descripcion');
       
-      this.actualizarPreview(clave, descripcion);
-      this.mostrarValidacion('✓ Periodo válido', 'success');
+      if (inicioHidden) inicioHidden.value = fechaInicio;
+      if (finHidden) finHidden.value = fechaFin;
+      if (claveInput) claveInput.value = clave;
+      if (descInput) descInput.value = descripcion;
+      
+      // ✅ Actualizar visualización con validación
+      const resultClave = document.getElementById('result-clave');
+      const displayClave = document.getElementById('display-clave');
+      const resultRango = document.getElementById('result-rango');
+      const displayInicio = document.getElementById('display-fecha-inicio');
+      const displayFin = document.getElementById('display-fecha-fin');
+      
+      if (resultClave) resultClave.textContent = clave;
+      if (displayClave) displayClave.textContent = clave;
+      if (resultRango) resultRango.textContent = descripcion;
+      
+      if (displayInicio) displayInicio.textContent = this.formatDateDisplay(fechaInicio);
+      if (displayFin) displayFin.textContent = this.formatDateDisplay(fechaFin);
+      
+      // ✅ Mostrar sección automática y ocultar personalizada
+      this.ocultarFechasPersonalizadas();
+      
+      // ✅ Actualizar panel de estado
+      this.actualizarEstado('valid', 'Periodo válido', 'Listo para guardar');
+      
     } catch (error) {
       console.error('Error generando fechas:', error);
-      this.mostrarValidacion('❌ Error al generar fechas', 'error');
-    }
-  }
-
-  activarModoPersonalizado() {
-    const sectionFechas = document.getElementById('section-fechas');
-    const inicioEl = document.getElementById('periodo-fecha-inicio');
-    const finEl = document.getElementById('periodo-fecha-fin');
-    const claveEl = document.getElementById('periodo-clave');
-    
-    // ✅ Mostrar sección con animación
-    if (sectionFechas) {
-        sectionFechas.classList.remove('hidden');
-        sectionFechas.style.animation = 'none';
-        setTimeout(() => { sectionFechas.style.animation = ''; }, 10);
-    }
-    
-    // ✅ Habilitar campos
-    if (inicioEl) { inicioEl.disabled = false; inicioEl.required = true; }
-    if (finEl) { finEl.disabled = false; finEl.required = true; }
-    
-    // ✅ Limpiar solo si no hay valores
-    if (claveEl && !inicioEl.value) claveEl.value = '';
-    
-    this.mostrarValidacion('✏️ Edita las fechas manualmente', 'warning');
-    }
-
-  ocultarFechasPersonalizadas() {
-    const sectionFechas = document.getElementById('section-fechas');
-    const inicioEl = document.getElementById('periodo-fecha-inicio');
-    const finEl = document.getElementById('periodo-fecha-fin');
-    
-    if (sectionFechas) sectionFechas.classList.add('hidden');
-    if (inicioEl) { inicioEl.disabled = true; inicioEl.required = false; inicioEl.value = ''; }
-    if (finEl) { finEl.disabled = true; finEl.required = false; finEl.value = ''; }
-    }
-
-  validarYActualizarClave() {
-    const inicio = document.getElementById('periodo-fecha-inicio')?.value;
-    const fin = document.getElementById('periodo-fecha-fin')?.value;
-    
-    if (!inicio || !fin) return;
-    
-    if (!validarDuracionPeriodo(inicio, fin, 6)) {
-      this.mostrarValidacion('⚠️ Los periodos no pueden exceder 6 meses', 'warning');
-      return;
-    }
-    
-    if (new Date(fin) < new Date(inicio)) {
-      this.mostrarValidacion('❌ Fecha fin no puede ser anterior a inicio', 'error');
-      return;
-    }
-    
-    const clave = generarClavePeriodo(inicio, fin);
-    document.getElementById('periodo-clave').value = clave;
-    this.actualizarPreview(clave);
-    this.mostrarValidacion('✓ Periodo válido', 'success');
-  }
-
-  actualizarPreview(clave, descripcion = '') {
-    const previewDesc = document.getElementById('preview-descripcion');
-    const previewDur = document.getElementById('preview-duracion');
-    
-    if (previewDesc && clave) {
-      previewDesc.textContent = `${clave}${descripcion ? `: ${descripcion}` : ''}`;
-    }
-    
-    if (previewDur) {
-      previewDur.textContent = '✓ Válido';
-      previewDur.style.color = 'var(--success-color)';
-    }
-  }
-
-  mostrarValidacion(mensaje, tipo) {
-    const container = document.getElementById('periodo-validation');
-    if (!container) return;
-    
-    container.textContent = mensaje;
-    container.className = `form-feedback ${tipo}`;
-    container.classList.remove('hidden');
-    
-    if (tipo === 'success') {
-      setTimeout(() => container.classList.add('hidden'), 3000);
+      this.actualizarEstado('error', 'Error al generar fechas', error.message);
     }
   }
 
   // =========================================
-  // ABRIR MODAL
+  // ACTIVAR MODO PERSONALIZADO (Corregido)
+  // =========================================
+  activarModoPersonalizado() {
+    const sectionPersonalizada = document.getElementById('section-fechas-personalizadas');
+    const sectionAutomatica = document.getElementById('section-fechas-automaticas');
+    const inicioEl = document.getElementById('periodo-fecha-inicio');
+    const finEl = document.getElementById('periodo-fecha-fin');
+    
+    // ✅ Mostrar/ocultar secciones con validación
+    if (sectionPersonalizada) sectionPersonalizada.classList.remove('hidden');
+    if (sectionAutomatica) sectionAutomatica.classList.add('hidden');
+    
+    // ✅ Habilitar campos de fecha reales con validación
+    if (inicioEl) { 
+      inicioEl.disabled = false; 
+      inicioEl.required = true; 
+    }
+    if (finEl) { 
+      finEl.disabled = false; 
+      finEl.required = true; 
+    }
+    
+    // ✅ Limpiar valores visuales (pero no los hidden aún)
+    const displayInicio = document.getElementById('display-fecha-inicio');
+    const displayFin = document.getElementById('display-fecha-fin');
+    if (displayInicio) displayInicio.textContent = '--/--/----';
+    if (displayFin) displayFin.textContent = '--/--/----';
+    
+    this.actualizarEstado('warning', 'Modo personalizado', 'Define las fechas manualmente');
+  }
+
+  // =========================================
+  // OCULTAR FECHAS PERSONALIZADAS (Corregido)
+  // =========================================
+  ocultarFechasPersonalizadas() {
+    const sectionPersonalizada = document.getElementById('section-fechas-personalizadas');
+    const sectionAutomatica = document.getElementById('section-fechas-automaticas');
+    const inicioEl = document.getElementById('periodo-fecha-inicio');
+    const finEl = document.getElementById('periodo-fecha-fin');
+    
+    // ✅ Alternar visibilidad con validación
+    if (sectionPersonalizada) sectionPersonalizada.classList.add('hidden');
+    if (sectionAutomatica) sectionAutomatica.classList.remove('hidden');
+    
+    // ✅ Deshabilitar campos y limpiar SOLO si existen
+    if (inicioEl) { 
+      inicioEl.disabled = true; 
+      inicioEl.required = false; 
+      // NO limpiar el valor, lo necesitamos si el usuario regresa
+    }
+    if (finEl) { 
+      finEl.disabled = true; 
+      finEl.required = false;
+      // NO limpiar el valor
+    }
+  }
+
+  // =========================================
+  // VALIDAR Y ACTUALIZAR CLAVE (Corregido)
+  // =========================================
+  validarYActualizarClave() {
+    const inicioInput = document.getElementById('periodo-fecha-inicio');
+    const finInput = document.getElementById('periodo-fecha-fin');
+    
+    const inicio = inicioInput?.value;
+    const fin = finInput?.value;
+    
+    if (!inicio || !fin) {
+      this.actualizarEstado('warning', 'Fechas pendientes', 'Selecciona inicio y fin');
+      return;
+    }
+    
+    if (!validarDuracionPeriodo(inicio, fin, 6)) {
+      this.actualizarEstado('warning', 'Duración excedida', 'Los periodos no pueden exceder 6 meses');
+      return;
+    }
+    
+    if (new Date(fin) < new Date(inicio)) {
+      this.actualizarEstado('error', 'Fechas inválidas', 'La fecha de fin no puede ser anterior a inicio');
+      return;
+    }
+    
+    // ✅ Generar clave con validación
+    const clave = generarClavePeriodo(inicio, fin);
+    
+    const claveInput = document.getElementById('periodo-clave');
+    const resultClave = document.getElementById('result-clave');
+    const displayClave = document.getElementById('display-clave');
+    const descInput = document.getElementById('periodo-descripcion');
+    const resultRango = document.getElementById('result-rango');
+    const displayInicio = document.getElementById('display-fecha-inicio');
+    const displayFin = document.getElementById('display-fecha-fin');
+    
+    // ✅ Actualizar todos los elementos con validación
+    if (claveInput) claveInput.value = clave;
+    if (resultClave) resultClave.textContent = clave;
+    if (displayClave) displayClave.textContent = clave;
+    
+    // Generar descripción
+    const descripcion = `${this.formatMes(new Date(inicio).getMonth())} ${new Date(inicio).getFullYear()} - ${this.formatMes(new Date(fin).getMonth())} ${new Date(fin).getFullYear()}`;
+    if (descInput) descInput.value = descripcion;
+    if (resultRango) resultRango.textContent = descripcion;
+    
+    // Actualizar displays
+    if (displayInicio) displayInicio.textContent = this.formatDateDisplay(inicio);
+    if (displayFin) displayFin.textContent = this.formatDateDisplay(fin);
+    
+    this.actualizarEstado('valid', 'Periodo válido', 'Listo para guardar');
+  }
+
+    // =========================================
+  // ACTUALIZAR ESTADO (Versión Silenciosa y Segura)
+  // =========================================
+  actualizarEstado(tipo, titulo, mensaje) {
+    // ✅ Usar requestAnimationFrame para esperar a que el DOM esté listo
+    requestAnimationFrame(() => {
+      const panel = document.getElementById('panel-estado');
+      const badge = document.getElementById('result-validacion');
+      const statusTitle = document.getElementById('status-title');
+      const statusMessage = document.getElementById('status-message');
+      
+      if (!panel || !badge) {
+        // ✅ Silencioso: no interrumpe la UX ni ensucia la consola
+        return; 
+      }
+      
+      // Actualizar clases y textos
+      panel.className = `status-panel status-${tipo}`;
+      badge.className = `result-badge ${tipo}`;
+      
+      if (statusTitle) statusTitle.textContent = titulo;
+      if (statusMessage) statusMessage.textContent = mensaje;
+      
+      badge.textContent = tipo === 'valid' ? '✓ Válido' : 
+                          tipo === 'warning' ? '⚠ Pendiente' : '✕ Inválido';
+    });
+  }
+
+  // =========================================
+  // ABRIR MODAL (Corregido - Reset completo)
   // =========================================
   openModal(periodo = null) {
     const modal = document.getElementById('modal-periodo');
     const form = document.getElementById('form-periodo');
     if (!modal || !form) return;
     
-    // Resetear formulario
+    // ✅ Resetear formulario COMPLETO
     form.reset();
     
-    // ✅ Ocultar fechas personalizadas al inicio (corrección crítica)
+    // ✅ Limpiar TODOS los campos hidden
+    const hiddenFields = [
+      'periodo-id', 'periodo-clave', 'periodo-descripcion', 'periodo-estado',
+      'periodo-fecha-inicio-hidden', 'periodo-fecha-fin-hidden'
+    ];
+    hiddenFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    
+    // ✅ Ocultar fechas personalizadas al inicio
     this.ocultarFechasPersonalizadas();
     
-    // Inicializar selector de años
+    // ✅ Inicializar selector de años
     this.initAnioSelector();
     
-    // Seleccionar plantilla por defecto (Semestre A)
+    // ✅ Seleccionar plantilla por defecto (Semestre A)
     const plantillaSemestreA = document.querySelector('input[name="plantilla"][value="semestre-a"]');
     if (plantillaSemestreA) plantillaSemestreA.checked = true;
     
     this.currentPlantilla = 'semestre-a';
     this.currentAnio = new Date().getFullYear();
     
-    // Establecer año base en el select
+    // ✅ Establecer año base en el select
     const anioSelect = document.getElementById('periodo-anio-base');
-    if (anioSelect) anioSelect.value = this.currentAnio;
+    if (anioSelect) {
+      anioSelect.value = this.currentAnio;
+      // Disparar cambio para generar fechas
+      anioSelect.dispatchEvent(new Event('change'));
+    }
     
     if (periodo) {
-        // =========================================
-        // MODO EDICIÓN: Precargar datos existentes
-        // =========================================
-        
-        // Campos básicos
-        const idField = document.getElementById('periodo-id');
-        if (idField) idField.value = periodo.id || '';
-        
-        const claveField = document.getElementById('periodo-clave');
-        if (claveField) claveField.value = periodo.clave || '';
-        
-        const descField = document.getElementById('periodo-descripcion');
-        if (descField) descField.value = periodo.descripcion || '';
-        
-        const estadoField = document.getElementById('periodo-estado');
-        if (estadoField) estadoField.value = periodo.estado || 'abierto';
-        
-        // =========================================
-        // Detectar plantilla desde la clave existente
-        // =========================================
-        if (periodo.clave && periodo.clave.startsWith('FEB-JUL')) {
-        // Es Semestre A
-        const plantillaA = document.querySelector('input[name="plantilla"][value="semestre-a"]');
-        if (plantillaA) plantillaA.checked = true;
-        this.currentPlantilla = 'semestre-a';
-        
-        } else if (periodo.clave && periodo.clave.startsWith('AGO-ENE')) {
-        // Es Semestre B
-        const plantillaB = document.querySelector('input[name="plantilla"][value="semestre-b"]');
-        if (plantillaB) plantillaB.checked = true;
-        this.currentPlantilla = 'semestre-b';
-        
+      // =========================================
+      // MODO EDICIÓN: Precargar datos existentes
+      // =========================================
+      
+      // Campos básicos (hidden) con validación
+      const idField = document.getElementById('periodo-id');
+      if (idField && periodo.id) idField.value = periodo.id;
+      
+      const claveField = document.getElementById('periodo-clave');
+      if (claveField && periodo.clave) claveField.value = periodo.clave;
+      
+      const descField = document.getElementById('periodo-descripcion');
+      if (descField && periodo.descripcion) descField.value = periodo.descripcion;
+      
+      const estadoField = document.getElementById('periodo-estado');
+      if (estadoField) estadoField.value = periodo.estado || 'abierto';
+      
+      // Inputs hidden para fechas
+      if (periodo.fecha_inicio) {
+        const fechaInicio = periodo.fecha_inicio.split('T')[0];
+        const inicioHidden = document.getElementById('periodo-fecha-inicio-hidden');
+        if (inicioHidden) inicioHidden.value = fechaInicio;
+      }
+      if (periodo.fecha_fin) {
+        const fechaFin = periodo.fecha_fin.split('T')[0];
+        const finHidden = document.getElementById('periodo-fecha-fin-hidden');
+        if (finHidden) finHidden.value = fechaFin;
+      }
+      
+      // Actualizar visualización con validación
+      const resultClave = document.getElementById('result-clave');
+      if (resultClave) resultClave.textContent = periodo.clave || '---';
+      
+      const displayClave = document.getElementById('display-clave');
+      if (displayClave) displayClave.textContent = periodo.clave || '---';
+      
+      const resultRango = document.getElementById('result-rango');
+      if (resultRango) resultRango.textContent = periodo.descripcion || '---';
+      
+      if (periodo.fecha_inicio) {
+        const displayInicio = document.getElementById('display-fecha-inicio');
+        if (displayInicio) displayInicio.textContent = this.formatDateDisplay(periodo.fecha_inicio);
+      }
+      if (periodo.fecha_fin) {
+        const displayFin = document.getElementById('display-fecha-fin');
+        if (displayFin) displayFin.textContent = this.formatDateDisplay(periodo.fecha_fin);
+      }
+      
+      // Detectar plantilla desde clave existente
+      if (periodo.clave) {
+        if (periodo.clave.startsWith('FEB-JUL')) {
+          const plantillaA = document.querySelector('input[name="plantilla"][value="semestre-a"]');
+          if (plantillaA) plantillaA.checked = true;
+          this.currentPlantilla = 'semestre-a';
+        } else if (periodo.clave.startsWith('AGO-ENE')) {
+          const plantillaB = document.querySelector('input[name="plantilla"][value="semestre-b"]');
+          if (plantillaB) plantillaB.checked = true;
+          this.currentPlantilla = 'semestre-b';
         } else {
-        // Es Personalizado (clave no coincide con patrones)
-        const plantillaPersonalizado = document.querySelector('input[name="plantilla"][value="personalizado"]');
-        if (plantillaPersonalizado) plantillaPersonalizado.checked = true;
-        this.currentPlantilla = 'personalizado';
-        
-        // Cargar fechas manuales si existen
-        const fechaInicio = document.getElementById('periodo-fecha-inicio');
-        const fechaFin = document.getElementById('periodo-fecha-fin');
-        if (periodo.fecha_inicio && fechaInicio) {
-            fechaInicio.value = periodo.fecha_inicio.split('T')[0];
+          const plantillaPersonalizado = document.querySelector('input[name="plantilla"][value="personalizado"]');
+          if (plantillaPersonalizado) plantillaPersonalizado.checked = true;
+          this.currentPlantilla = 'personalizado';
+          this.activarModoPersonalizado();
+          
+          // Cargar fechas en inputs reales
+          if (periodo.fecha_inicio) {
+            const inputInicio = document.getElementById('periodo-fecha-inicio');
+            if (inputInicio) inputInicio.value = periodo.fecha_inicio.split('T')[0];
+          }
+          if (periodo.fecha_fin) {
+            const inputFin = document.getElementById('periodo-fecha-fin');
+            if (inputFin) inputFin.value = periodo.fecha_fin.split('T')[0];
+          }
         }
-        if (periodo.fecha_fin && fechaFin) {
-            fechaFin.value = periodo.fecha_fin.split('T')[0];
-        }
-        }
-        
-        // =========================================
-        // Aplicar estado visual según plantilla detectada
-        // =========================================
-        if (this.currentPlantilla === 'personalizado') {
-        this.activarModoPersonalizado();
-        } else {
-        this.actualizarFechasDesdePlantilla();
-        }
-        
+      }
+      
+      this.actualizarEstado('valid', 'Editando periodo', 'Modifica y guarda los cambios');
+      
     } else {
-        // =========================================
-        // MODO NUEVO: Iniciar con valores por defecto
-        // =========================================
+      // =========================================
+      // MODO NUEVO: Generar fechas automáticamente
+      // =========================================
+      // Pequeño delay para asegurar que el DOM esté listo
+      setTimeout(() => {
         this.actualizarFechasDesdePlantilla();
+      }, 50);
     }
     
     // Mostrar modal
     modal.classList.remove('hidden');
     
-    // Enfocar primer campo editable para mejor UX
+    // Enfocar primer campo
     const primerCampo = document.getElementById('periodo-anio-base');
-    if (primerCampo) primerCampo.focus();
+    if (primerCampo) {
+      primerCampo.focus();
     }
+  }
 
   // =========================================
   // GUARDAR PERIODO
   // =========================================
   async savePeriodo(modal) {
+    // Leer de inputs HIDDEN, no de los visuales
     const datos = {
       id: document.getElementById('periodo-id')?.value ? parseInt(document.getElementById('periodo-id').value) : null,
       clave: document.getElementById('periodo-clave')?.value?.trim(),
       descripcion: document.getElementById('periodo-descripcion')?.value?.trim(),
-      anio_base: parseInt(document.getElementById('periodo-anio-base')?.value),
-      fecha_inicio: document.getElementById('periodo-fecha-inicio')?.value || null,
-      fecha_fin: document.getElementById('periodo-fecha-fin')?.value || null,
+      fecha_inicio: document.getElementById('periodo-fecha-inicio-hidden')?.value || 
+                    document.getElementById('periodo-fecha-inicio')?.value || null,
+      fecha_fin: document.getElementById('periodo-fecha-fin-hidden')?.value || 
+                 document.getElementById('periodo-fecha-fin')?.value || null,
       estado: document.getElementById('periodo-estado')?.value || 'abierto'
     };
     
+    // Validaciones básicas
     if (!datos.clave || !datos.descripcion) {
       alert('Clave y descripción son obligatorios');
       return;

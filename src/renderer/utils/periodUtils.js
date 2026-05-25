@@ -28,10 +28,21 @@ export function validarDuracionPeriodo(fechaInicio, fechaFin, maxMeses = 6) {
   const inicio = new Date(fechaInicio);
   const fin = new Date(fechaFin);
   
-  const diffTime = Math.abs(fin - inicio);
-  const diffMeses = diffTime / (1000 * 60 * 60 * 24 * 30.44); // Promedio de días por mes
+  // 1. Diferencia base en meses calendario (maneja cruce de año automáticamente)
+  let meses = (fin.getFullYear() - inicio.getFullYear()) * 12;
+  meses += fin.getMonth() - inicio.getMonth();
   
-  return diffMeses <= maxMeses;
+  // 2. Ajuste por día: si el día final es menor al inicial, no completa el último mes
+  if (fin.getDate() < inicio.getDate()) {
+    meses--;
+  }
+  
+  // 3. Conteo inclusivo (estándar académico):
+  // Ago 1 → Ene 31 son 6 meses completos (Ago, Sep, Oct, Nov, Dic, Ene)
+  // La fórmula matemática da 5, sumamos 1 para conteo inclusivo correcto.
+  meses += 1;
+  
+  return meses <= maxMeses;
 }
 
 /**
