@@ -5,7 +5,7 @@
     <header class="modal-topbar">
       <div class="topbar-left">
         <h2>Gestión Académica</h2>
-        <span class="topbar-subtitle">Workspace contextual de relaciones</span>
+        <span class="topbar-subtitle">Cree nuevas relaciones</span>
       </div>
       <div class="topbar-right">
         <button id="btn-close-modal" class="btn-icon-close" aria-label="Cerrar">
@@ -30,7 +30,7 @@
             <div class="sidebar-controls">
               <label class="control-label">Periodo académico</label>
               <select id="ctx-period-selector" class="form-select">
-                <option value="">Todos los periodos (Histórico)</option>
+                <option value="">Filtrar por periodos</option>
               </select>
             </div>
           </section>
@@ -61,57 +61,67 @@
 
         <!-- BODY (Estructura v2.0: Estado vs Acciones) -->
         <section id="workspace-content" class="workspace-body">
-          <!-- SECCIÓN 1: Adhesión a Periodos -->
-          <div
-            class="workspace-section section-period-adhesion"
-            id="section-period-adhesion"
-          >
-            <div class="section-header">
-              <h4>Periodos disponibles para asignar</h4>
+          <!-- ========================= -->
+          <!-- VIEW: GESTIONAR -->
+          <!-- ========================= -->
+          <div id="view-gestionar" class="workspace-view">
+            <!-- SECCIÓN 1: Adhesión -->
+            <div
+              class="workspace-section section-period-adhesion"
+              id="section-period-adhesion"
+            >
+              <div class="section-header">
+                <h4>Periodos disponibles para asignar</h4>
+              </div>
+
+              <div class="adhesion-controls">
+                <select
+                  id="adhesion-period-select"
+                  class="form-select form-select-sm"
+                >
+                  <option value="">Seleccionar periodo...</option>
+                </select>
+
+                <button class="btn btn-sm btn-primary" id="btn-add-adhesion">
+                  <i class="fa-solid fa-plus"></i> Asignar
+                </button>
+              </div>
+
+              <div class="adhesion-list" id="adhesion-list">
+                <span class="adhesion-item empty">
+                  Sin periodos asignados
+                </span>
+              </div>
             </div>
 
-            <!-- Controles (Arriba) -->
-            <div class="adhesion-controls">
-              <select
-                id="adhesion-period-select"
-                class="form-select form-select-sm"
-              >
-                <option value="">Seleccionar periodo...</option>
-              </select>
-              <button class="btn btn-sm btn-primary" id="btn-add-adhesion">
-                <i class="fa-solid fa-plus"></i> Asignar
-              </button>
-            </div>
+            <!-- SECCIÓN 2 -->
+            <div
+              class="workspace-section section-operational-relations"
+              id="section-operational-relations"
+            >
+              <div class="section-header">
+                <h4>Relaciones Operativas</h4>
+              </div>
 
-            <!-- Lista de chips (Abajo - ESTO ES LO QUE FALTABA) -->
-            <div class="adhesion-list" id="adhesion-list">
-              <span class="adhesion-item empty">Sin periodos asignados</span>
-            </div>
-          </div>
+              <div class="workspace-grid" id="operational-relations-grid"></div>
 
-          <!-- SECCIÓN INFERIOR: Relaciones Operativas (Requiere periodo activo) -->
-          <div
-            class="workspace-section section-operational-relations"
-            id="section-operational-relations"
-          >
-            <div class="section-header">
-              <h4>Relaciones Operativas</h4>
-            </div>
+              <div class="relations-overlay hidden" id="relations-overlay">
+                <div class="overlay-content">
+                  <i class="fa-solid fa-circle-info"></i>
 
-            <!-- Grid de cards de acción -->
-            <div class="workspace-grid" id="operational-relations-grid"></div>
-
-            <!-- Overlay de bloqueo sin periodo -->
-            <div class="relations-overlay hidden" id="relations-overlay">
-              <div class="overlay-content">
-                <i class="fa-solid fa-circle-info"></i>
-                <p>
-                  Seleccione un periodo académico para habilitar las relaciones
-                  operativas
-                </p>
+                  <p>
+                    Seleccione un periodo académico para habilitar las
+                    relaciones operativas
+                  </p>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- ========================= -->
+          <!-- VIEW: CONSULTAR -->
+          <!-- ========================= -->
+          <div id="view-consultar" class="workspace-view hidden"></div>
         </section>
       </main>
     </div>
