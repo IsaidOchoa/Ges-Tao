@@ -21,7 +21,8 @@ import { BibliotecaModule } from './modules/BibliotecaModule.js';
 // Utilidades
 import { globalConfirm } from './utils/confirmationModal.js';
 import { AssignmentModal } from './utils/AssignmentModal.js';
-import { allRelationships } from './config/relationships/index.js'; // Configuraciones modulares del mega modal
+import { allRelationships } from './config/relationships/index.js';
+import { Toast } from './components/common/Toast.js';
 
 // Debug de imports (eliminar en producción)
 if (process.env.NODE_ENV === 'development') { console.log('🔍 [app.js] allRelationships:', allRelationships?.length, 'relaciones'); }

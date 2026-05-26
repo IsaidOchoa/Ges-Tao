@@ -308,6 +308,20 @@ function initSchema(db) {
     UNIQUE(ee_id, dia, hora_inicio)
   )`);
 
+  // 22. ENTITY_PERIOD - Vinculación independiente Entidad-Periodo
+db.exec(`CREATE TABLE IF NOT EXISTS entity_period (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entity_type TEXT NOT NULL CHECK(entity_type IN ('docente', 'alumno', 'ee')),
+  entity_id INTEGER NOT NULL,
+  period_id INTEGER NOT NULL,
+  fecha_vinculacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (period_id) REFERENCES periodos(id) ON DELETE CASCADE,
+  UNIQUE(entity_type, entity_id, period_id)
+)`);
+
+db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_period_lookup ON entity_period(entity_type, entity_id)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_period_entities ON entity_period(period_id, entity_type)`);
+
   console.log('[DB] Esquema verificado ✅');
 }
 

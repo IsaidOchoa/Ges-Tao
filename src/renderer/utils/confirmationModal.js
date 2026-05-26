@@ -4,7 +4,6 @@ export class ConfirmationModal {
     this.modal = null;
     this._resolve = null;
     this._reject = null;
-    this._timeoutId = null;
     this._initialized = false;
   }
 
@@ -12,7 +11,6 @@ export class ConfirmationModal {
     if (this._initialized) return true;
     
     try {
-      // Si ya existe, usarlo
       this.modal = document.getElementById('modal-confirmacion');
       if (this.modal) {
         this._bindEvents();
@@ -20,7 +18,6 @@ export class ConfirmationModal {
         return true;
       }
       
-      // Inyectar HTML con z-index alto para asegurar visibilidad
       const html = `
         <div id="modal-confirmacion" class="modal-overlay hidden" style="z-index:10000; position:fixed; top:0; left:0; width:100%; height:100%;">
           <div class="modal-content modal-sm" style="max-width:400px; margin:20vh auto;">
@@ -45,7 +42,6 @@ export class ConfirmationModal {
       
       this._bindEvents();
       this._initialized = true;
-      console.log('✅ [ConfirmationModal] Inicializado correctamente');
       return true;
     } catch (e) {
       console.error('❌ [ConfirmationModal] Error en init():', e);
@@ -57,28 +53,14 @@ export class ConfirmationModal {
     if (!this.modal) return;
     
     const close = (result) => {
-      // Limpiar timeout de seguridad
-      if (this._timeoutId) {
-        clearTimeout(this._timeoutId);
-        this._timeoutId = null;
-      }
-      
-      // Ocultar modal
-      if (this.modal) {
-        this.modal.classList.add('hidden');
-      }
-      
-      // Resolver promise
+      if (this.modal) this.modal.classList.add('hidden');
       if (this._resolve) {
         this._resolve(result);
         this._resolve = null;
       }
-      if (this._reject) {
-        this._reject = null;
-      }
+      if (this._reject) this._reject = null;
     };
 
-    // Botones
     const btnAceptar = document.getElementById('btn-confirmacion-aceptar');
     const btnCancelar = document.getElementById('btn-confirmacion-cancelar');
     const btnCerrar = document.getElementById('btn-cerrar-confirmacion');
@@ -87,12 +69,10 @@ export class ConfirmationModal {
     if (btnCancelar) btnCancelar.onclick = () => close(false);
     if (btnCerrar) btnCerrar.onclick = () => close(false);
     
-    // Click en overlay
     this.modal.onclick = (e) => {
       if (e.target === this.modal) close(false);
     };
     
-    // Tecla Escape
     const escHandler = (e) => {
       if (e.key === 'Escape' && this.modal && !this.modal.classList.contains('hidden')) {
         close(false);
@@ -102,9 +82,8 @@ export class ConfirmationModal {
     document.addEventListener('keydown', escHandler);
   }
 
-  ask(message, timeout = 15000) {
+  ask(message) {
     return new Promise((resolve, reject) => {
-      // Inicializar si no se ha hecho
       if (!this._initialized) {
         const ok = this.init();
         if (!ok) {
@@ -114,45 +93,27 @@ export class ConfirmationModal {
         }
       }
       
-      // Si aún no hay modal, resolver inmediatamente
       if (!this.modal) {
         console.warn('⚠️ [ConfirmationModal] Modal no disponible, asumiendo "Aceptar"');
         resolve(true);
         return;
       }
       
-      // Guardar callbacks
       this._resolve = resolve;
       this._reject = reject;
       
-      // Configurar mensaje
       const msgEl = document.getElementById('confirmacion-mensaje');
       if (msgEl) msgEl.textContent = message || '¿Estás seguro?';
       
-      // Mostrar modal
       this.modal.classList.remove('hidden');
       
-      // Timeout de seguridad: nunca bloquear más de X ms
-      this._timeoutId = setTimeout(() => {
-        console.warn('⚠️ [ConfirmationModal] Timeout de seguridad, resolviendo como "Aceptar"');
-        if (this._resolve) {
-          this._resolve(true);
-          this._resolve = null;
-          this._reject = null;
-        }
-        if (this.modal) this.modal.classList.add('hidden');
-      }, timeout);
-      
-      // Enfocar botón cancelar para accesibilidad
       setTimeout(() => {
         document.getElementById('btn-confirmacion-cancelar')?.focus();
       }, 50);
     });
   }
   
-  // Método de emergencia para forzar cierre
   forceClose(result = false) {
-    if (this._timeoutId) clearTimeout(this._timeoutId);
     if (this.modal) this.modal.classList.add('hidden');
     if (this._resolve) {
       this._resolve(result);

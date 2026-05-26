@@ -1,481 +1,445 @@
 // src/renderer/utils/AssignmentModal.js
-
-import { uiLoader } from './uiLoader';
-import modalAsignacionesHtml from '../config/relationships/templates/modal-asignaciones.html';
+import { uiLoader } from "./uiLoader";
+import modalAsignacionesHtml from "../config/relationships/templates/modal-asignaciones.html";
+import { Toast } from "../components/common/Toast.js";
+import { globalConfirm } from "./confirmationModal.js";
 
 export class AssignmentModal {
   constructor() {
     this.modal = null;
-    this.state = {
-      context: null,       // { entityType, entityId, entityName }
-      activePeriod: null,  // ID del periodo activo (global para todo el modal)
-      activeTab: 'gestionar', // 'gestionar' o 'consultar'
-      isLoading: false     // Estado para tu Loader
-    };
-    
-    // Referencias al DOM para manipulación rápida
-    this.elements = {
-      overlay: null,
-      sidebarPeriodSelect: null,
-      sidebarContextInfo: null,
-      workspaceContent: null,
-      workspaceTabs: null,
-      workspaceLoader: null
-    };
-
+    this.state = { context: null, activePeriod: null, activeTab: "gestionar", isLoading: false };
+    this.elements = { overlay: null, sidebarPeriodSelect: null, sidebarContextInfo: null, workspaceContent: null, workspaceTabs: null, workspaceLoader: null };
     this._initialized = false;
+    this._registeredRelations = new Map();
+    // ✅ Caché bidireccional para navegación fluida
+    this._viewCache = { gestionar: null, consultar: null };
   }
 
-  // ==========================================
-  // 1. INICIALIZACIÓN E INYECCIÓN DE UI
-  // ==========================================
+  // --- INICIALIZACIÓN ---
   _ensureInitialized() {
     if (this._initialized) return;
-
-    // Inyectamos el nuevo layout de 2 columnas
-    this._injectModalStructure();
-    
-    // Capturamos referencias a los elementos clave
-    this.elements.overlay = document.getElementById('modal-asignaciones');
-    this.elements.sidebarPeriodSelect = document.getElementById('ctx-period-selector');
-    this.elements.sidebarContextInfo = document.getElementById('ctx-context-info');
-    this.elements.workspaceContent = document.getElementById('workspace-content');
-    this.elements.workspaceTabs = document.getElementById('workspace-tabs');
-
+    document.body.insertAdjacentHTML("beforeend", modalAsignacionesHtml);
+    this.elements.overlay = document.getElementById("modal-asignaciones");
+    this.elements.sidebarPeriodSelect = document.getElementById("ctx-period-selector");
+    this.elements.sidebarContextInfo = document.getElementById("ctx-context-info");
+    this.elements.workspaceContent = document.getElementById("workspace-content");
+    this.elements.workspaceTabs = document.getElementById("workspace-tabs");
     this._bindGlobalEvents();
     this._initialized = true;
-    console.log('✅ [AssignmentModal] Estructura inyectada y lista.');
   }
 
-  _injectModalStructure() {
-    
-    document.body.insertAdjacentHTML('beforeend', modalAsignacionesHtml);
-  }
-
-  // ==========================================
-  // 2. APERTURA Y CARGA DE DATOS
-  // ==========================================
   open(context) {
     this._ensureInitialized();
-    
-    // 1. Guardar contexto inicial
     this.state.context = { ...context };
-    this.state.activePeriod = null; // Reset periodo
-    this.state.activeTab = 'gestionar';
-    
-    // 2. Mostrar Modal
-    this.elements.overlay.classList.remove('hidden');
-    
-    // 3. Mostrar tu Loader (Aquí es donde lo integraremos)
-    this.showLoader();
-
-    // 4. Cargar datos asíncronos (Periodos + Info del Contexto)
+    this.state.activePeriod = null;
+    this.state.activeTab = "gestionar";
+    this.elements.overlay.classList.remove("hidden");
+    this._showWorkspaceLoader("Cargando datos...");
     this._loadInitialData();
   }
 
   async _loadInitialData() {
     try {
-      // Mostrar loader en el workspace (no en toda la pantalla)
-      this._showWorkspaceLoader('Cargando datos del docente...');
-      
-      // A. Cargar Selector de Periodos
       await this._loadPeriodsIntoSidebar();
-      
-      // B. Renderizar Info del Contexto
       this._renderSidebarContext();
-
-      // C. Cargar contenido inicial
-      await this._switchTab('gestionar');
-
+      this._renderSidebarRelations();
+      await this._renderWorkspace();
     } catch (error) {
-      console.error('❌ Error cargando modal:', error);
+      console.error("❌ Error cargando modal:", error);
       this.elements.workspaceContent.innerHTML = `<p class="error-msg">Error al cargar datos.</p>`;
     } finally {
-      // Ocultar loader siempre
       this._hideWorkspaceLoader();
     }
   }
 
-  // src/renderer/utils/AssignmentModal.js
-
-async _loadPeriodsIntoSidebar() {
-  const select = this.elements.sidebarPeriodSelect;
-  if (!select) return;
-
-  try {
-    console.log('📡 [Modal] Solicitando periodos...');
-    
-    // ✅ Llama al método expuesto en preload
-    const res = await window.electronAPI.listarPeriodos();
-    
-    console.log('📥 [Modal] Respuesta:', res);
-
-    if (!res?.success) {
-      throw new Error(res?.error || 'Error desconocido al cargar periodos');
+  // --- DATOS: PERIODOS (SIDEBAR) ---
+  async _loadPeriodsIntoSidebar() {
+    const select = this.elements.sidebarPeriodSelect;
+    if (!select) return;
+    try {
+      const res = await window.electronAPI.listarPeriodos();
+      if (!res?.success) throw new Error(res?.error || "Error cargando periodos");
+      const periodos = res.data || [];
+      select.innerHTML = '<option value="">Todos los periodos (Histórico)</option>';
+      if (periodos.length === 0) {
+        select.innerHTML += '<option value="" disabled>No hay periodos registrados</option>';
+        return;
+      }
+      periodos.forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = `${p.clave} - ${p.descripcion}`;
+        select.appendChild(opt);
+      });
+      select.onchange = (e) => {
+        this.state.activePeriod = e.target.value || null;
+        this._handlePeriodChange();
+      };
+    } catch (error) {
+      console.error("❌ [Modal] Error cargando periodos:", error);
+      select.innerHTML = `<option value="">⚠️ ${error.message}</option>`;
     }
+  }
 
-    const periodos = res.data || [];
+  // --- SIDEBAR: CONTEXTO DE ENTIDAD ---
+  _renderSidebarContext() {
+    const { entityName, entityType, entityId } = this.state.context;
+    const container = this.elements.sidebarContextInfo;
+    const entityConfig = {
+      docente: { label: "Código", value: this.state.context.codigo, icon: '<i class="fa-solid fa-chalkboard-user"></i>', meta: "DOCENTE" },
+      alumno: { label: "Matrícula", value: this.state.context.matricula, icon: '<i class="fa-solid fa-user-graduate"></i>', meta: "ALUMNO" },
+      ee: { label: "NRC", value: this.state.context.clave_ee, icon: '<i class="fa-solid fa-book-open"></i>', meta: "EXPERIENCIA EDUCATIVA" }
+    };
+    const config = entityConfig[entityType] || { label: "ID", value: entityId, icon: '<i class="fa-solid fa-user"></i>', meta: entityType.toUpperCase() };
+    container.innerHTML = `<div class="entity-badge ${entityType}"><span class="icon">${config.icon}</span><div><strong>${entityName}</strong><small>${config.label}: ${config.value || entityId}</small></div></div><div class="entity-meta"><span class="meta-item">${config.meta}</span></div>`;
+  }
+
+  // --- SIDEBAR: ESTADO RELACIONAL ---
+  async _renderSidebarRelations() {
+    const { entityType, entityId } = this.state.context;
+    const periodId = this.state.activePeriod;
+    const container = document.getElementById("sidebar-relations-panel");
+    if (!container) return;
+
+    const relationDefs = {
+      docente: [
+        { key: "ee_asignada", label: "Experiencia Educativa", fetch: async () => { if (!periodId) return { value: "Sin periodo seleccionado", empty: true }; const res = await window.electronAPI.obtenerEEDelDocente?.({ docenteId: entityId, periodoId: periodId }); const ee = res?.data?.[0]; return ee ? { value: ee.nombre || ee.clave_ee, empty: false } : { value: "Sin asignar", empty: true }; }},
+        { key: "tutorados", label: "Tutorados", fetch: async () => { if (!periodId) return { value: "Sin periodo seleccionado", empty: true }; const res = await window.electronAPI.obtenerTutorados?.({ docenteId: entityId, periodoId: periodId }); const count = res?.data?.length || 0; return { value: count > 0 ? `${count} alumno${count !== 1 ? "s" : ""}` : "Sin asignar", empty: count === 0 }; }}
+      ],
+      ee: [
+        { key: "docente_asignado", label: "Docente Asignado", fetch: async () => { if (!periodId) return { value: "Sin periodo seleccionado", empty: true }; const res = await window.electronAPI.obtenerDocenteDeEE?.({ eeId: entityId, periodoId: periodId }); const doc = res?.data?.[0]; return doc ? { value: `${doc.tratamiento} ${doc.apellido_paterno}`, empty: false } : { value: "Sin asignar", empty: true }; }},
+        { key: "alumnos_inscritos", label: "Alumnos Inscritos", fetch: async () => { if (!periodId) return { value: "Sin periodo seleccionado", empty: true }; const res = await window.electronAPI.obtenerAlumnosDeEE?.({ eeId: entityId, periodoId: periodId }); const count = res?.data?.length || 0; return { value: count > 0 ? `${count} alumno${count !== 1 ? "s" : ""}` : "Sin inscritos", empty: count === 0 }; }}
+      ],
+      alumno: [
+        { key: "tutor_asignado", label: "Tutor Académico", fetch: async () => { if (!periodId) return { value: "Sin periodo seleccionado", empty: true }; const res = await window.electronAPI.obtenerTutorDeAlumno?.({ alumnoId: entityId, periodoId: periodId }); const tutor = res?.data?.[0]; return tutor ? { value: `${tutor.tratamiento} ${tutor.apellido_paterno}`, empty: false } : { value: "Sin asignar", empty: true }; }},
+        { key: "ee_inscritas", label: "EE Inscritas", fetch: async () => { if (!periodId) return { value: "Sin periodo seleccionado", empty: true }; const res = await window.electronAPI.obtenerEEDeAlumno?.({ alumnoId: entityId, periodoId: periodId }); const count = res?.data?.length || 0; return { value: count > 0 ? `${count} materia${count !== 1 ? "s" : ""}` : "Sin inscritas", empty: count === 0 }; }}
+      ]
+    };
+
+    const relations = relationDefs[entityType] || [];
+    container.innerHTML = `<div class="sidebar-relations-panel"><div class="relations-panel-title">Relaciones Actuales</div><div id="relations-list">${relations.map((rel) => `<div class="relation-block" data-relation="${rel.key}"><div class="relation-label">${rel.label}</div><div class="relation-value loading">Cargando...</div></div>`).join("")}</div></div>`;
+
+    relations.forEach(async (rel) => {
+      try {
+        const data = await rel.fetch();
+        const valueEl = container.querySelector(`[data-relation="${rel.key}"] .relation-value`);
+        if (valueEl) { valueEl.textContent = data.value; valueEl.classList.toggle("empty", data.empty); }
+      } catch (error) {
+        console.warn(`Error cargando ${rel.key}:`, error);
+        const valueEl = container.querySelector(`[data-relation="${rel.key}"] .relation-value`);
+        if (valueEl) { valueEl.textContent = "Error"; valueEl.classList.add("empty"); }
+      }
+    });
+  }
+
+  // --- WORKSPACE: RENDER PRINCIPAL ---
+  async _renderWorkspace() {
+    const { activeTab } = this.state;
+    if (activeTab === 'gestionar') await this._renderGestionarView();
+    else if (activeTab === 'consultar') await this._renderConsultRelations();
+  }
+
+  // Vista específica para "Gestionar"
+  async _renderGestionarView() {
+    await this._renderPeriodAdhesionCard();
+    await this._renderOperationalRelations();
+  }
+
+  // Vista específica para "Consultar" con caché
+  async _renderConsultRelations() {
+    const container = this.elements.workspaceContent;
+    const { entityType, entityId, entityName } = this.state.context;
+    const cacheKey = this._getCacheKey();
     
-    // Limpiar y poner opción por defecto
-    select.innerHTML = '<option value="">Todos los periodos (Histórico)</option>';
-    
-    if (periodos.length === 0) {
-      select.innerHTML += '<option value="" disabled>No hay periodos registrados</option>';
+    // ✅ Usar caché si existe
+    if (this._viewCache.consultar?.key === cacheKey && this._viewCache.consultar?.html) {
+      await this._renderFromCache(this._viewCache.consultar.html);
       return;
     }
 
-    // Llenar opciones
-    periodos.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id; // ID numérico para consultas DB
-      opt.textContent = `${p.clave} - ${p.descripcion}`;
-      select.appendChild(opt);
-    });
-
-    // Listener de cambio
-    select.onchange = (e) => {
-      this.state.activePeriod = e.target.value || null;
-      console.log(`🔄 [Modal] Periodo activo: ${this.state.activePeriod || 'Global'}`);
-      this._handlePeriodChange();
-    };
-
-  } catch (error) {
-    console.error('❌ [Modal] Error cargando periodos:', error);
-    select.innerHTML = `<option value="">⚠️ ${error.message}</option>`;
-  }
-}
-
-    _renderSidebarContext() {
-    const { entityName, entityType, entityId, matricula, clave } = this.state.context;
-    const container = this.elements.sidebarContextInfo;
+    const consultRelations = this._getRegisteredRelations(entityType).filter(rel => rel.workspaceConfig?.modes?.includes('consultar'));
     
-    // Construir etiquetas meta según el tipo
-    let metaTags = `<span class="meta-item">🎓 ${entityType.toUpperCase()}</span>`;
-    if (entityType === 'alumno' && matricula) metaTags += `<span class="meta-item">🆔 ${matricula}</span>`;
-    if (entityType === 'ee' && clave) metaTags += `<span class="meta-item">🔑 ${clave}</span>`;
-
-    container.innerHTML = `
-      <div class="entity-badge ${entityType}">
-        <span class="icon">${this._getEntityIcon(entityType)}</span>
-        <div>
-          <strong>${entityName}</strong>
-          <small>ID: ${entityId}</small>
-        </div>
-      </div>
-      <div class="entity-meta">${metaTags}</div>
-    `;
-  }
-
-    // MÉTODO NUEVO: Devuelve HTML del icono correcto
-  _getEntityIcon(type) {
-    if (type === 'docente') return '<i class="fa-solid fa-chalkboard-user"></i>';
-    if (type === 'alumno')  return '<i class="fa-solid fa-user-graduate"></i>';
-    if (type === 'ee')      return '<i class="fa-solid fa-book-open"></i>';
-    return '<i class="fa-solid fa-user"></i>'; // Default
-  }
-
-  _renderSidebarContext() {
-  const { entityName, entityType, entityId } = this.state.context;
-  const container = this.elements.sidebarContextInfo;
-  
-  //Configuración dinámica por entidad
-  const entityConfig = {
-    docente: {
-      label: 'Código',
-      value: this.state.context.codigo,
-      icon: '<i class="fa-solid fa-chalkboard-user"></i>',
-      meta: 'DOCENTE'
-    },
-    alumno: {
-      label: 'Matrícula',
-      value: this.state.context.matricula,
-      icon: '<i class="fa-solid fa-user-graduate"></i>',
-      meta: 'ALUMNO'
-    },
-    ee: {
-      label: 'NRC',
-      value: this.state.context.clave_ee,
-      icon: '<i class="fa-solid fa-book-open"></i>',
-      meta: 'EXPERIENCIA EDUCATIVA'
+    if (consultRelations.length === 0) {
+      container.innerHTML = `<div class="empty-state"><p>No hay relaciones configuradas para consultar</p></div>`;
+      return;
     }
-  };
-  
-  //Obtener configuración o fallback seguro
-  const config = entityConfig[entityType] || {
-    label: 'ID',
-    value: entityId,
-    icon: '<i class="fa-solid fa-user"></i>',
-    meta: entityType.toUpperCase()
-  };
-  
-  // ✅ Renderizar con datos dinámicos
-  container.innerHTML = `
-    <div class="entity-badge ${entityType}">
-      <span class="icon">${config.icon}</span>
-      <div>
-        <strong>${entityName}</strong>
-        <small>${config.label}: ${config.value || entityId}</small>
-      </div>
-    </div>
-    <div class="entity-meta">
-      <span class="meta-item">${config.meta}</span>
-    </div>
-  `;
-}
+    
+    // Renderizar estructura base
+    let html = `<div class="workspace-grid">`;
+    for (const relation of consultRelations) {
+      if (typeof relation.renderWorkspace === 'function') {
+        const cardHtml = relation.renderWorkspace({ entityType, entityId, entityName }, null, 'consultar');
+        if (cardHtml) html += cardHtml;
+      }
+    }
+    html += `</div>`;
+    
+    // Forzar actualización del DOM
+    await new Promise(resolve => { requestAnimationFrame(() => { container.innerHTML = html; resolve(); }); });
 
-  // ==========================================
-  // 3. GESTIÓN DE TABS Y WORKSPACE
-  // ==========================================
+    // Cargar datos asíncronamente (no bloquea el render)
+    const loadPromises = [];
+    for (const relation of consultRelations) {
+      if (relation.tabId === 'ee_asignadas' && typeof relation.loadHistorialData === 'function') {
+        const historialList = container.querySelector('#historial-ee-list');
+        if (historialList) {
+          loadPromises.push((async () => {
+            try {
+              const historial = await relation.loadHistorialData(entityType, entityId);
+              historialList.innerHTML = historial.length === 0 ? '<span class="empty-text">Sin registros históricos</span>' : `<div style="display:flex;flex-direction:column;gap:0.75rem;">${historial.map(item => `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--accent-color);"><div><div style="font-weight:600;color:var(--text-light);">${item.ee}</div><div style="font-size:0.8rem;color:var(--text-muted);">${item.clave}</div></div><div style="text-align:right;"><span style="display:block;font-weight:600;color:var(--accent-color);">${item.periodo}</span><span style="font-size:0.8rem;color:var(--text-muted);">${item.carga} hrs</span></div></div>`).join('')}</div>`;
+            } catch (error) { console.warn('Error cargando historial EE:', error); historialList.innerHTML = '<span class="error-text">Error al cargar</span>'; }
+          })());
+        }
+      }
+    }
+    await Promise.all(loadPromises);
+    
+    // Guardar en caché
+    this._viewCache.consultar = { key: cacheKey, html: container.innerHTML };
+  }
+
+  // Renderizar desde caché con reflow forzado
+  async _renderFromCache(html) {
+    await new Promise(resolve => {
+      requestAnimationFrame(() => {
+        this.elements.workspaceContent.innerHTML = html;
+        resolve();
+      });
+    });
+  }
+
+  // Generar clave de caché única por contexto
+  _getCacheKey() {
+    const { entityType, entityId } = this.state.context;
+    const periodId = this.state.activePeriod || 'global';
+    return `${entityType}_${entityId}_${periodId}`;
+  }
+
+  // Invalidar caché al cambiar datos críticos
+  _invalidateCache() {
+    this._viewCache.gestionar = null;
+    this._viewCache.consultar = null;
+  }
+
+  // --- WORKSPACE: ADHESIÓN A PERIODOS ---
+  async _renderPeriodAdhesionCard() {
+    const { entityType, entityId } = this.state.context;
+    const listContainer = document.getElementById("adhesion-list");
+    const select = document.getElementById("adhesion-period-select");
+    const btnAdd = document.getElementById("btn-add-adhesion");
+
+    if (!listContainer || !select) return;
+
+    try {
+      const resPeriodos = await window.electronAPI.listarPeriodos();
+      if (!resPeriodos?.success) throw new Error("Error cargando periodos");
+      const allPeriods = resPeriodos.data || [];
+      const assignedPeriods = await this._fetchAssignedPeriods(entityType, entityId);
+
+      const MAX_VISIBLE = 5;
+      const visiblePeriods = assignedPeriods.slice(0, MAX_VISIBLE);
+      const remainingCount = assignedPeriods.length - MAX_VISIBLE;
+
+      let html = "";
+      visiblePeriods.forEach((p) => {
+        html += `<span class="adhesion-item" data-period-id="${p.id}" data-period-clave="${p.clave}" title="${p.descripcion}">${p.clave}<button class="remove-btn" data-period="${p.id}" title="Quitar">&times;</button></span>`;
+      });
+      if (remainingCount > 0) html += `<span class="adhesion-item adhesion-counter" title="Ver más en Consultar" data-action="view-all">+${remainingCount}</span>`;
+      if (assignedPeriods.length === 0) html = '<span class="adhesion-item empty">Sin periodos asignados</span>';
+
+      listContainer.innerHTML = html;
+
+      // Bind eventos de quitar
+      listContainer.querySelectorAll(".remove-btn").forEach((btn) => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const periodId = btn.dataset.period;
+          const periodChip = btn.closest(".adhesion-item");
+          const periodClave = periodChip?.dataset.periodClave || "este periodo";
+          const { entityName, entityType } = this.state.context;
+          const entityLabel = entityType === 'docente' ? 'al docente' : entityType === 'alumno' ? 'al alumno' : 'a la EE';
+          const message = `¿Desvincular ${entityLabel} "${entityName}" del periodo "${periodClave}"?`;
+          
+          if (await globalConfirm?.ask(message, 0)) {
+            await this._removeEntityFromPeriod(entityType, entityId, periodId);
+            await this._renderPeriodAdhesionCard();
+            if (this.state.activePeriod == periodId) {
+              this.state.activePeriod = null;
+              document.getElementById("ctx-period-selector").value = "";
+              this._handlePeriodChange();
+            }
+            Toast.success(`${entityName} desvinculado de ${periodClave}`);
+            this._invalidateCache();
+          }
+        };
+      });
+
+      // Bind evento del chip contador
+      const counterChip = listContainer.querySelector('[data-action="view-all"]');
+      if (counterChip) counterChip.onclick = () => this._switchTab("consultar");
+
+      // Llenar selector con disponibles
+      const availablePeriods = allPeriods.filter((p) => !assignedPeriods.some((ap) => ap.id == p.id));
+      if (availablePeriods.length === 0) {
+        select.innerHTML = '<option value="" disabled>Se han asignado todos los periodos</option>';
+      } else {
+        select.innerHTML = '<option value="">Seleccionar periodo...</option>';
+        availablePeriods.forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = `${p.clave} - ${p.descripcion}`;
+          select.appendChild(opt);
+        });
+      }
+
+      // Configurar botón asignar
+      if (btnAdd) {
+        btnAdd.disabled = availablePeriods.length === 0;
+        btnAdd.title = availablePeriods.length === 0 ? "No hay periodos disponibles" : "Asignar periodo seleccionado";
+        btnAdd.onclick = async () => {
+          const periodId = select.value;
+          if (!periodId) { Toast.warning("Seleccione un periodo"); return; }
+          const selected = allPeriods.find((p) => p.id == periodId);
+          await this._addEntityToPeriod(entityType, entityId, periodId);
+          await this._renderPeriodAdhesionCard();
+          Toast.success(`Vinculado a ${selected?.clave}`);
+          this._invalidateCache();
+        };
+      }
+    } catch (error) {
+      console.error("Error adhesión:", error);
+      listContainer.innerHTML = `<span class="adhesion-item empty">Error</span>`;
+    }
+  }
+
+  // --- WORKSPACE: RELACIONES OPERATIVAS ---
+  async _renderOperationalRelations() {
+    const { entityType, entityId, entityName } = this.state.context;
+    const periodId = this.state.activePeriod;
+    const grid = document.getElementById("operational-relations-grid");
+    const overlay = document.getElementById("relations-overlay");
+    if (!grid) return;
+
+    if (!periodId) { overlay?.classList.remove("hidden"); } else { overlay?.classList.add("hidden"); }
+
+    const compatibleRelations = this._getRegisteredRelations(entityType).filter((rel) => rel.workspaceConfig?.modes?.includes("gestionar"));
+    grid.innerHTML = compatibleRelations.length === 0 ? '<div class="empty-state">No hay relaciones configuradas</div>' : compatibleRelations.map((rel) => {
+      if (typeof rel.renderOperationalCard === "function") {
+        return rel.renderOperationalCard({ entityType, entityId, entityName }, periodId, { onAssign: (data) => this._handleRelationAction(rel.tabId, "assign", data), availableEntities: () => this._getAvailableEntitiesForRelation(rel.tabId, periodId) });
+      }
+      return `<section class="workspace-card relation-card" data-relation="${rel.tabId}"><header class="card-header"><h4>${rel.label || rel.tabId}</h4></header><div class="card-body"><p class="summary-text">${rel.description || "Operación disponible"}</p></div></section>`;
+    }).join("");
+
+    this._bindOperationalRelationEvents(grid, periodId);
+  }
+
+  // --- PERSISTENCIA: ENTITY_PERIOD ---
+  async _fetchAssignedPeriods(entityType, entityId) {
+    try {
+      const res = await window.electronAPI.obtenerPeriodosDeEntidad({ entityType, entityId });
+      return res?.success ? res.data : [];
+    } catch (error) { console.error("Error cargando periodos asignados:", error); return []; }
+  }
+
+  async _addEntityToPeriod(entityType, entityId, periodId) {
+    const res = await window.electronAPI.agregarEntidadAPeriodo({ entityType, entityId, periodId });
+    if (!res?.success) throw new Error(res?.error || "No se pudo vincular al periodo");
+    return res;
+  }
+
+  async _removeEntityFromPeriod(entityType, entityId, periodId) {
+    const res = await window.electronAPI.removerEntidadDePeriodo({ entityType, entityId, periodId });
+    if (!res?.success) throw new Error(res?.error || "No se pudo desvincular del periodo");
+    return res;
+  }
+
+  // --- HANDLERS: RELACIONES OPERATIVAS ---
+  _bindOperationalRelationEvents(container) {
+    container.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const relation = btn.closest("[data-relation]")?.dataset.relation;
+      if (action === "configure") await this._openRelationConfigFlow(relation, this.state.activePeriod);
+    });
+  }
+
+  async _openRelationConfigFlow(relationId, periodId) { Toast.info(`Configuración de ${relationId} (en desarrollo)`); }
+  async _handleRelationAction(relationId, action, data) { console.log(`[Action] ${action} en ${relationId}`, data); }
+  _getAvailableEntitiesForRelation(relationId, periodId) { return []; }
+
+  // --- TABS Y PERIODO (CON CACHE) ---
   async _switchTab(tabId) {
+    // 1. Actualizar estado
     this.state.activeTab = tabId;
     
-    // Actualizar UI de botones
-    this.elements.workspaceTabs.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === tabId);
-    });
+    // 2. Actualizar UI de botones
+    this.elements.workspaceTabs.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
+    
+    // 3. Forzar reflow para asegurar actualización visual
+    void this.elements.workspaceContent.offsetWidth;
 
-    // Loader pequeño al cambiar tab
-    this._showWorkspaceLoader('Actualizando vista...');
-    await this._renderWorkspaceContent(tabId);
-    this._hideWorkspaceLoader();
+    // 4. Renderizar con caché
+    this._showWorkspaceLoader("Cargando...");
+    
+    try {
+      const cacheKey = this._getCacheKey();
+      
+      if (tabId === "gestionar") {
+        if (this._viewCache.gestionar?.key === cacheKey && this._viewCache.gestionar?.html) {
+          await this._renderFromCache(this._viewCache.gestionar.html);
+        } else {
+          await this._renderGestionarView();
+          this._viewCache.gestionar = { key: cacheKey, html: this.elements.workspaceContent.innerHTML };
+        }
+      } else if (tabId === "consultar") {
+        if (this._viewCache.consultar?.key === cacheKey && this._viewCache.consultar?.html) {
+          await this._renderFromCache(this._viewCache.consultar.html);
+        } else {
+          await this._renderConsultRelations();
+        }
+      }
+    } catch (error) {
+      console.error(`Error renderizando tab ${tabId}:`, error);
+      this.elements.workspaceContent.innerHTML = `<p class="error-msg">Error al cargar la vista.</p>`;
+    } finally {
+      this._hideWorkspaceLoader();
+    }
   }
 
-  _showWorkspaceLoader(message = 'Cargando...') {
-    if (this.elements.workspaceLoader) {
-      this.elements.workspaceLoader.remove();
-    }
-    
-    this.elements.workspaceLoader = uiLoader.showInContainer(
-      this.elements.workspaceContent, 
-      message
-    );
+  _handlePeriodChange() {
+    this.state.activePeriod = this.state.activePeriod || null;
+    this._invalidateCache(); // ← Limpiar caché al cambiar contexto
+    this._renderSidebarRelations();
+    this._renderWorkspace();
+  }
+
+  // --- LOADER ---
+  _showWorkspaceLoader(message = "Cargando...") {
+    if (this.elements.workspaceLoader) this.elements.workspaceLoader.remove();
+    this.elements.workspaceLoader = uiLoader.showInContainer(this.elements.workspaceContent, message);
     this.state.isLoading = true;
   }
 
   _hideWorkspaceLoader() {
-    if (this.elements.workspaceLoader) {
-      uiLoader.hideInContainer(this.elements.workspaceContent, this.elements.workspaceLoader);
-      this.elements.workspaceLoader = null;
-    }
+    if (this.elements.workspaceLoader) { uiLoader.hideInContainer(this.elements.workspaceContent, this.elements.workspaceLoader); this.elements.workspaceLoader = null; }
     this.state.isLoading = false;
   }
 
-  async _renderWorkspaceContent(tabId) {
-  const container = this.elements.workspaceContent;
-  const { entityType, entityId, entityName } = this.state.context;
-  const periodId = this.state.activePeriod;
-
-  // ✅ Usar relaciones registradas desde app.js (compatibilidad)
-  const compatibleRelations = this._getRegisteredRelations(entityType).filter(rel => {
-    const supportsMode = rel.workspaceConfig?.modes?.includes(tabId);
-    return supportsMode;
-  });
-
-  // Fallback: si no hay relaciones registradas, intentar import dinámico
-  if (compatibleRelations.length === 0) {
-    try {
-      const { allRelationships } = await import('../config/relationships/index.js');
-      compatibleRelations.push(...allRelationships.filter(rel => 
-        rel.compatibleWith?.includes(entityType) && 
-        rel.workspaceConfig?.modes?.includes(tabId)
-      ));
-    } catch (err) {
-      console.warn('⚠️ No se pudieron cargar relaciones dinámicamente:', err);
-    }
-  }
-
-  // Si no hay nada compatible
-  if (compatibleRelations.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <p>No hay relaciones configuradas para ${entityType} en modo "${tabId}".</p>
-      </div>
-    `;
-    return;
-  }
-
-  // Renderizar cada relación como tarjeta
-  let html = `<div class="workspace-grid">`;
-  
-  for (const relation of compatibleRelations) {
-    if (typeof relation.renderWorkspace === 'function') {
-      const cardHtml = relation.renderWorkspace(
-        { entityType, entityId, entityName }, 
-        periodId, 
-        tabId
-      );
-      if (cardHtml) html += cardHtml;
-    }
-  }
-  
-  html += `</div>`;
-  container.innerHTML = html;
-  
-  // Bind de eventos
-  this._bindWorkspaceEvents(container, tabId);
-}
-
-  _handlePeriodChange() {
-    console.log(`🔄 Periodo cambiado a: ${this.state.activePeriod}`);
-    // Al cambiar periodo, recargamos la tab activa para filtrar datos
-    this._switchTab(this.state.activeTab);
-  }
-
-  // ==========================================
-  // 4. UTILIDADES Y LOADER
-  // ==========================================
-  showLoader() {
-    this.state.isLoading = true;
-    // 🔍 AQUI BUSCAREMOS TU LOADER EXISTENTE PARA REUTILIZARLO
-    // Por ahora, un spinner básico CSS
-    if(this.elements.workspaceContent) {
-        this.elements.workspaceContent.style.opacity = '0.5';
-        this.elements.workspaceContent.style.pointerEvents = 'none';
-    }
-    console.log('⏳ Loader Activado');
-  }
-
-  hideLoader() {
-    this.state.isLoading = false;
-    if(this.elements.workspaceContent) {
-        this.elements.workspaceContent.style.opacity = '1';
-        this.elements.workspaceContent.style.pointerEvents = 'auto';
-    }
-    console.log('✅ Loader Desactivado');
-  }
-
+  // --- EVENTOS GLOBALES ---
   _bindGlobalEvents() {
-    // Cerrar modal
-    const close = () => this.elements.overlay.classList.add('hidden');
-    document.getElementById('btn-close-modal').onclick = close;
-    document.getElementById('btn-cancelar-asig').onclick = close;
-    
-    // Click fuera
-    this.elements.overlay.addEventListener('click', (e) => {
-      if (e.target === this.elements.overlay) close();
-    });
-
-    // Tabs click
-    this.elements.workspaceTabs.addEventListener('click', (e) => {
-      if (e.target.classList.contains('tab-btn')) {
-        this._switchTab(e.target.dataset.tab);
-      }
-    });
+    const close = () => this.elements.overlay.classList.add("hidden");
+    document.getElementById("btn-close-modal").onclick = close;
+    document.getElementById("btn-cancelar-asig").onclick = close;
+    this.elements.overlay.addEventListener("click", (e) => { if (e.target === this.elements.overlay) close(); });
+    this.elements.workspaceTabs.addEventListener("click", (e) => { if (e.target.classList.contains("tab-btn")) this._switchTab(e.target.dataset.tab); });
   }
 
-    // =========================================
-  // GESTIÓN DE EVENTOS DEL WORKSPACE
-  // =========================================
-  
-  _bindWorkspaceEvents(container, tabId) {
-    // Delegación de eventos: un solo listener para todo el workspace
-    container.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-action]');
-      if (!btn) return;
-      
-      const action = btn.dataset.action;
-      const relation = btn.closest('[data-relation]')?.dataset.relation;
-      
-      console.log(`🎯 Acción "${action}" en relación "${relation}" (tab: ${tabId})`);
-      
-      // Manejar acciones específicas por relación
-      if (relation === 'tutoria') {
-        this._handleTutoriaAction(action, tabId);
-      } else if (relation === 'docente_ee') {
-        this._handleDocenteEEAction(action, tabId);
-      } else {
-        console.log(`⚠️ Acción genérica para ${relation}: ${action}`);
-      }
-    });
+  // --- REGISTRO DE RELACIONES ---
+  registerTab(entityType, config) {
+    if (!this._registeredRelations.has(entityType)) this._registeredRelations.set(entityType, []);
+    this._registeredRelations.get(entityType).push(config);
   }
 
-  // =========================================
-  // HANDLERS ESPECÍFICOS POR RELACIÓN
-  // =========================================
-  
-  async _handleTutoriaAction(action, tabId) {
-    const { entityType, entityId } = this.state.context;
-    const periodId = this.state.activePeriod;
-    
-    console.log(`🔧 [Tutoria] Acción: ${action}`, { entityType, entityId, periodId });
-    
-    switch (action) {
-      case 'assign-tutor':
-        await this._handleAssignTutor(entityType, entityId, periodId);
-        break;
-      case 'view-tutorados':
-        await this._handleViewTutorados(entityType, entityId, periodId);
-        break;
-      default:
-        console.warn(`⚠️ Acción de tutoría no implementada: ${action}`);
-    }
-  }
-
-  async _handleDocenteEEAction(action, tabId) {
-    const { entityType, entityId } = this.state.context;
-    const periodId = this.state.activePeriod;
-    
-    console.log(`🔧 [DocenteEE] Acción: ${action}`, { entityType, entityId, periodId });
-    
-    switch (action) {
-      case 'assign-ee':
-        await this._handleAssignEE(entityType, entityId, periodId);
-        break;
-      case 'view-ee':
-        await this._handleViewEE(entityType, entityId, periodId);
-        break;
-      default:
-        console.warn(`⚠️ Acción de EE no implementada: ${action}`);
-    }
-  }
-
-  // =========================================
-  // PLACEHOLDERS PARA ACCIONES FUTURAS
-  // =========================================
-  
-  async _handleAssignTutor(entityType, entityId, periodId) {
-    console.log('🔧 [TODO] Implementar asignar tutorado');
-    // Futuro:
-    // const alumnoId = prompt('ID del alumno:');
-    // await window.electronAPI.asignarTutor({ docenteId: entityId, alumnoId, periodoId });
-    // this._switchTab('gestionar'); // Recargar
-  }
-
-  async _handleViewTutorados(entityType, entityId, periodId) {
-    console.log('🔧 [TODO] Implementar vista de tutorados');
-  }
-
-  async _handleAssignEE(entityType, entityId, periodId) {
-    console.log('🔧 [TODO] Implementar asignar EE');
-  }
-
-  async _handleViewEE(entityType, entityId, periodId) {
-    console.log('🔧 [TODO] Implementar vista de EE');
-  }
-
-  // =========================================
-// MÉTODO DE COMPATIBILIDAD (para app.js)
-// =========================================
-registerTab(entityType, config) {
-  // Almacena las relaciones registradas desde app.js
-  if (!this._registeredRelations) {
-    this._registeredRelations = new Map();
-  }
-  
-  if (!this._registeredRelations.has(entityType)) {
-    this._registeredRelations.set(entityType, []);
-  }
-  
-  this._registeredRelations.get(entityType).push(config);
-  
-  // Log opcional para debug
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`✅ [AssignmentModal] Tab "${config.tabId}" registrada para "${entityType}"`);
-  }
-}
-
-// Método auxiliar para obtener relaciones registradas
-_getRegisteredRelations(entityType) {
-  return this._registeredRelations?.get(entityType) || [];
-}
+  _getRegisteredRelations(entityType) { return this._registeredRelations?.get(entityType) || []; }
 }

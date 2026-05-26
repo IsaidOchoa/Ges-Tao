@@ -206,9 +206,84 @@
 
 /* --- SIDEBAR FOOTER --- */
 #modal-asignaciones .sidebar-footer {
+  display: none !important;
   padding: 1.25rem 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
+}
+
+/* 2. Ajustar padding del sidebar para maximizar espacio útil */
+#modal-asignaciones .sidebar-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+  gap: 1.25rem;
+}
+
+/* 3. Título de sección: Discreto y profesional */
+#modal-asignaciones .relations-panel-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+/* 4. Contenedor de lista */
+#relations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Espacio entre bloques */
+}
+
+/* 5. Bloque individual */
+#modal-asignaciones .relation-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem; /* Pegar etiqueta al valor */
+}
+
+/* 6. Etiqueta (Subtítulo): Pequeño, muted, mayúsculas */
+#modal-asignaciones .relation-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* 7. Valor: Grande, bold, color principal */
+#modal-asignaciones .relation-value {
+  font-size: 1.15rem; /* Destaca visualmente */
+  font-weight: 700;
+  color: #f3f4f6;
+  line-height: 1.3;
+  padding: 0; /* Sin fondos ni bordes innecesarios */
+  background: transparent;
+  border: none;
+  min-height: auto;
+  transition: color 0.2s ease;
+}
+
+/* Estados especiales */
+#modal-asignaciones .relation-value.empty {
+  color: #6b7280;
+  font-weight: 500;
+  font-style: normal;
+}
+
+#modal-asignaciones .relation-value.loading {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+/* Ajuste visual para el selector de periodo (consistencia) */
+#modal-asignaciones .section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
 }
 
 /* --- WORKSPACE --- */
@@ -232,12 +307,10 @@
   white-space: nowrap;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  
-  /* Fondo del contenedor de tabs */
   background: #232323; 
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0 2rem;
-  height: 56px; /* Altura fija para alineación */
+  height: 45px;
   flex-shrink: 0;
 }
 
@@ -520,6 +593,329 @@
 #modal-asignaciones .entity-badge .icon i {
   font-size: 1.4rem; /* Ajusta tamaño */
   color: var(--accent-color); /* Hereda color del tema */
+}
+
+/* =========================================
+   ADHESIÓN A PERIODOS - VERSIÓN COMPACTA
+========================================= */
+
+.section-period-adhesion {
+  margin-bottom: .5rem;
+  padding-bottom: 1rem;
+}
+
+.section-period-adhesion .section-header {
+  margin-bottom: 0.5rem;
+}
+
+.section-period-adhesion .section-header h4 {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.section-period-adhesion .section-desc {
+  font-size: 0.8rem;
+  display: none; /* Ocultar descripción para ahorrar espacio */
+}
+
+.adhesion-card {
+  padding: 0.75rem;
+}
+
+.adhesion-list {
+  padding: 0;
+  margin-bottom: 0.75rem;
+  min-height: auto;
+}
+
+.adhesion-item {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.adhesion-controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  padding: 0;
+  align-items: center;
+}
+
+.adhesion-controls .form-select-sm {
+  height: 32px;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+}
+
+.adhesion-controls .btn-sm {
+  height: 32px;
+  padding: 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Versión aún más compacta cuando no hay periodos */
+.adhesion-list:has(.adhesion-item.empty) + .adhesion-controls {
+  grid-template-columns: 1fr;
+}
+
+.adhesion-list:has(.adhesion-item.empty) + .adhesion-controls .btn-sm {
+  width: 100%;
+}
+
+/* --- WORKSPACE: SCROLL CORREGIDO --- */
+#modal-asignaciones .workspace-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.5rem 2rem; /* Reducido de 2rem 2.5rem */
+}
+
+/* Secciones más compactas */
+.workspace-section {
+  margin-bottom: 0rem; /* Reducido de 2rem */
+  padding-bottom: 0rem;
+}
+
+/* --- ADHESIÓN: SIN CARD WRAPPER (Ultra compacto) --- */
+.section-period-adhesion .adhesion-card {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+.section-period-adhesion .card-body {
+  padding: 0;
+  gap: 0.75rem;
+}
+
+.section-period-adhesion .adhesion-list {
+  margin-bottom: 0.5rem;
+}
+
+/* Selector y botón en una sola línea compacta */
+.section-period-adhesion .adhesion-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.section-period-adhesion .form-select-sm {
+  flex: 1;
+  height: 36px;
+  font-size: 0.85rem;
+}
+
+.section-period-adhesion .btn-sm {
+  height: 36px;
+  padding: 0 1rem;
+  white-space: nowrap;
+}
+
+/* Cuando no hay periodos, botón full width */
+.adhesion-list:has(.adhesion-item.empty) + .adhesion-controls {
+  flex-direction: column;
+}
+
+.adhesion-list:has(.adhesion-item.empty) + .adhesion-controls .btn-sm {
+  width: 100%;
+}
+
+/* Items de adhesión más compactos */
+.adhesion-item {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.adhesion-item .remove-btn {
+  margin-left: 0.3rem;
+  opacity: 0.6;
+}
+
+.adhesion-item .remove-btn:hover {
+  opacity: 1;
+}
+
+/* Grid de relaciones: Ajuste para scroll */
+#modal-asignaciones .workspace-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Reducido de 360px */
+  gap: 1.25rem; /* Reducido de 1.5rem */
+}
+
+/* Cards más compactas */
+#modal-asignaciones .workspace-card {
+  min-height: auto; /* Eliminar altura mínima forzada */
+}
+
+#modal-asignaciones .card-body {
+  padding: 1rem; /* Reducido de 1.25rem */
+  gap: 0.75rem; /* Reducido de 1rem */
+}
+
+/* --- ADHESIÓN: AJUSTE DE ANCHO Y ESPACIO --- */
+
+/* Limitar el ancho del contenedor de controles */
+.section-period-adhesion .adhesion-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  max-width: 450px; /* ← Controla el ancho máximo del grupo */
+  width: fit-content;
+}
+
+/* Inputs y botones dentro de adhesión */
+.section-period-adhesion .form-select-sm {
+  min-width: 200px; /* Ancho mínimo para que se lea bien */
+  height: 36px;
+  font-size: 0.85rem;
+}
+
+.section-period-adhesion .btn-sm {
+  height: 36px;
+  padding: 0 1.2rem; /* Un poco más de aire en el botón */
+  white-space: nowrap;
+}
+
+/* Cuando la lista está vacía, mantener alineación a la izquierda */
+.adhesion-list:has(.adhesion-item.empty) + .adhesion-controls {
+  flex-direction: row; /* Mantener en fila */
+  width: 100%; /* Permitir que ocupe su max-width */
+}
+
+/* Ajuste visual del mensaje vacío */
+.adhesion-item.empty {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-style: italic;
+  padding-left: 0;
+}
+
+/* --- OVERLAY DE RELACIONES (Corrección de alineación) --- */
+.relations-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+  transition: opacity 0.2s ease;
+}
+
+.overlay-content {
+  display: flex;       /* Alineación horizontal */
+  align-items: center; /* Centrado vertical entre icono y texto */
+  gap: 1rem;           /* Espacio entre icono y texto */
+  color: #b5b5b5;
+  text-align: left;    /* Asegura que el texto no se centre solo */
+  padding: 1rem;
+}
+
+.overlay-content i {
+  font-size: 1.5rem;
+  color: #3498db;      /* Color del icono (opcional) */
+  flex-shrink: 0;      /* Evita que el icono se aplaste */
+}
+
+.overlay-content p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.section-operational-relations {
+  position: relative; /* ← ESTO ES CRUCIAL: Limita al overlay a esta área */
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Asegurar que el overlay respete el contenedor padre */
+.relations-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  /* ... resto de estilos ... */
+}
+
+/* Lista de chips de periodos asignados */
+.adhesion-list {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+  margin-top: 1rem; /* Espacio separador de los controles */
+  max-height: 110px; overflow-y: auto; padding-right: 4px;
+}
+
+.adhesion-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  background: rgba(52, 152, 219, 0.12);
+  border: 1px solid rgba(52, 152, 219, 0.35);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.adhesion-item.empty {
+  background: transparent;
+  border: none;
+  color: #757575;
+  font-style: italic;
+  padding: 0;
+}
+
+.adhesion-item .remove-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.adhesion-item .remove-btn:hover {
+  opacity: 1;
+  color: #ef4444;
+}
+
+/* Estilo del chip contador */
+.adhesion-counter {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+  position: relative;
+}
+
+.adhesion-counter:hover {
+  background: rgba(52, 152, 219, 0.1);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+/* Ocultar botón de cerrar en el contador */
+.adhesion-counter .remove-btn {
+  display: none !important;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* --- RESPONSIVE & SCALING --- */

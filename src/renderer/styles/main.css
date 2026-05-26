@@ -14,6 +14,9 @@
 @import './views/_emision.css';
 @import './views/_historial.css';
 @import './views/_reportes.css';
+
 @import './modals/modal-asignaciones.css';
+
+@import './components/_toast.css';
 
 @import '@fortawesome/fontawesome-free/css/all.min.css';

@@ -198,6 +198,11 @@ try {
       asignarDocenteEE: (data) => ipcRenderer.invoke('asignarDocenteEE', data),
       removerDocenteEE: (data) => ipcRenderer.invoke('removerDocenteEE', data),
       obtenerEEDelDocente: (params) => ipcRenderer.invoke('obtenerEEDelDocente', params),
+
+      // Gestión de Entidad-Periodo (usando tablas existentes)
+      obtenerPeriodosDeEntidad: (params) => ipcRenderer.invoke('obtener-periodos-de-entidad', params),
+      agregarEntidadAPeriodo: (params) => ipcRenderer.invoke('agregar-entidad-a-periodo', params),
+      removerEntidadDePeriodo: (params) => ipcRenderer.invoke('remover-entidad-de-periodo', params),
   });
   
   console.log('[PRELOAD] electronAPI expuesto correctamente con todos los modulos.');
