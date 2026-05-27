@@ -1,3 +1,4 @@
+// src/renderer/modules/EmisionModule.js
 export class EmisionModule {
   constructor() {
     this.datosMaestros = {

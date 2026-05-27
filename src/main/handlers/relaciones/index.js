@@ -2,10 +2,9 @@
 
 module.exports = () => {
   // Registrar cada módulo de relación
-  require('./tutoria.js')();
-  require('./docente-ee.js')();
+  require('./docenteEEHandlers.js')();
   require('./periodos.js')();
-  // require('./inscripcion.js')(); // Cuando lo crees
+  require('./docenteTutoradosHandlers.js')();
   
   console.log('✅ [relacion] Todos los módulos de relación registrados');
 };

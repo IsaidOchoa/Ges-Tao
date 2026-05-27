@@ -1,3 +1,4 @@
+//main/handlers/docenteHandlers.js
 const { ipcMain } = require('electron');
 const { getDB } = require('../database');
 

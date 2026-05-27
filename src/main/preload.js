@@ -195,7 +195,7 @@ try {
       obtenerTutorados: (params) => ipcRenderer.invoke('obtenerTutorados', params),
       
       // Docente-EE
-      asignarDocenteEE: (data) => ipcRenderer.invoke('asignarDocenteEE', data),
+      asignarEEAdocente: (data) => ipcRenderer.invoke('asignarEEAdocente', data),
       removerDocenteEE: (data) => ipcRenderer.invoke('removerDocenteEE', data),
       obtenerEEDelDocente: (params) => ipcRenderer.invoke('obtenerEEDelDocente', params),
 

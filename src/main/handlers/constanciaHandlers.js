@@ -1,3 +1,4 @@
+// src/main/handlers/constanciaHandlers.js
 const { ipcMain } = require('electron');
 const { getDB } = require('../database');
 
