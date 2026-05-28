@@ -1,228 +1,395 @@
-// src/renderer/modules/EmisionModule.js
+import { Toast } from "../components/common/Toast.js";
+
 export class EmisionModule {
   constructor() {
     this.datosMaestros = {
-      docentes: [],
-      periodos: [],
-      ee: [],
+      tipos: [],
       programas: [],
-      tipos: []
+      periodos: [],
+      docentes: [],
+      directivos: [],
     };
+    this.contexto = {
+      tipo: null,
+      programa: null,
+      periodo: null,
+      docente: null,
+    };
+    this.datosAutoCargados = { ee: [], fecha: new Date(), firmas: {} };
   }
 
   async init() {
-    console.log('🚀 [EmisionModule] Iniciando...');
     await this.cargarDatosIniciales();
-    this.configurarVistaPrevia();
     this.configurarFormulario();
+    this.establecerFechaDefault();
+    this.actualizarPreview();
   }
 
   async cargarDatosIniciales() {
     try {
       const resp = await window.electronAPI.obtenerDatosConstancia();
-      if (resp.success) {
-        this.datosMaestros = resp.data;
-        
-        // Fallback por si el endpoint maestro no trae los tipos aún
-        if (!this.datosMaestros.tipos || this.datosMaestros.tipos.length === 0) {
-          const respTipos = await window.electronAPI.listarTiposConstancia();
-          if(respTipos.success) {
-            this.datosMaestros.tipos = respTipos.rows || respTipos.data;
-          }
-        }
-        
-        this.llenarSelectores();
-      } else {
-        alert('Error al cargar datos para emisión: ' + resp.error);
-      }
-    } catch (e) {
-      console.error('❌ Error crítico en EmisionModule:', e);
+      if (!resp?.success)
+        throw new Error(resp?.error || "Error al cargar catálogos");
+
+      this.datosMaestros = {
+        tipos: resp.data.tipos || [],
+        programas: resp.data.programas || [],
+        periodos: resp.data.periodos || [],
+        docentes: resp.data.docentes || [],
+        directivos: resp.data.directivos || [],
+      };
+      this.llenarSelectores();
+    } catch (err) {
+      Toast.error("Error de carga", err.message);
     }
   }
 
   llenarSelectores() {
-    const fill = (id, items, defaultText, valueKey = 'id', textFn) => {
+    const fill = (id, items, defaultTxt, valKey = "id", txtFn = null) => {
       const sel = document.getElementById(id);
       if (!sel) return;
-      sel.innerHTML = `<option value="">${defaultText}</option>`;
-      if (!items) return;
-      
-      items.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item[valueKey];
-        // Guardamos metadatos para validación lógica
-        if (item.requiere_ee !== undefined) option.dataset.requiereEe = item.requiere_ee;
-        if (item.requiere_periodo !== undefined) option.dataset.requierePeriodo = item.requiere_periodo;
-        option.textContent = textFn(item);
-        sel.appendChild(option);
+
+      // Limpiar opciones previas y poner el default
+      sel.innerHTML = `<option value="">${defaultTxt}</option>`;
+
+      if (!Array.isArray(items) || items.length === 0) return;
+
+      // Si no se pasa una función específica, intenta usar 'nombre' por defecto
+      const defaultTextFn = (i) => i.nombre || i.clave || i.codigo || "";
+
+      items.forEach((item) => {
+        const opt = document.createElement("option");
+        opt.value = item[valKey];
+
+        // 🔹 Aquí está la corrección: Usar la función personalizada o la genérica
+        opt.textContent = txtFn ? txtFn(item) : defaultTextFn(item);
+
+        sel.appendChild(opt);
       });
     };
 
-    fill('sel-docente', this.datosMaestros.docentes, 'Seleccione un docente...', 'id', 
-         d => `${d.codigo} - ${d.apellido_paterno}, ${d.nombres}`);
-    
-    fill('sel-tipo', this.datosMaestros.tipos, 'Seleccione un tipo...', 'id', 
-         t => t.nombre);
-    
-    // Periodo SIEMPRE visible
-    fill('sel-periodo', this.datosMaestros.periodos, 'Seleccione un periodo (Opcional)', 'id', 
-         p => `${p.clave} - ${p.descripcion}`);
-    
-    // EE SIEMPRE visible (pero puede ser opcional según el tipo)
-    fill('sel-ee', this.datosMaestros.ee, 'Seleccione una materia (Opcional)', 'id', 
-         e => `${e.clave_ee} - ${e.nombre}`);
-    
-    // Programa SIEMPRE visible (Dato de asignación interna)
-    fill('sel-programa', this.datosMaestros.programas, 'Seleccione un programa (Asignación interna)', 'id', 
-         p => p.nombre);
+    // 1. Tipos (Usa txtFn específico)
+    fill(
+      "sel-tipo",
+      this.datosMaestros.tipos,
+      "Seleccione un tipo...",
+      "id",
+      (i) => i.nombre,
+    );
 
-    // Aplicar estado inicial de obligatoriedad
-    this.actualizarObligatoriedad();
-  }
+    // 2. Programa (Usa txtFn específico)
+    fill(
+      "sel-programa",
+      this.datosMaestros.programas,
+      "Seleccione un programa...",
+      "id",
+      (i) => i.nombre,
+    );
 
-  /**
-   * 🆕 Lógica corregida: Solo afecta el atributo 'required', NO oculta campos.
-   */
-  actualizarObligatoriedad() {
-    const selectTipo = document.getElementById('sel-tipo');
-    if (!selectTipo) return;
+    // 3. Periodo 🔹 CORRECCIÓN AQUÍ:
+    // Antes fallaba porque buscaba 'nombre' que no existe en periodos.
+    // Ahora usamos 'clave' y 'descripcion'.
+    fill(
+      "sel-periodo",
+      this.datosMaestros.periodos,
+      "Seleccione un periodo...",
+      "id",
+      (p) => `${p.clave} - ${p.descripcion}`,
+    );
 
-    const opcionSeleccionada = selectTipo.options[selectTipo.selectedIndex];
-    if (!opcionSeleccionada) return;
+    // 4. Docente (Usa txtFn específico)
+    fill(
+      "sel-docente",
+      this.datosMaestros.docentes,
+      "Seleccione un docente...",
+      "id",
+      (d) => `${d.apellido_paterno}, ${d.nombres} (${d.codigo})`,
+    );
 
-    const requiereEE = opcionSeleccionada.dataset.requiereEe === '1';
-    const requierePeriodo = opcionSeleccionada.dataset.requierePeriodo === '1';
-
-    const inputEE = document.getElementById('sel-ee');
-    const inputPer = document.getElementById('sel-periodo');
-    
-    // Actualizar atributo required
-    if (inputEE) inputEE.required = requiereEE;
-    if (inputPer) inputPer.required = requierePeriodo;
-
-    // Feedback visual opcional (cambiar label o placeholder)
-    const labelEE = inputEE?.previousElementSibling;
-    const labelPer = inputPer?.previousElementSibling;
-
-    if (labelEE) {
-      labelEE.innerHTML = requiereEE ? 'Materia (EE) <span style="color:red">*</span>' : 'Materia (EE) <small>(Opcional)</small>';
-    }
-    if (labelPer) {
-      labelPer.innerHTML = requierePeriodo ? 'Periodo <span style="color:red">*</span>' : 'Periodo <small>(Opcional)</small>';
-    }
-  }
-
-  configurarVistaPrevia() {
-    const ids = ['sel-docente', 'sel-tipo', 'sel-periodo', 'sel-ee', 'sel-programa'];
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        const newEl = el.cloneNode(true);
-        el.parentNode.replaceChild(newEl, el);
-        
-        newEl.addEventListener('change', () => {
-          if (id === 'sel-tipo') this.actualizarObligatoriedad();
-          this.actualizarPreview();
-        });
-      }
-    });
-    this.actualizarPreview();
-  }
-
-  actualizarPreview() {
-    const docId = document.getElementById('sel-docente')?.value;
-    const tipoId = document.getElementById('sel-tipo')?.value;
-    const perId = document.getElementById('sel-periodo')?.value;
-    const eeId = document.getElementById('sel-ee')?.value;
-
-    const docente = this.datosMaestros.docentes.find(d => d.id == docId);
-    const periodo = this.datosMaestros.periodos.find(p => p.id == perId);
-    const ee = this.datosMaestros.ee.find(e => e.id == eeId);
-    const tipoObj = this.datosMaestros.tipos.find(t => t.id == tipoId);
-
-    const elNombre = document.getElementById('preview-nombre');
-    if(elNombre) elNombre.innerText = docente ? `${docente.nombres} ${docente.apellido_paterno}` : '[NOMBRE DEL DOCENTE]';
-
-    const elTipo = document.getElementById('preview-tipo');
-    if(elTipo) elTipo.innerText = tipoObj ? tipoObj.nombre.toUpperCase() : '[TIPO]';
-
-    // En la vista previa del PDF, mostramos EE solo si existe
-    const spanEE = document.getElementById('preview-ee');
-    if(spanEE) {
-      spanEE.style.display = ee ? 'inline' : 'none';
-      if(ee) spanEE.innerText = `en la experiencia educativa "${ee.nombre}"`;
-    }
-
-    // En la vista previa del PDF, mostramos Periodo solo si existe
-    const spanPer = document.getElementById('preview-periodo');
-    if(spanPer) {
-      spanPer.style.display = periodo ? 'inline' : 'none';
-      if(periodo) spanPer.innerText = `durante el periodo ${periodo.clave}`;
-    }
-
-    const hoy = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-    const elFecha = document.getElementById('preview-fecha');
-    if(elFecha) elFecha.innerText = hoy;
+    fillSelect(
+      "sel-ee",
+      this.datosMaestros.ee,
+      "Ninguna",
+      "id",
+      (i) => `${i.nrc || i.clave_ee} - ${i.nombre}`,
+    );
   }
 
   configurarFormulario() {
-    const form = document.getElementById('form-constancia');
-    if (!form) return;
+    // 1. Contexto -> Habilita docente
+    ["sel-tipo", "sel-programa", "sel-periodo"].forEach((id) => {
+      document
+        .getElementById(id)
+        ?.addEventListener("change", () => this.actualizarContexto());
+    });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const btn = document.getElementById('btn-generar');
-      if(!btn) return;
+    // 2. Docente -> Dispara auto-carga
+    document.getElementById("sel-docente")?.addEventListener("change", (e) => {
+      if (e.target.value) this.cargarDatosDocente(e.target.value);
+      else this.limpiarAutoCarga();
+    });
 
-      const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+    // 3. Fecha -> Actualiza preview en tiempo real
+    document
+      .getElementById("input-fecha-emision")
+      ?.addEventListener("change", (e) => {
+        this.datosAutoCargados.fecha = e.target.value
+          ? new Date(e.target.value)
+          : new Date();
+        this.actualizarPreview();
+      });
 
-      const datos = {
-        docente_id: parseInt(document.getElementById('sel-docente').value),
-        tipo_constancia_id: parseInt(document.getElementById('sel-tipo').value),
-        periodo_id: document.getElementById('sel-periodo').value ? parseInt(document.getElementById('sel-periodo').value) : null,
-        ee_id: document.getElementById('sel-ee').value ? parseInt(document.getElementById('sel-ee').value) : null,
-        programa_id: document.getElementById('sel-programa').value ? parseInt(document.getElementById('sel-programa').value) : null
+    // 4. Submit & Limpiar
+    document
+      .getElementById("form-constancia")
+      ?.addEventListener("submit", (e) => this.generarConstancia(e));
+    document
+      .getElementById("btn-limpiar")
+      ?.addEventListener("click", () => this.limpiarTodo());
+  }
+
+  actualizarContexto() {
+    this.contexto.tipo = document.getElementById("sel-tipo").value;
+    this.contexto.programa = document.getElementById("sel-programa").value;
+    this.contexto.periodo = document.getElementById("sel-periodo").value;
+
+    // Habilitar docente solo si hay periodo seleccionado
+    const selDoc = document.getElementById("sel-docente");
+    if (this.contexto.periodo) {
+      selDoc.disabled = false;
+      selDoc.options[0].textContent = "Seleccione un docente...";
+    } else {
+      selDoc.disabled = true;
+      selDoc.value = "";
+      selDoc.options[0].textContent = "Primero seleccione periodo...";
+      this.limpiarAutoCarga();
+    }
+    this.actualizarPreview();
+  }
+
+  async cargarDatosDocente(docenteId) {
+    this.contexto.docente = docenteId;
+    const tbody = document.getElementById("preview-tabla-body");
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="loading-state">Cargando datos...</td></tr>';
+
+    try {
+      // Verificación de seguridad
+      if (!window.electronAPI?.obtenerDatosDocenteContexto) {
+        throw new Error("API no disponible. Verifica preload.js y reinicia.");
+      }
+
+      const resp = await window.electronAPI.obtenerDatosDocenteContexto({
+        docente_id: parseInt(docenteId), // 🔹 Forzar número
+        periodo_id: parseInt(this.contexto.periodo), // 🔹 Forzar número
+      });
+
+      if (!resp?.success) throw new Error(resp?.error || "Sin datos");
+
+      // 🔹 MAPEO CORRECTO: Aseguramos que 'id' sea numérico
+      this.datosAutoCargados = {
+        ee: (resp.data.asignaciones || []).map((a) => ({
+          id: a.ee_id,
+          nombre: a.ee_nombre,
+          nrc: a.nrc || "N/A",
+          hsm: a.carga_horaria || 0,
+          horas: (a.carga_horaria || 0) * 16, // Cálculo simple en JS, no en SQL
+          creditos: 8, // Valor por defecto si no viene en la tabla simple
+          periodo: a.periodo_desc || "",
+          alumnos: 0,
+        })),
+        firmas: resp.data.firmas || {},
       };
 
-      // Validaciones básicas
-      if(!datos.docente_id || !datos.tipo_constancia_id) {
-        alert('⚠️ Seleccione Docente y Tipo de Constancia.');
-        btn.disabled = false; btn.innerHTML = originalText; return;
+      // Actualizar UI
+      const selEE = document.getElementById("sel-ee");
+      if (selEE && this.datosAutoCargados.ee.length > 0) {
+        selEE.value = this.datosAutoCargados.ee[0].id;
+        selEE.disabled = false;
       }
 
-      // Validaciones condicionales (Solo si el tipo lo exige)
-      const tipoObj = this.datosMaestros.tipos.find(t => t.id == datos.tipo_constancia_id);
-      if (tipoObj) {
-        if (tipoObj.requiere_ee && !datos.ee_id) {
-          alert('⚠️ Este tipo requiere seleccionar una Materia.');
-          btn.disabled = false; btn.innerHTML = originalText; return;
-        }
-        if (tipoObj.requiere_periodo && !datos.periodo_id) {
-          alert('⚠️ Este tipo requiere seleccionar un Periodo.');
-          btn.disabled = false; btn.innerHTML = originalText; return;
-        }
-      }
+      this.renderTabla();
+      this.actualizarPreview();
+      console.log(
+        "✅ Docente cargado. ee_id:",
+        this.datosAutoCargados.ee[0]?.id,
+      );
+    } catch (err) {
+      // 🔹 TOAST SEGURO: Solo 2 parámetros, mensaje claro, duración larga
+      console.error(" Error en cargarDatosDocente:", err);
+      Toast.error("Error al cargar datos del docente: " + err.message, 8000);
+      this.limpiarAutoCarga();
+    }
+  }
 
-      try {
-        const resultado = await window.electronAPI.guardarConstancia(datos);
-        if(resultado.success) {
-          alert(`✅ ${resultado.message}\nFolio: ${resultado.folio}`);
-          form.reset();
-          this.actualizarPreview();
-          this.actualizarObligatoriedad(); // Resetear labels
-        } else {
-          alert('❌ Error: ' + resultado.error);
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Error de conexión.');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-      }
+  renderTabla() {
+    const tbody = document.getElementById("preview-tabla-body");
+    tbody.innerHTML = "";
+
+    if (!this.datosAutoCargados.ee || this.datosAutoCargados.ee.length === 0) {
+      tbody.innerHTML =
+        '<tr><td colspan="7" class="empty-state">Sin asignaciones registradas para este periodo</td></tr>';
+      return;
+    }
+
+    this.datosAutoCargados.ee.forEach((row) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.nrc}</td>
+        <td>${row.nombre}</td>
+        <td>${row.hsm}</td>
+        <td>${row.horas}</td>
+        <td>${row.creditos}</td>
+        <td>${row.periodo}</td>
+        <td>${row.alumnos}</td>
+      `;
+      tbody.appendChild(tr);
     });
+  }
+
+  establecerFechaDefault() {
+    const input = document.getElementById("input-fecha-emision");
+    if (input) {
+      const hoy = new Date().toISOString().split("T")[0];
+      input.value = hoy;
+      this.datosAutoCargados.fecha = new Date();
+    }
+  }
+
+  actualizarPreview() {
+    // Fecha formal
+    const fecha = this.datosAutoCargados.fecha || new Date();
+    const opts = { day: "numeric", month: "long", year: "numeric" };
+    const partes = new Intl.DateTimeFormat("es-MX", opts).formatToParts(fecha);
+
+    document.getElementById("preview-dia").textContent = partes.find(
+      (p) => p.type === "day",
+    ).value;
+    document.getElementById("preview-mes").textContent = partes.find(
+      (p) => p.type === "month",
+    ).value;
+    document.getElementById("preview-anio").textContent = partes.find(
+      (p) => p.type === "year",
+    ).value;
+
+    // Firmas
+    if (this.datosAutoCargados.firmas.coord) {
+      document.getElementById("preview-firma1-nombre").textContent =
+        this.datosAutoCargados.firmas.coord.nombre;
+    }
+    if (this.datosAutoCargados.firmas.director) {
+      document.getElementById("preview-firma2-nombre").textContent =
+        this.datosAutoCargados.firmas.director.nombre;
+    }
+  }
+
+  limpiarAutoCarga() {
+    this.contexto.docente = null;
+    this.datosAutoCargados = {
+      ee: [],
+      fecha: this.datosAutoCargados.fecha,
+      firmas: {},
+    };
+    document.getElementById("preview-tratamiento").textContent = "El/La";
+    document.getElementById("preview-nombre-docente").textContent =
+      "[NOMBRE DEL DOCENTE]";
+    document.getElementById("preview-codigo-docente").textContent = "[CÓDIGO]";
+    document.getElementById("preview-tabla-body").innerHTML =
+      '<tr><td colspan="7" class="empty-state">Seleccione un docente para cargar asignaciones</td></tr>';
+    this.actualizarPreview();
+  }
+
+  limpiarTodo() {
+    document.getElementById("form-constancia").reset();
+    this.contexto = {
+      tipo: null,
+      programa: null,
+      periodo: null,
+      docente: null,
+    };
+    this.limpiarAutoCarga();
+    document.getElementById("sel-docente").disabled = true;
+    this.establecerFechaDefault();
+  }
+
+  async generarConstancia(e) {
+  e.preventDefault();
+  
+  // 🔹 VALIDACIÓN DIRECTA AL DOM (Evita problemas de estado asíncrono)
+  const docenteVal = document.getElementById('sel-docente')?.value;
+  if (!docenteVal) {
+    Toast.warning('Seleccione un docente para continuar.', 6000);
+    return;
+  }
+
+  const btn = document.getElementById('btn-generar');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando PDF...';
+
+  // Construcción del Payload
+  const payload = {
+    tipo_constancia_id: parseInt(this.contexto.tipo),
+    programa_id: parseInt(this.contexto.programa),
+    docente_id: parseInt(docenteVal),
+    periodo_id: this.contexto.periodo ? parseInt(this.contexto.periodo) : null,
+    
+    //  PRIORIDAD: ID auto-cargado (garantiza que viene de la BD)
+    ee_id: this.datosAutoCargados.ee?.[0]?.id || null,
+    
+    fecha_emision: document.getElementById('input-fecha-emision')?.value || new Date().toISOString().split('T')[0],
+    cuerpoHtml: this.generarHtmlCuerpo(),
+    cierreHtml: this.generarHtmlCierre(),
+    eeList: this.datosAutoCargados.ee || [],
+    firmaCoord: this.datosAutoCargados.firmas?.coord?.nombre || '',
+    firmaDirector: this.datosAutoCargados.firmas?.director?.nombre || ''
+  };
+
+  console.log(' Payload final -> EE_ID:', payload.ee_id);
+
+  // Validación lógica antes de enviar
+  if (this.tipoSeleccionado?.requiere_ee && !payload.ee_id) {
+    Toast.error('Este tipo requiere una Experiencia Educativa. Verifique que el docente tenga asignaciones.', 8000);
+    btn.disabled = false; btn.innerHTML = originalText; return;
+  }
+
+  try {
+    const resp = await window.electronAPI.generarConstanciaPDF(payload);
+
+    if (resp.success) {
+      document.getElementById('preview-folio').textContent = resp.folio;
+      Toast.success(`Constancia emitida. Folio: ${resp.folio}`, 8000);
+      setTimeout(() => this.limpiarTodo(), 3000);
+    } else {
+      Toast.error(`Error del servidor: ${resp.error}`, 10000);
+    }
+  } catch (err) {
+    console.error('❌ Error crítico:', err);
+    Toast.error(`Error de conexión: ${err.message}`, 10000);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+}
+
+  // Helpers para construir HTML seguro (inyección controlada)
+  generarHtmlCuerpo() {
+    const doc = this.datosMaestros.docentes.find(
+      (d) => d.id == this.contexto.docente,
+    );
+    if (!doc) return "";
+    return `Que <strong>${doc.tratamiento || "El/La"} ${doc.nombres} ${doc.apellido_paterno} ${doc.apellido_materno || ""}</strong>, con número de personal <strong>${doc.codigo}</strong>, pertenece al cuerpo docente del Programa Educativo de Posgrado Maestría en Sistemas Interactivos Centrados en el Usuario (16156), programa adscrito a la Facultad de Estadística e Informática (11304) y ha impartido las siguientes experiencias educativas:`;
+  }
+
+  generarHtmlCierre() {
+    const fecha = new Date(
+      document.getElementById("input-fecha-emision").value || Date.now(),
+    );
+    const opts = { day: "numeric", month: "long", year: "numeric" };
+    const partes = new Intl.DateTimeFormat("es-MX", opts).formatToParts(fecha);
+    const dia = partes.find((p) => p.type === "day")?.value || "__";
+    const mes = partes.find((p) => p.type === "month")?.value || "________";
+    const anio = partes.find((p) => p.type === "year")?.value || "____";
+    return `Para los fines que al interesado convenga se extiende la presente en la ciudad de Xalapa, Enríquez, Veracruz a los <strong>${dia}</strong> días del mes de <strong>${mes}</strong> del año <strong>${anio}</strong>.`;
   }
 }

@@ -1,0 +1,104 @@
+<!-- src/main/templates/constancia-ee.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { size: A4; margin: 0; }
+    body {
+      margin: 0; padding: 2.5cm 2cm;
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 11pt; color: #000; line-height: 1.5;
+    }
+    .cert-folio { text-align: left; font-size: 10pt; font-weight: bold; margin-bottom: 2rem; line-height: 1.3; }
+    .cert-folio span { display: block; font-family: 'Courier New', monospace; font-size: 11pt; margin-top: 2px; }
+    .sheet-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    .sheet-header h3 { margin: 0; font-size: 12pt; text-transform: uppercase; font-weight: bold; }
+    .sheet-header h4 { margin: 0; font-size: 11pt; font-weight: normal; }
+    .cert-greeting { margin-bottom: 1rem; font-weight: bold; }
+    .cert-title { text-align: center; text-transform: uppercase; margin: 1.5rem 0; font-size: 14pt; font-weight: bold; text-decoration: underline; letter-spacing: 1px; }
+    .cert-text { text-align: justify; text-indent: 2.5cm; margin: 1rem 0; }
+    .cert-text strong { font-weight: bold; }
+    .cert-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 9pt; }
+    .cert-table th, .cert-table td { border: 1px solid #000; padding: 6px 8px; text-align: center; vertical-align: middle; }
+    .cert-table th { background-color: #f0f0f0; font-weight: bold; text-transform: uppercase; }
+    .cert-footer { text-align: justify; text-indent: 2.5cm; margin-top: 2rem; margin-bottom: 2.5rem; }
+    .cert-closing { text-align: center; margin-bottom: 1.5rem; }
+    .cert-closing p:first-child { font-weight: bold; margin-bottom: 0.25rem; }
+    .cert-motto { font-style: italic; font-size: 10pt; margin-bottom: 3rem; }
+    .cert-signatures { display: flex; justify-content: space-between; margin-top: 3rem; gap: 2rem; }
+    .signature-block { text-align: center; flex: 1; }
+    .signature-line { border-top: 1px solid #000; width: 85%; margin: 0 auto 0.5rem auto; }
+    .signature-block p { margin: 0; font-size: 9pt; line-height: 1.3; }
+    .signature-block p:first-child { font-weight: bold; margin-bottom: 0.3rem; min-height: 1.2em; }
+    .signature-title { font-size: 8pt; color: #333; }
+  </style>
+</head>
+<body>
+  <div class="cert-folio">No. Constancia<br><span id="pdf-folio">PENDIENTE</span></div>
+  <div class="sheet-header">
+    <h3>UNIVERSIDAD VERACRUZANA</h3>
+    <h4>Facultad de Estadística e Informática</h4>
+  </div>
+  <p class="cert-greeting">A quien corresponda,</p>
+  <p class="cert-text">Por medio de la presente se</p>
+  <h2 class="cert-title">HACE CONSTAR</h2>
+  <p class="cert-text" id="pdf-cuerpo">[CUERPO DEL TEXTO]</p>
+  <table class="cert-table" id="pdf-tabla">
+    <thead>
+      <tr><th>NRC</th><th>Experiencia Educativa</th><th>H/S/M</th><th>No. Horas</th><th>No. Créditos</th><th>Periodo</th><th>No. Alumnos</th></tr>
+    </thead>
+    <tbody id="pdf-tabla-body"></tbody>
+  </table>
+  <p class="cert-footer" id="pdf-cierre">[TEXTO DE CIERRE]</p>
+  <div class="cert-closing">
+    <p>ATENTAMENTE</p>
+    <p class="cert-motto">"Lis de Veracruz, Arte, Ciencia y Luz"</p>
+  </div>
+  <div class="cert-signatures">
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <p id="pdf-firma1">[Nombre Coordinador]</p>
+      <p class="signature-title">Coordinador Maestría en Sistemas Interactivos Centrados en el Usuario</p>
+    </div>
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <p id="pdf-firma2">[Nombre Director]</p>
+      <p class="signature-title">Director de la Facultad de Estadística e Informática</p>
+    </div>
+  </div>
+
+  <script>
+    // Script de inyección segura: espera a que el main process asigne las variables
+    (function() {
+      const poll = setInterval(() => {
+        if (window.__PDF_DATA && window.__PDF_FOLIO) {
+          clearInterval(poll);
+          const d = window.__PDF_DATA;
+          document.getElementById('pdf-folio').textContent = window.__PDF_FOLIO;
+          document.getElementById('pdf-cuerpo').innerHTML = d.cuerpoHtml || '';
+          document.getElementById('pdf-cierre').innerHTML = d.cierreHtml || '';
+          document.getElementById('pdf-firma1').textContent = d.firmaCoord || '[Nombre Coordinador]';
+          document.getElementById('pdf-firma2').textContent = d.firmaDirector || '[Nombre Director]';
+
+          const tbody = document.getElementById('pdf-tabla-body');
+          if (d.eeList && d.eeList.length > 0) {
+            tbody.innerHTML = d.eeList.map(row => `
+              <tr>
+                <td>${row.nrc || ''}</td>
+                <td>${row.nombre || ''}</td>
+                <td>${row.hsm || ''}</td>
+                <td>${row.horas || ''}</td>
+                <td>${row.creditos || ''}</td>
+                <td>${row.periodo || ''}</td>
+                <td>${row.alumnos || ''}</td>
+              </tr>`).join('');
+          } else {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#666;">Sin asignaciones registradas</td></tr>';
+          }
+        }
+      }, 50);
+    })();
+  </script>
+</body>
+</html>

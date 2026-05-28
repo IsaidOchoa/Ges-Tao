@@ -1,10 +1,22 @@
 /* =======================================================
    LAYOUT PRINCIPAL DE EMISIÓN
    ======================================================= */
+.emission-container {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 20px;
+  height: calc(100vh - 160px);
+}
+
+.emission-form, 
+.emission-preview {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
 
 /* =======================================================
-   ENCABEZADO DE SECCIÓN (Reutilizable)
-   Para evitar títulos huérfanos y redundantes
+   ENCABEZADO DE SECCIÓN
    ======================================================= */
 .section-header {
   margin-bottom: 20px;
@@ -17,43 +29,31 @@
   align-items: center;
   gap: 10px;
   font-weight: 700;
-  color: var(--text-dark); /* Usa la variable dinámica */
+  color: var(--text-dark);
 }
 
 .section-desc {
-  color: var(--text-muted); /* Usa la variable dinámica */
+  color: var(--text-muted);
   font-size: 0.9rem;
-  margin: 0; /* Sin margen superior para pegarlo al título */
+  margin: 0;
 }
 
-/* Ajuste específico para modo oscuro si fuera necesario */
 body[data-theme="dark"] .section-title {
-  color: var(--text-dark); 
-}
-.emission-container {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr; /* Formulario más estrecho, preview más ancho */
-  gap: 20px;
-  height: calc(100vh - 160px); /* Ajustado según tu header */
+  color: var(--text-light, #eef2f5); 
 }
 
-.emission-form, 
-.emission-preview {
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-/* Inputs del formulario */
+/* =======================================================
+   CONTROLES DEL FORMULARIO
+   ======================================================= */
 .form-control {
   width: 100%;
   padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  background-color: var(--bg-white);
-  color: var(--text-dark);
+  background-color: var(--bg-white, #ffffff);
+  color: var(--text-dark, #2c3e50);
   font-size: 0.95rem;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-control:focus {
@@ -62,10 +62,15 @@ body[data-theme="dark"] .section-title {
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
-/* =======================================================
-   LA HOJA DE VISTA PREVIA (SOLUCIÓN MODO OSCURO)
-   ======================================================= */
+/* Input fecha específico */
+input[type="date"].form-control {
+  font-family: inherit;
+  cursor: pointer;
+}
 
+/* =======================================================
+   HOJA DE VISTA PREVIA (BASE)
+   ======================================================= */
 .preview-sheet {
   flex: 1;
   padding: 40px;
@@ -74,121 +79,243 @@ body[data-theme="dark"] .section-title {
   min-height: 400px;
   position: relative;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
   overflow-y: auto;
   
-  /* COLOR BASE CLARO: Gris azulado muy pálido (mejor que blanco puro) */
+  /* Papel claro */
   background-color: #f4f6f8; 
   color: #2c3e50;
 }
 
-/* Estilos internos de la hoja (Tipografía Times New Roman) */
 .sheet-content {
-  font-family: 'Times New Roman', serif;
-  line-height: 1.6;
-  text-align: center;
-  max-width: 800px;
+  font-family: 'Times New Roman', Times, serif;
+  line-height: 1.5;
+  text-align: left; /* Base izquierda para permitir folio y justificados */
+  max-width: 850px;
   margin: 0 auto;
+  position: relative;
 }
 
+/* =======================================================
+   PLANTILLA OFICIAL: CONSTANCIA DE EE
+   ======================================================= */
+
+/* 1. Folio (Izquierda superior) */
+.cert-folio {
+  text-align: left;
+  font-size: 10pt;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
+}
+.cert-folio span {
+  display: block;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11pt;
+  margin-top: 2px;
+}
+
+/* 2. Membrete */
+.sheet-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid currentColor;
+}
 .sheet-header h3 { 
-  font-size: 1.2rem; 
-  margin: 10px 0 5px 0; 
+  font-size: 12pt; 
+  margin: 0 0 4px 0; 
   text-transform: uppercase; 
-  color: inherit; /* Hereda el color del tema */
+  font-weight: bold;
 }
-
 .sheet-header h4 { 
-  font-size: 1rem; 
-  margin: 0 0 30px 0; 
+  font-size: 11pt; 
+  margin: 0; 
   font-weight: normal; 
-  color: inherit;
 }
 
-.sheet-title { 
-  font-size: 1.4rem; 
+/* 3. Saludo y Título */
+.cert-greeting {
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+.cert-title { 
+  text-align: center;
+  font-size: 14pt; 
   text-transform: uppercase; 
-  margin: 30px 0; 
+  margin: 1.5rem 0; 
   font-weight: bold;
-  color: inherit;
+  letter-spacing: 1px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
-.sheet-text { 
+/* 4. Texto Justificado */
+.cert-text-justified { 
   text-align: justify; 
-  margin: 20px 0; 
-  font-size: 1rem;
-  color: inherit;
+  text-indent: 2.5cm;
+  margin: 1rem 0; 
+  font-size: 11pt;
 }
-
-.sheet-name { 
-  font-size: 1.3rem; 
-  margin: 20px 0; 
-  text-decoration: underline; 
+.cert-text-justified strong { 
   font-weight: bold;
-  color: inherit;
 }
 
-.sheet-footer { 
-  margin-top: 60px; 
-  text-align: center; 
-  color: inherit;
+/* 5. Tabla Dinámica de Experiencias */
+.cert-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 9pt;
+}
+.cert-table th,
+.cert-table td {
+  border: 1px solid #333;
+  padding: 6px 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+.cert-table th {
+  background-color: rgba(0,0,0,0.05);
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.cert-table td:first-child {
+  font-family: 'Courier New', Courier, monospace;
+}
+.cert-table .empty-state, 
+.cert-table .loading-state {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 1rem;
+  background: rgba(0,0,0,0.02);
 }
 
-.signature-line { 
-  margin-top: 40px; 
-  color: inherit;
+/* 6. Cierre y Pie */
+.cert-footer-text {
+  text-align: justify;
+  margin-top: 2rem;
+  margin-bottom: 2.5rem;
+  text-indent: 2.5cm;
 }
 
-/* Marca de agua */
+.cert-closing {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.cert-closing p:first-child {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+.cert-motto {
+  font-style: italic;
+  font-size: 10pt;
+  margin-bottom: 3rem;
+}
+
+/* 7. Firmas (Dos columnas) */
+.cert-signatures {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3rem;
+  gap: 2rem;
+}
+.signature-block {
+  text-align: center;
+  flex: 1;
+}
+.signature-line {
+  border-top: 1px solid #000;
+  width: 85%;
+  margin: 0 auto 0.5rem auto;
+}
+.signature-block p {
+  margin: 0;
+  font-size: 9pt;
+  line-height: 1.3;
+}
+.signature-block p:first-child {
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+  min-height: 1.2em;
+}
+.signature-title {
+  font-size: 8pt;
+  opacity: 0.85;
+}
+
+/* Marca de agua y nota */
 .watermark {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%) rotate(-45deg);
   font-size: 4rem;
   font-weight: bold;
   pointer-events: none;
   white-space: nowrap;
   opacity: 0.08;
-  color: #000000; /* Por defecto negro en modo claro */
-  transition: color 0.3s, opacity 0.3s;
+  color: #000;
+  transition: opacity 0.3s, color 0.3s;
 }
-
 .preview-note {
   text-align: center;
   color: var(--text-muted);
   font-size: 0.8rem;
-  margin-top: 10px;
+  margin-top: 15px;
+  font-family: sans-serif; /* Nota fuera del papel formal */
 }
 
 /* =======================================================
-   MODO OSCURO: PAPEL GRIS
+   MODO OSCURO: PAPEL GRIS + AJUSTES DE CONTRASTE
    ======================================================= */
-
 body[data-theme="dark"] .preview-sheet {
-  /* Fondo gris medio (ni negro ni blanco) para simular papel en noche */
   background-color: #525659 !important; 
-  color: #eef2f5 !important; /* Texto claro */
+  color: #eef2f5 !important; 
   border-color: #666;
 }
 
+body[data-theme="dark"] .sheet-header {
+  border-bottom-color: #aaa;
+}
+
+body[data-theme="dark"] .cert-table th,
+body[data-theme="dark"] .cert-table td {
+  border-color: #aaa;
+}
+body[data-theme="dark"] .cert-table th {
+  background-color: rgba(255,255,255,0.05);
+}
+body[data-theme="dark"] .cert-table .empty-state,
+body[data-theme="dark"] .cert-table .loading-state {
+  color: #bbb;
+  background: rgba(255,255,255,0.03);
+}
+
+body[data-theme="dark"] .signature-line {
+  border-top-color: #ddd;
+}
+
 body[data-theme="dark"] .watermark {
-  color: #ffffff; /* Marca de agua blanca en modo oscuro */
-  opacity: 0.15;
-}
-
-body[data-theme="dark"] .sheet-content strong {
   color: #ffffff;
+  opacity: 0.12;
 }
 
-/* Responsive */
+
+/* =======================================================
+   RESPONSIVE
+   ======================================================= */
 @media (max-width: 900px) {
   .emission-container { 
     grid-template-columns: 1fr; 
     height: auto; 
   }
-  
   .preview-sheet {
     min-height: 300px;
+    padding: 20px;
+  }
+  .cert-signatures {
+    flex-direction: column;
+    gap: 3rem;
   }
 }

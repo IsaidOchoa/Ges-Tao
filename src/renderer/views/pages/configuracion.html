@@ -10,22 +10,28 @@
       </p>
 
       <!-- Fila 1: Tema Visual (Botones) -->
-      <div class="form-group" style="margin-bottom: 25px;">
-        <label class="toggle-label" style="font-size: 1rem; font-weight: 600;">
+      <div class="form-group" style="margin-bottom: 25px">
+        <label class="toggle-label" style="font-size: 1rem; font-weight: 600">
           <span>Modo Oscuro</span>
           <label class="toggle-switch">
             <!-- El ID es importante para luego guardar la preferencia -->
-            <input type="checkbox" id="toggle-dark-mode">
+            <input type="checkbox" id="toggle-dark-mode" />
             <span class="slider"></span>
           </label>
         </label>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; margin-left: 60px;">
+        <p
+          style="
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            margin-left: 60px;
+          "
+        >
           Cambia la interfaz a un tema oscuro para reducir la fatiga visual.
         </p>
       </div>
 
-      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0" />
 
       <!-- Fila 2: Interruptores (Toggles) -->
       <div class="form-group">
@@ -59,18 +65,42 @@
 
       <!-- Ruta de Guardado -->
       <div class="form-group" style="margin-top: 20px">
-        <label style="font-weight: 600; margin-bottom: 8px; display: block"
-          >Ruta de Guardado de PDFs</label
-        >
-        <div style="display: flex; gap: 5px">
+        <label style="font-weight: 600; margin-bottom: 8px; display: block">
+          <i class="fa-solid fa-folder-tree"></i> Ruta de Guardado de
+          Constancias (PDF)
+        </label>
+        <div style="display: flex; gap: 10px; align-items: center">
           <input
             type="text"
-            value="%USERPROFILE%/Documents/Ges-TAO"
+            id="input-ruta-pdf"
+            value="Cargando configuración..."
             readonly
-            style="background: #f1f5f9; flex-grow: 1"
+            style="
+              background: var(--bg-secondary, #f1f5f9);
+              flex-grow: 1;
+              padding: 10px;
+              border: 1px solid var(--border-color);
+              border-radius: var(--radius-sm);
+              color: var(--text-dark);
+            "
           />
-          <button class="btn btn-outline">Examinar</button>
+          <button
+            id="btn-seleccionar-ruta"
+            class="btn btn-outline"
+            style="white-space: nowrap"
+          >
+            <i class="fa-solid fa-folder-open"></i> Examinar
+          </button>
         </div>
+        <p
+          id="msg-estado-ruta"
+          style="
+            font-size: 0.8rem;
+            margin-top: 6px;
+            color: var(--text-muted);
+            min-height: 1.2em;
+          "
+        ></p>
       </div>
     </div>
 

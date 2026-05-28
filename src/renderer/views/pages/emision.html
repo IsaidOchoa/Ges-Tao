@@ -1,241 +1,133 @@
-// src/renderer/views/pages/emision.html
 <div class="fade-in">
-  <!-- NOTA: El título principal "Emisión de Constancias" ya está en la Top Bar (pageTitle). 
-       No lo repetimos aquí para evitar redundancia visual. -->
-
   <div class="emission-container">
     
-    <!-- COLUMNA IZQUIERDA: FORMULARIO -->
+    <!-- 🟢 FORMULARIO (Izquierda) -->
     <div class="card emission-form">
-      
-      <!-- NUEVO ENCABEZADO DE SECCIÓN (Estilo Configuración) -->
       <div class="section-header">
-        <h3 class="section-title">
-          <i class="fa-solid fa-pen-to-square"></i> Datos de la Constancia
-        </h3>
-        <p class="section-desc">
-          Seleccione la información para generar el documento oficial.
-        </p>
+        <h3 class="section-title"><i class="fa-solid fa-sliders"></i> Configuración de Emisión</h3>
+        <p class="section-desc">Defina el contexto. Los datos del docente se cargarán automáticamente.</p>
       </div>
-      <!-- FIN ENCABEZADO -->
 
       <form id="form-constancia">
-        <!-- 1. Docente -->
-        <div class="form-group">
-          <label>Docente *</label>
-          <select id="sel-docente" class="form-control" required>
-            <option value="">Cargando docentes...</option>
-          </select>
-        </div>
-
-        <!-- 2. Tipo de Constancia -->
+        <!-- 1. Tipo -->
         <div class="form-group">
           <label>Tipo de Constancia *</label>
-          <!-- Agrega 'required' y asegúrate que el ID sea correcto -->
           <select id="sel-tipo" class="form-control" required>
             <option value="">Seleccione un tipo...</option>
-            <!-- Las opciones se llenan dinámicamente con JS -->
           </select>
         </div>
 
-        <!-- 3. Periodo -->
+        <!-- 2. Programa (Metadato) -->
         <div class="form-group">
-          <label>Periodo Escolar</label>
-          <select id="sel-periodo" class="form-control">
-            <option value="">Sin periodo específico</option>
+          <label>Programa Institucional *</label>
+          <select id="sel-programa" class="form-control" required>
+            <option value="">Seleccione un programa...</option>
           </select>
         </div>
 
-        <!-- 4. Experiencia Educativa -->
+        <!-- 3. Periodo (Contenedor) -->
         <div class="form-group">
-          <label>Experiencia Educativa (Materia)</label>
-          <select id="sel-ee" class="form-control">
-            <option value="">Ninguna / General</option>
+          <label>Periodo Escolar *</label>
+          <select id="sel-periodo" class="form-control" required>
+            <option value="">Seleccione un periodo...</option>
           </select>
         </div>
 
-        <!-- 5. Programa Institucional -->
+        <!-- 4. Docente (Disparador de auto-carga) -->
         <div class="form-group">
-          <label>Programa Institucional</label>
-          <select id="sel-programa" class="form-control">
-            <option value="">Ninguno</option>
+          <label>Docente *</label>
+          <select id="sel-docente" class="form-control" required disabled>
+            <option value="">Primero seleccione periodo...</option>
           </select>
+        </div>
+
+        <!-- 5. Fecha de Emisión (Editable) -->
+        <div class="form-group">
+          <label>Fecha de Emisión</label>
+          <input type="date" id="input-fecha-emision" class="form-control">
+          <small class="form-help">Por defecto: hoy. Editable para constancias históricas.</small>
         </div>
 
         <hr>
-
         <div class="form-actions">
-          <button type="button" class="btn btn-secondary" onclick="limpiarFormulario()">Limpiar</button>
-          <button type="submit" class="btn btn-primary" id="btn-generar">
-            <i class="fa-solid fa-file-pdf"></i> Generar Constancia
-          </button>
+          <button type="button" class="btn btn-secondary" id="btn-limpiar">Limpiar</button>
+          <button type="submit" class="btn btn-primary" id="btn-generar">Emitir Constancia</button>
         </div>
       </form>
     </div>
 
-    <!-- COLUMNA DERECHA: VISTA PREVIA -->
+    <!-- 📄 VISTA PREVIA (Derecha) -->
     <div class="card emission-preview">
-      
-      <!-- Encabezado similar para la vista previa -->
       <div class="section-header">
-        <h3 class="section-title">
-          <i class="fa-regular fa-eye"></i> Vista Previa
-        </h3>
-        <p class="section-desc">
-          Visualización en tiempo real del documento generado.
-        </p>
+        <h3 class="section-title"><i class="fa-regular fa-eye"></i> Vista Previa Oficial</h3>
       </div>
 
-      <!-- Área de la hoja -->
-      <div id="preview-area" class="preview-sheet">
-        <div class="sheet-content">
-          <div class="sheet-header">
-            <h3>UNIVERSIDAD VERACRUZANA</h3>
-            <h4>Facultad de Estadística e Informática</h4>
+      <div id="preview-area" class="preview-sheet cert-template-ee">
+        <!-- Folio Superior Izquierda -->
+        <div class="cert-folio">
+          No. Constancia<br>
+          <span id="preview-folio">CO/MSICU/POR GENERAR</span>
+        </div>
+
+        <div class="cert-content">
+          <p class="cert-greeting">A quien corresponda,</p>
+          <p class="cert-intro">Por medio de la presente se</p>
+          
+          <h2 class="cert-title">HACE CONSTAR</h2>
+          
+          <p class="cert-text-justified">
+            Que <span id="preview-tratamiento">El/La</span> 
+            <strong id="preview-nombre-docente">[NOMBRE DEL DOCENTE]</strong>, 
+            con número de personal <span id="preview-codigo-docente">[CÓDIGO]</span>, 
+            pertenece al cuerpo docente del Programa Educativo de Posgrado Maestría en Sistemas Interactivos Centrados en el Usuario (16156), 
+            programa adscrito a la Facultad de Estadística e Informática (11304) 
+            y ha impartido las siguientes experiencias educativas:
+          </p>
+
+          <!-- Tabla Dinámica -->
+          <table class="cert-table" id="preview-tabla-ee">
+            <thead>
+              <tr>
+                <th>NRC</th>
+                <th>Experiencia Educativa</th>
+                <th>H/S/M</th>
+                <th>No. Horas</th>
+                <th>No. Créditos</th>
+                <th>Periodo</th>
+                <th>No. Alumnos</th>
+              </tr>
+            </thead>
+            <tbody id="preview-tabla-body">
+              <tr><td colspan="7" class="empty-state">Seleccione un docente para cargar asignaciones</td></tr>
+            </tbody>
+          </table>
+
+          <p class="cert-text-justified cert-footer-text">
+            Para los fines que al interesado convenga se extiende la presente en la ciudad de Xalapa, Enríquez, Veracruz a los 
+            <span id="preview-dia">__</span> días del mes de <span id="preview-mes">________</span> del año <span id="preview-anio">____</span>.
+          </p>
+
+          <div class="cert-closing">
+            <p>ATENTAMENTE</p>
+            <p class="cert-motto">"Lis de Veracruz, Arte, Ciencia y Luz"</p>
           </div>
-          
-          <h2 class="sheet-title">CONSTANCIA</h2>
-          
-          <p class="sheet-text">
-            La Dirección de la Facultad de Estadística e Informática hace constar que:
-          </p>
-          
-          <h3 id="preview-nombre" class="sheet-name">[NOMBRE DEL DOCENTE]</h3>
-          
-          <p class="sheet-text">
-            Ha participado exitosamente como <strong id="preview-tipo">[TIPO]</strong> 
-            <span id="preview-ee">en la experiencia educativa [EE]</span>
-            <span id="preview-periodo">durante el periodo [PERIODO]</span>.
-          </p>
-          
-          <p class="sheet-text">
-            Se expide la presente a petición del interesado para los fines legales que convengan.
-          </p>
-          
-          <div class="sheet-footer">
-            <p>Xalapa, Ver. a <span id="preview-fecha"></span></p>
-            <br>
-            <div class="signature-line">
-              <p>__________________________</p>
-              <p><strong>Directora MSICU</strong></p>
+
+          <!-- Firmas -->
+          <div class="cert-signatures">
+            <div class="signature-block">
+              <div class="signature-line"></div>
+              <p id="preview-firma1-nombre">[Nombre Coordinador]</p>
+              <p class="signature-title">Coordinador Maestría en Sistemas Interactivos Centrados en el Usuario</p>
+            </div>
+            <div class="signature-block">
+              <div class="signature-line"></div>
+              <p id="preview-firma2-nombre">[Nombre Director]</p>
+              <p class="signature-title">Director de la Facultad de Estadística e Informática</p>
             </div>
           </div>
-          
-          <div class="watermark">BORRADOR</div>
         </div>
       </div>
-      <p class="preview-note">
-        * Esta es una vista previa preliminar. El PDF final NO incluirá firmas digitales ni códigos QR.
-      </p>
     </div>
 
   </div>
 </div>
-
-<!-- Script (Sin cambios) -->
-<script>
-  let datosMaestros = { docentes: [], periodos: [], ee: [], programas: [] };
-
-  async function cargarDatosIniciales() {
-    try {
-      const respuesta = await window.electronAPI.obtenerDatosConstancia();
-      if (respuesta.success) {
-        datosMaestros = respuesta.data;
-        llenarSelectores();
-      } else {
-        alert('Error al cargar datos: ' + respuesta.error);
-      }
-    } catch (e) { console.error(e); }
-  }
-
-  function llenarSelectores() {
-    const fill = (id, items, defaultText, textFn) => {
-      const sel = document.getElementById(id);
-      sel.innerHTML = `<option value="">${defaultText}</option>`;
-      items.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.id;
-        opt.textContent = textFn(item);
-        sel.appendChild(opt);
-      });
-    };
-    fill('sel-docente', datosMaestros.docentes, 'Seleccione un docente...', d => `${d.codigo} - ${d.apellido_paterno}, ${d.nombres}`);
-    fill('sel-periodo', datosMaestros.periodos, 'Sin periodo específico', p => `${p.clave} (${p.descripcion})`);
-    fill('sel-ee', datosMaestros.ee, 'Ninguna / General', e => `${e.clave_ee} - ${e.nombre}`);
-    fill('sel-programa', datosMaestros.programas, 'Ninguno', p => p.nombre);
-  }
-
-  function actualizarPreview() {
-    const docId = document.getElementById('sel-docente').value;
-    const tipo = document.getElementById('sel-tipo').value;
-    const perId = document.getElementById('sel-periodo').value;
-    const eeId = document.getElementById('sel-ee').value;
-
-    const docente = datosMaestros.docentes.find(d => d.id == docId);
-    const periodo = datosMaestros.periodos.find(p => p.id == perId);
-    const ee = datosMaestros.ee.find(e => e.id == eeId);
-
-    document.getElementById('preview-nombre').innerText = docente ? `${docente.nombres} ${docente.apellido_paterno}` : '[NOMBRE DEL DOCENTE]';
-    document.getElementById('preview-tipo').innerText = tipo ? tipo.replace('_', ' ').toUpperCase() : '[TIPO]';
-    
-    const spanEE = document.getElementById('preview-ee');
-    spanEE.style.display = ee ? 'inline' : 'none';
-    if(ee) spanEE.innerText = `en la experiencia educativa "${ee.nombre}"`;
-
-    const spanPer = document.getElementById('preview-periodo');
-    spanPer.style.display = periodo ? 'inline' : 'none';
-    if(periodo) spanPer.innerText = `durante el periodo ${periodo.clave}`;
-
-    const hoy = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-    document.getElementById('preview-fecha').innerText = hoy;
-  }
-
-  ['sel-docente', 'sel-tipo', 'sel-periodo', 'sel-ee', 'sel-programa'].forEach(id => {
-    document.getElementById(id).addEventListener('change', actualizarPreview);
-  });
-
-  document.getElementById('form-constancia').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('btn-generar');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
-
-    const datos = {
-      docente_id: document.getElementById('sel-docente').value,
-      tipo_constancia: document.getElementById('sel-tipo').value,
-      periodo_id: document.getElementById('sel-periodo').value || null,
-      ee_id: document.getElementById('sel-ee').value || null,
-      programa_id: document.getElementById('sel-programa').value || null
-    };
-
-    if(!datos.docente_id || !datos.tipo_constancia) {
-      alert('Por favor seleccione al menos el Docente y el Tipo de Constancia.');
-      btn.disabled = false;
-      btn.innerHTML = originalText;
-      return;
-    }
-
-    try {
-      const resultado = await window.electronAPI.guardarConstancia(datos);
-      if(resultado.success) {
-        alert(`✅ ${resultado.message}\nFolio generado: ${resultado.folio}`);
-        limpiarFormulario();
-      } else {
-        alert('❌ Error: ' + resultado.error);
-      }
-    } catch (err) {
-      alert('Error de conexión al generar.');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = originalText;
-    }
-  });
-
-  function limpiarFormulario() {
-    document.getElementById('form-constancia').reset();
-    actualizarPreview();
-  }
-
-  cargarDatosIniciales();
-</script>

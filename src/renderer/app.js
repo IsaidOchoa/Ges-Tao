@@ -7,7 +7,6 @@ import catalogosHtml from './views/pages/catalogos.html';
 import emisionHtml from './views/pages/emision.html';
 import historialHtml from './views/pages/historial.html';
 import configuracionHtml from './views/pages/configuracion.html';
-import reportesHtml from './views/pages/reportes.html';
 import perfilHtml from './views/pages/perfil.html';
 import bibliotecaHtml from './views/pages/biblioteca.html';
 
@@ -17,6 +16,7 @@ import { CatalogoModule } from './modules/CatalogoModule.js';
 import { EmisionModule } from './modules/EmisionModule.js';
 import { HistorialModule } from './modules/HistorialModule.js';
 import { BibliotecaModule } from './modules/BibliotecaModule.js';
+import { ConfiguracionModule } from './modules/ConfiguracionModule.js';
 
 // Utilidades
 import { globalConfirm } from './utils/confirmationModal.js';
@@ -28,7 +28,7 @@ import { Toast } from './components/common/Toast.js';
 if (process.env.NODE_ENV === 'development') { console.log('🔍 [app.js] allRelationships:', allRelationships?.length, 'relaciones'); }
 
 // Mapa de vistas
-const views = { 'home': homeHtml, 'catalogos': catalogosHtml, 'configuracion': configuracionHtml, 'perfil': perfilHtml, 'reportes': reportesHtml || '<div class="card"><h3>Reportes</h3><p>En construcción...</p></div>', 'emision': emisionHtml, 'historial': historialHtml, 'biblioteca': bibliotecaHtml };
+const views = { 'home': homeHtml, 'catalogos': catalogosHtml, 'configuracion': configuracionHtml, 'perfil': perfilHtml, 'emision': emisionHtml, 'historial': historialHtml, 'biblioteca': bibliotecaHtml };
 
 // Instancias globales
 const auth = new AuthModule(), catalogos = new CatalogoModule(), emision = new EmisionModule(), historial = new HistorialModule(), biblioteca = new BibliotecaModule(), assignmentModal = new AssignmentModal();
@@ -40,6 +40,14 @@ function applyDarkMode(isDark) { document.body.setAttribute('data-theme', isDark
 
 // Inicialización DOM
 document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof Toast !== 'undefined' && typeof Toast._init === 'function') {
+    try {
+      Toast._init();
+      console.log('✅ Toast container inicializado en DOMContentLoaded');
+    } catch (e) {
+      console.warn('⚠️ No se pudo inicializar Toast temprano:', e);
+    }
+  }
   globalConfirm.init(); // Inicializar confirmaciones globales
   
   // Registrar pestañas modulares del mega modal (única fuente de verdad)
@@ -83,11 +91,15 @@ async function navigate(viewName, targetTab = null) {
   try {
     const htmlContent = views[viewName]; if (!htmlContent) throw new Error(`Vista '${viewName}' no encontrada`);
     contentDiv.innerHTML = htmlContent;
-    const titles = { 'home': 'Panel Principal', 'catalogos': 'Gestión de Datos', 'configuracion': 'Configuración del Sistema', 'perfil': 'Mi Perfil', 'reportes': 'Reportes Estadísticos', 'emision': 'Emisión de Constancias', 'historial': 'Historial y Búsqueda', 'biblioteca': 'Biblioteca de Constancias' };
+    const titles = { 'home': 'Panel Principal', 'catalogos': 'Gestión de Datos', 'configuracion': 'Configuración del Sistema', 'perfil': 'Mi Perfil', 'emision': 'Emisión de Constancias', 'historial': 'Historial y Búsqueda', 'biblioteca': 'Biblioteca de Constancias' };
     if (viewName === 'home') { setTimeout(() => cargarPeriodoActual(), 100); }
     pageTitle.innerText = titles[viewName] || 'Ges-TAO';
     // Orquestación de módulos por vista
-    switch (viewName) { case 'catalogos': await catalogos.init(targetTab); break; case 'emision': await emision.init(); break; case 'historial': await historial.init(); break; case 'biblioteca': await biblioteca.init(); break; case 'configuracion': setTimeout(() => { const toggle = document.getElementById('toggle-dark-mode'); if (toggle) { toggle.checked = localStorage.getItem('gesTao_darkMode') === 'true'; toggle.onchange = (e) => applyDarkMode(e.target.checked); } }, 10); break; }
+    switch (viewName) { case 'catalogos': await catalogos.init(targetTab); break; case 'emision': await emision.init(); break; case 'historial': await historial.init(); break; case 'biblioteca': await biblioteca.init(); break;
+       case 'configuracion': const configInstance = new ConfiguracionModule();
+  configInstance.init();
+  break;
+       }
   } catch (error) { console.error(`[navigate] Error cargando vista '${viewName}':`, error); contentDiv.innerHTML = `<div class="card error"><h4><i class="fa-solid fa-triangle-exclamation"></i> Error de Carga</h4><p>${error.message || 'No se pudo cargar la vista solicitada.'}</p><button class="btn btn-primary" onclick="navigate('home')"><i class="fa-solid fa-house"></i> Volver al Inicio</button></div>`; }
   finally { contentDiv.style.opacity = '1'; contentDiv.style.pointerEvents = 'auto'; }
 }

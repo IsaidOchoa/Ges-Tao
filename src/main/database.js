@@ -1,4 +1,4 @@
-// src/database.js
+// src/main/database.js
 const { app } = require('electron');
 const path = require('node:path');
 const Database = require('better-sqlite3');
@@ -110,7 +110,7 @@ function initSchema(db) {
     UNIQUE(ee_id, plan_id)
   )`);
 
-  // 8. PROGRAMAS
+  // 8. PROGRAMAS (EXISTENTE)
   db.exec(`CREATE TABLE IF NOT EXISTS programas_institucionales (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
@@ -119,7 +119,7 @@ function initSchema(db) {
     estado TEXT DEFAULT 'vigente'
   )`);
 
-  // 9. TIPOS CONSTANCIA
+  // 9. TIPOS CONSTANCIA (EXISTENTE)
   db.exec(`CREATE TABLE IF NOT EXISTS tipos_constancia (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     clave TEXT UNIQUE NOT NULL,
@@ -130,23 +130,66 @@ function initSchema(db) {
     estado TEXT DEFAULT 'activo'
   )`);
 
-  // 10. CONSTANCIAS
+  // ==========================================================
+  // NUEVAS TABLAS PROPUESTAS
+  // ==========================================================
+
+  // 9b. DIRECTIVOS (Para gestión de firmantes)
+  db.exec(`CREATE TABLE IF NOT EXISTS directivos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cargo TEXT NOT NULL UNIQUE CHECK(cargo IN ('directora','secretaria_academica','coordinadora_posgrado','administradora')),
+    nombre_completo TEXT NOT NULL,
+    grado_academico TEXT,
+    vigente_desde DATE DEFAULT (date('now')),
+    vigente_hasta DATE,
+    estado TEXT DEFAULT 'vigente' CHECK(estado IN ('vigente','historico'))
+  )`);
+
+  // 9c. FORMATOS_CONSTANCIA (Para plantillas versionables)
+  db.exec(`CREATE TABLE IF NOT EXISTS formatos_constancia (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo_constancia_id INTEGER NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    nombre_version TEXT NOT NULL,
+    plantilla_html TEXT NOT NULL,
+    fecha_vigencia_desde DATE DEFAULT (date('now')),
+    fecha_vigencia_hasta DATE,
+    es_actual INTEGER DEFAULT 1,
+    FOREIGN KEY (tipo_constancia_id) REFERENCES tipos_constancia(id) ON DELETE CASCADE,
+    UNIQUE(tipo_constancia_id, version)
+  )`);
+
+  // 10. CONSTANCIAS (MODIFICADA: programa_id NOT NULL, + directivo_id, + formato_version)
+  db.exec(`DROP TABLE IF EXISTS constancias`);
   db.exec(`CREATE TABLE IF NOT EXISTS constancias (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     folio TEXT UNIQUE NOT NULL,
     docente_id INTEGER NOT NULL,
     periodo_id INTEGER,
     ee_id INTEGER,
-    programa_id INTEGER,
+    programa_id INTEGER NOT NULL,
     tipo_constancia_id INTEGER NOT NULL,
+    directivo_id INTEGER,
+    formato_version INTEGER DEFAULT 1,
     fecha_emision DATE DEFAULT (date('now')),
     ruta_archivo TEXT,
     estado TEXT DEFAULT 'emitida',
     FOREIGN KEY (docente_id) REFERENCES docentes(id) ON DELETE RESTRICT,
     FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE RESTRICT,
     FOREIGN KEY (ee_id) REFERENCES experiencias_educativas(id) ON DELETE RESTRICT,
-    FOREIGN KEY (tipo_constancia_id) REFERENCES tipos_constancia(id) ON DELETE RESTRICT
+    FOREIGN KEY (programa_id) REFERENCES programas_institucionales(id) ON DELETE RESTRICT,
+    FOREIGN KEY (tipo_constancia_id) REFERENCES tipos_constancia(id) ON DELETE RESTRICT,
+    FOREIGN KEY (directivo_id) REFERENCES directivos(id) ON DELETE RESTRICT
   )`);
+  
+  // Índices para Constancias
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_constancias_folio ON constancias(folio)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_constancias_programa ON constancias(programa_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_constancias_fecha ON constancias(fecha_emision DESC)`);
+
+  // ==========================================================
+  // TABLAS RESTANTES (EXISTENTES)
+  // ==========================================================
 
   // 11. HISTORIAL
   db.exec(`CREATE TABLE IF NOT EXISTS historial_auditoria (
@@ -191,7 +234,7 @@ function initSchema(db) {
     FOREIGN KEY (periodo_ingreso_id) REFERENCES periodos(id) ON DELETE RESTRICT
   )`);
 
-  // 14. TUTOR_ALUMNO ✅ CORREGIDO: SIN "WHERE" EN UNIQUE
+  // 14. TUTOR_ALUMNO
   db.exec(`CREATE TABLE IF NOT EXISTS tutor_alumno (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     docente_id INTEGER NOT NULL,
@@ -202,9 +245,7 @@ function initSchema(db) {
     FOREIGN KEY (docente_id) REFERENCES docentes(id) ON DELETE RESTRICT,
     FOREIGN KEY (alumno_id) REFERENCES alumnos(id) ON DELETE RESTRICT,
     FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE SET NULL
-    -- ✅ El índice parcial va DESPUÉS, no aquí
   )`);
-  // ✅ ÍNDICE PARCIAL SEPARADO (esto SÍ permite WHERE)
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_tutor_unique ON tutor_alumno(docente_id, alumno_id) WHERE estado='activo'`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_tutor_docente ON tutor_alumno(docente_id)`);
 
@@ -240,7 +281,7 @@ function initSchema(db) {
     UNIQUE(alumno_id, ee_id, periodo_id)
   )`);
 
-  // 17. ESTADÍSTICAS (Contador automático)
+  // 17. ESTADÍSTICAS
   db.exec(`CREATE TABLE IF NOT EXISTS estadisticas_ee_periodo (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ee_id INTEGER NOT NULL,
@@ -252,7 +293,7 @@ function initSchema(db) {
     UNIQUE(ee_id, periodo_id)
   )`);
 
-  // 18. TRIGGERS para contador automático
+  // 18. TRIGGERS
   db.exec(`CREATE TRIGGER IF NOT EXISTS trg_ins_insert AFTER INSERT ON inscripciones BEGIN
     INSERT INTO estadisticas_ee_periodo(ee_id,periodo_id,total_alumnos,ultima_actualizacion)
     VALUES(NEW.ee_id,NEW.periodo_id,1,CURRENT_TIMESTAMP)
@@ -308,56 +349,119 @@ function initSchema(db) {
     UNIQUE(ee_id, dia, hora_inicio)
   )`);
 
-  // 22. ENTITY_PERIOD - Vinculación independiente Entidad-Periodo
-db.exec(`CREATE TABLE IF NOT EXISTS entity_period (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  entity_type TEXT NOT NULL CHECK(entity_type IN ('docente', 'alumno', 'ee')),
-  entity_id INTEGER NOT NULL,
-  period_id INTEGER NOT NULL,
-  fecha_vinculacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (period_id) REFERENCES periodos(id) ON DELETE CASCADE,
-  UNIQUE(entity_type, entity_id, period_id)
-)`);
+  // 22. ENTITY_PERIOD
+  db.exec(`CREATE TABLE IF NOT EXISTS entity_period (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_type TEXT NOT NULL CHECK(entity_type IN ('docente', 'alumno', 'ee')),
+    entity_id INTEGER NOT NULL,
+    period_id INTEGER NOT NULL,
+    fecha_vinculacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (period_id) REFERENCES periodos(id) ON DELETE CASCADE,
+    UNIQUE(entity_type, entity_id, period_id)
+  )`);
 
-db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_period_lookup ON entity_period(entity_type, entity_id)`);
-db.exec(`CREATE INDEX IF NOT EXISTS idx_period_entities ON entity_period(period_id, entity_type)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_period_lookup ON entity_period(entity_type, entity_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_period_entities ON entity_period(period_id, entity_type)`);
 
   console.log('[DB] Esquema verificado ✅');
 }
 
 function seedData(db) {
-  // Solo catálogos base, relaciones vacías para testing manual
-  
+  // ==========================================================
+  // 1. USUARIOS
+  // ==========================================================
   if (db.prepare('SELECT count(*) FROM usuarios').get()['count(*)'] === 0) {
     const s = db.prepare('INSERT INTO usuarios(username,password_hash,nombre_completo,rol)VALUES(?,?,?,?)');
     s.run('admin','admin','Administrador','administrador');
   }
   
+  // ==========================================================
+  // 2. DOCENTES
+  // ==========================================================
   if (db.prepare('SELECT count(*) FROM docentes').get()['count(*)'] === 0) {
     const s = db.prepare('INSERT INTO docentes(codigo,apellido_paterno,nombres,tratamiento,articulo,estado)VALUES(?,?,?,?,?,?)');
     s.run('DOC-001','Perez','Juan','Dr.','El','activo');
     s.run('DOC-002','Lopez','Maria','Dra.','La','activo');
   }
   
+  // ==========================================================
+  // 3. PERIODOS
+  // ==========================================================
   if (db.prepare('SELECT count(*) FROM periodos').get()['count(*)'] === 0) {
     const s = db.prepare('INSERT INTO periodos(clave,descripcion,fecha_inicio,fecha_fin,estado)VALUES(?,?,?,?,?)');
     s.run('FEB-JUL24','Feb-Jul 2024','2024-02-15','2024-07-31','cerrado');
     s.run('AGO-DIC24','Ago-Dic 2024','2024-08-01','2024-12-15','abierto');
+    s.run('ENE-JUN25','Ene-Jun 2025','2025-01-15','2025-06-30','abierto');
   }
-  
+
+  // ==========================================================
+  // 4. PROGRAMAS INSTITUCIONALES (Seed: PRODEV, SNII)
+  // ==========================================================
+  if (db.prepare('SELECT count(*) FROM programas_institucionales').get()['count(*)'] === 0) {
+    const s = db.prepare(`INSERT INTO programas_institucionales(nombre,descripcion,responsable,estado) VALUES(?,?,?,?)`);
+    s.run('PRODEV', 'Programa de Desarrollo Profesional Docente', 'Coordinación de formación', 'vigente');
+    s.run('SNII', 'Sistema Nacional de Investigadores', 'Gestión de reconocimientos', 'vigente');
+  }
+
+  // ==========================================================
+  // 5. TIPOS DE CONSTANCIA (Seed: 13 tipos)
+  // ==========================================================
+  if (db.prepare('SELECT count(*) FROM tipos_constancia').get()['count(*)'] === 0) {
+    const s = db.prepare(`INSERT INTO tipos_constancia(clave,nombre,descripcion,requiere_ee,requiere_periodo,estado) VALUES(?,?,?,?,?,?)`);
+    
+    // Prioridad Alta
+    s.run('EE', 'Constancia de impartición de Experiencia Educativa', 'Acredita impartición de materia', 1, 1, 'activo');
+    s.run('DT', 'Constancia de dirección/codirección de tesis/trabajo recepcional', 'Acredita dirección de trabajos', 0, 0, 'activo');
+    s.run('JE', 'Constancia participación Sinodal/jurado de examen profesional', 'Acredita jurados de examen', 0, 1, 'activo');
+    
+    // Prioridad Media
+    s.run('SNP', 'Constancia de evaluación SNP', 'Evaluación Sistema Nacional de Posgrados', 0, 0, 'activo');
+    s.run('EV', 'Constancia de eventos académicos', 'Congresos, seminarios, talleres', 0, 1, 'activo');
+    s.run('TUT', 'Constancia de tutorías académica', 'Función como tutor de alumnos', 0, 1, 'activo');
+    
+    // Comités y Designaciones
+    s.run('CAP', 'Constancia de comité de admisión al posgrado', 'Procesos de selección', 0, 1, 'activo');
+    s.run('DDT', 'Constancia de designación de directora o codirectora de tesis', 'Asignación administrativa', 0, 0, 'activo');
+    s.run('DTA', 'Constancia de designación de tutor académico', 'Asignación formal', 0, 1, 'activo');
+    s.run('DJG', 'Constancia de designación de jurado de examen de grado', 'Nombramiento para jurados', 0, 1, 'activo');
+    
+    // Desarrollo Académico
+    s.run('PE', 'Constancia de elaboración, participación y/o actualización de planes de estudios', 'Diseño curricular', 0, 0, 'activo');
+    s.run('NAB', 'Constancia que acredita ser miembro del Núcleo Académico Básico (NAB)', 'Membresía posgrado', 0, 1, 'activo');
+    s.run('CA', 'Constancia que acredita ser miembro del Comité Académico (CA)', 'Membresía comité', 0, 1, 'activo');
+  }
+
+  // ==========================================================
+  // 6. DIRECTIVOS (Seed: 4 cargos)
+  // ==========================================================
+  if (db.prepare('SELECT count(*) FROM directivos').get()['count(*)'] === 0) {
+    const s = db.prepare(`INSERT INTO directivos(cargo,nombre_completo,grado_academico,estado) VALUES(?,?,?,?)`);
+    s.run('directora', 'Dra. [Nombre Completo]', 'Doctorado', 'vigente');
+    s.run('secretaria_academica', 'Mtra. [Nombre Completo]', 'Maestría', 'vigente');
+    s.run('coordinadora_posgrado', 'Dr. [Nombre Completo]', 'Doctorado', 'vigente');
+    s.run('administradora', 'Lic. [Nombre Completo]', 'Licenciatura', 'vigente');
+  }
+
+  // ==========================================================
+  // 7. EXPERIENCIAS EDUCATIVAS
+  // ==========================================================
   if (db.prepare('SELECT count(*) FROM experiencias_educativas').get()['count(*)'] === 0) {
     const s = db.prepare('INSERT INTO experiencias_educativas(clave_ee,nombre,tipo,creditos,estado)VALUES(?,?,?,?,?)');
-    s.run('EE-101','Programación I','Obligatoria',8,'activa');
-    s.run('EE-102','Base de Datos','Obligatoria',8,'activa');
+    s.run('34563','Programación I','Obligatoria',8,'activa');
+    s.run('09384','Base de Datos','Obligatoria',8,'activa');
+    s.run('12345','Estadística Avanzada','Especialidad',10,'activa');
   }
   
+  // ==========================================================
+  // 8. ALUMNOS
+  // ==========================================================
   if (db.prepare('SELECT count(*) FROM alumnos').get()['count(*)'] === 0) {
     const s = db.prepare('INSERT INTO alumnos(matricula,apellido_paterno,nombres,estado)VALUES(?,?,?,?)');
     s.run('MAT-001','Garcia','Carlos','activo');
     s.run('MAT-002','Ruiz','Laura','activo');
   }
   
-  console.log('[DB] Seed cargado (relaciones vacías para testing) ✅');
+  console.log('[DB] Seed cargado (catálogos completos) ✅');
 }
 
 module.exports = { getDB };
