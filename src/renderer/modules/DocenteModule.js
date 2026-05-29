@@ -4,6 +4,7 @@ import modalDocenteHtml from '../views/partials/modals/modal-docente.html';
 import { FormAutosave } from '../utils/formAutosave.js';
 import { UnsavedChangesGuard } from '../utils/unsavedChanges.js';
 import { globalConfirm } from '../utils/confirmationModal.js';
+import { Toast } from '../components/common/Toast.js'; // 🔹 IMPORTAR TOAST
 
 export class DocenteModule {
   constructor() {
@@ -32,19 +33,19 @@ export class DocenteModule {
     const tbody = document.getElementById('tabla-docentes-body');
     if (!tbody) {
       console.error('❌ [DocenteModule] tbody no encontrado');
+      Toast.error('Error de inicialización: tabla no encontrada', 5000);
       return;
     }
 
-    // ✅ CONFIGURACIÓN CORREGIDA: onExpandAction para el botón "Gestionar"
     this.table = new DataTable({
       tbodyId: 'tabla-docentes-body',
-      columns: this._getColumns(),  // ← Sin columna de acciones adicional
+      columns: this._getColumns(),
       expandable: true,
       actions: true,
       onRowClick: 'docenteModuleInstance.handleRowClick(event)',
       onAction: 'docenteModuleInstance.toggleActionMenu(event)',
       onExpand: 'docenteModuleInstance.loadRowSummary(event)',
-      onExpandAction: 'docenteModuleInstance.openAssignmentModal(this)'  // ✅ Para botón en fila expandible
+      onExpandAction: 'docenteModuleInstance.openAssignmentModal(this)'
     });
 
     if (this.data.length > 0) {
@@ -96,9 +97,11 @@ export class DocenteModule {
         return true;
       }
       console.warn('⚠️ [DocenteModule] Error en respuesta IPC:', res.error);
+      Toast.warning('No se pudieron cargar los docentes', 4000);
       return false;
     } catch (error) {
       console.error('❌ [DocenteModule] Error cargando datos:', error);
+      Toast.error('Error de conexión al cargar docentes', 5000);
       return false;
     }
   }
@@ -116,7 +119,6 @@ export class DocenteModule {
       },
       { key: 'correo_contacto', label: 'Correo' },
       { key: 'estado', label: 'Estado', badge: true }
-      // ✅ Sin columna de acciones: el botón "Gestionar" ya está en la fila expandible
     ];
   }
 
@@ -196,12 +198,19 @@ export class DocenteModule {
   }
 
   async _saveDocente(modal) {
+    // 🔹 VALIDACIONES CON TOAST
     const tratamientoEl = document.getElementById('doc-tratamiento');
     const tratamiento = tratamientoEl?.value?.trim();
-    if (!tratamiento) { alert('⚠️ Debes seleccionar un tratamiento'); tratamientoEl?.focus(); return; }
+    if (!tratamiento) { 
+      Toast.warning('Selecciona un tratamiento (Dr./Dra./etc.)', 4000); 
+      tratamientoEl?.focus(); 
+      return; 
+    }
+    
     const tratamientosFemeninos = ['Dra.', 'Mtra.'];
     const esFemenino = tratamiento.endsWith('a.') || tratamientosFemeninos.includes(tratamiento);
     const articulo = esFemenino ? 'La' : 'El';
+    
     const datos = {
       id: document.getElementById('doc-id')?.value || null,
       codigo: document.getElementById('doc-codigo')?.value?.trim(),
@@ -213,14 +222,47 @@ export class DocenteModule {
       nivel_academico: document.getElementById('doc-nivel')?.value || 'base',
       tratamiento, articulo, estado: 'activo'
     };
+    
+    // 🔹 VALIDAR CAMPOS OBLIGATORIOS
     if (!datos.codigo || !datos.apellido_paterno || !datos.nombres) {
-      alert('⚠️ Campos obligatorios:\n• Código\n• Apellido Paterno\n• Nombres'); return;
+      Toast.error('Campos obligatorios: Código, Apellido Paterno y Nombres', 6000); 
+      return;
     }
+    
+    // 🔹 UI: Loading state en botón
+    const btnSave = document.getElementById('btn-guardar-docente');
+    const originalText = btnSave?.innerHTML || '';
+    if (btnSave) {
+      btnSave.disabled = true;
+      btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+    }
+
     try {
       const res = await window.electronAPI.guardarDocente(datos);
-      if (res.success) { this._ejecutarCierre(); await this._loadData(); this.table?.setData(this.data); } 
-      else { alert(`❌ Error: ${res.error || 'No se pudo guardar'}`); }
-    } catch (error) { console.error('💥 Error guardando docente:', error); alert('Error de conexión'); }
+      
+      if (res.success) { 
+        // ✅ ÉXITO: Toast + recarga de tabla
+        const accion = datos.id ? 'actualizado' : 'registrado';
+        Toast.success(`Docente ${accion} correctamente: ${datos.nombres} ${datos.apellido_paterno}`, 5000);
+        
+        this._ejecutarCierre(); 
+        await this._loadData(); 
+        this.table?.setData(this.data); 
+      } else { 
+        // ❌ ERROR DEL BACKEND
+        Toast.error(`Error: ${res.error || 'No se pudo guardar el docente'}`, 7000); 
+      }
+    } catch (error) { 
+      // ❌ ERROR DE CONEXIÓN/RED
+      console.error('💥 Error guardando docente:', error); 
+      Toast.error('Error de conexión: no se pudo comunicar con el servidor', 6000);
+    } finally {
+      // 🔹 Restaurar botón
+      if (btnSave) {
+        btnSave.disabled = false;
+        btnSave.innerHTML = originalText;
+      }
+    }
   }
 
   _renderEmptyState() {
@@ -257,7 +299,7 @@ export class DocenteModule {
     } catch (error) { console.error('Error cargando resumen:', error); chips.innerHTML = '<span class="chip" style="color:var(--danger-color)">Error</span>'; }
   }
 
-    openAssignmentModal(buttonEl) {
+  openAssignmentModal(buttonEl) {
     const row = buttonEl?.closest('.sub-row-details')?.previousElementSibling 
              || buttonEl?.closest('.data-row');
     
@@ -270,10 +312,10 @@ export class DocenteModule {
 
     if (!docente) {
       console.error(`❌ Docente no encontrado: ${identificador}`);
+      Toast.error('No se encontró el docente seleccionado', 4000);
       return;
     }
 
-    // ✅ DEBUG: Verificar qué datos llegaron
     console.log('🔍 [Docente Data]:', {
       nombres: docente.nombres,
       apellido_paterno: docente.apellido_paterno,
@@ -281,22 +323,19 @@ export class DocenteModule {
       codigo: docente.codigo
     });
 
-    // ✅ Construcción ROBUSTA del nombre completo
     const partes = [
       docente.nombres?.trim(),
       docente.apellido_paterno?.trim(),
       docente.apellido_materno?.trim()
-    ].filter(p => p && p.length > 0); // Filtrar vacíos o undefined
+    ].filter(p => p && p.length > 0);
 
     const nombreCompleto = partes.join(' ');
-
     console.log('✅ [Nombre construido]:', nombreCompleto);
 
-    // ✅ Abrir modal
     window.assignmentModal.open({
       entityType: 'docente',
       entityId: docente.id,
-      entityName: nombreCompleto,  // ← Aquí va el nombre completo validado
+      entityName: nombreCompleto,
       codigo: docente.codigo
     });
   }

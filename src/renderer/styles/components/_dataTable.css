@@ -1,0 +1,146 @@
+/* =========================================
+   ESTILOS DE TABLAS DE DATOS (DataTable)
+   Archivo: src/renderer/styles/components/_dataTable.css
+   ========================================= */
+
+/* 1. BASE GLOBAL (Neutra, no interfiere con otras vistas) */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  table-layout: auto;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark);
+  vertical-align: middle;
+}
+
+.data-table thead th {
+  background-color: var(--bg-light);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(0,0,0,0.02);
+  transition: background-color 0.2s;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =========================================
+   2. SCOPED: SOLO PARA CATÁLOGOS (LÓGICA INTELIGENTE)
+   ========================================= */
+
+/* Header base */
+.catalog-table-wrapper .data-table thead th {
+  color: var(--text-dark);
+  font-weight: 700;
+  background-color: rgba(0,0,0,0.04);
+}
+
+/* 1. PRIMERA COLUMNA: Solo centrar si es la flecha (.col-expand) */
+/* Si NO tiene esta clase (ej. Periodos), se comportará como dato normal (Izquierda) */
+.catalog-table-wrapper .data-table th.col-expand,
+.catalog-table-wrapper .data-table td.col-expand {
+  text-align: center !important;
+  width: 40px !important;
+  min-width: 40px !important;
+}
+
+/* 2. DATOS GENERALES: IZQUIERDA */
+/* Incluye la primera columna si NO es flecha (ej. CLAVE en Periodos) */
+/* Excluye: Flecha (.col-expand), Penúltima (Estado), Última (Acciones) */
+.catalog-table-wrapper .data-table th:not(.col-expand):not(:last-child):not(:nth-last-child(2)),
+.catalog-table-wrapper .data-table td:not(.col-expand):not(:last-child):not(:nth-last-child(2)) {
+  text-align: left !important;
+}
+
+/* 3. PENÚLTIMA COLUMNA (ESTADO): CENTRO */
+.catalog-table-wrapper .data-table th:nth-last-child(2),
+.catalog-table-wrapper .data-table td:nth-last-child(2) {
+  text-align: center !important;
+  width: 100px; /* Ancho controlado */
+}
+
+/* 4. ÚLTIMA COLUMNA (ACCIONES): CENTRO */
+.catalog-table-wrapper .data-table th:last-child,
+.catalog-table-wrapper .data-table td:last-child {
+  text-align: center !important;
+  width: 80px; /* Ancho controlado */
+  padding-right: 20px !important;
+}
+
+/* Centrado del icono de 3 puntos */
+.catalog-table-wrapper .data-table td:last-child .action-icon-container {
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  opacity: 1 !important;
+}
+
+/* 5. FILAS SELECCIONADAS Y HOVER */
+.catalog-table-wrapper .data-row.selected {
+  background-color: rgba(52, 152, 219, 0.12) !important;
+  border-left: 4px solid var(--accent-color);
+}
+.catalog-table-wrapper .data-table tbody tr:hover:not(.selected) {
+  background-color: rgba(0,0,0,0.04);
+}
+
+/* 6. COLORES DE DOTS */
+.catalog-table-wrapper .status-dot.status-active {
+  background-color: #27ae60 !important;
+  box-shadow: 0 0 5px rgba(39, 174, 96, 0.5) !important;
+  color: #27ae60 !important;
+}
+.catalog-table-wrapper .status-dot.status-inactive {
+  background-color: #e74c3c !important;
+  box-shadow: 0 0 5px rgba(231, 76, 60, 0.5) !important;
+  color: #e74c3c !important;
+}
+
+
+/* =========================================
+   3. MODO OSCURO
+   ========================================= */
+body[data-theme="dark"] .data-table thead th {
+  background-color: #2a2a2a;
+  color: #b0b8c4;
+}
+body[data-theme="dark"] .catalog-table-wrapper .data-table thead th {
+  background-color: #333;
+  color: #eef2f5;
+}
+body[data-theme="dark"] .catalog-table-wrapper .data-row.selected {
+  background-color: rgba(52, 152, 219, 0.25) !important;
+}
+body[data-theme="dark"] .catalog-table-wrapper .status-dot.status-active {
+  background-color: #2ecc71 !important;
+  box-shadow: 0 0 8px rgba(46, 204, 113, 0.7) !important;
+  color: #2ecc71 !important;
+}
+body[data-theme="dark"] .catalog-table-wrapper .status-dot.status-inactive {
+  background-color: #ff6b6b !important;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.7) !important;
+  color: #ff6b6b !important;
+}
+
+/* Utilidad base */
+.table-responsive {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-white);
+}

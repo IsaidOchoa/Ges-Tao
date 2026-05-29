@@ -246,39 +246,6 @@ button:disabled, .btn:disabled {
   gap: 10px;
 }
 
-/* =========================================
-   5. TABLAS DE DATOS
-   ========================================= */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 0.95rem;
-}
-
-.data-table th, .data-table td {
-  text-align: left;
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-dark); /* Asegurar color de texto */
-}
-
-.data-table th {
-  background-color: var(--bg-light);
-  color: var(--text-dark);
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 0.5px;
-}
-
-.data-table tr:hover {
-  background-color: var(--bg-light); /* Variable dinámica para hover */
-}
-
-.data-table tr:last-child td {
-  border-bottom: none;
-}
 
 /* =========================================
    6. LISTAS DE ASIGNACIONES

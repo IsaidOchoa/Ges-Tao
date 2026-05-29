@@ -130,10 +130,6 @@ function initSchema(db) {
     estado TEXT DEFAULT 'activo'
   )`);
 
-  // ==========================================================
-  // NUEVAS TABLAS PROPUESTAS
-  // ==========================================================
-
   // 9b. DIRECTIVOS (Para gestión de firmantes)
   db.exec(`CREATE TABLE IF NOT EXISTS directivos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,7 +155,7 @@ function initSchema(db) {
     UNIQUE(tipo_constancia_id, version)
   )`);
 
-  // 10. CONSTANCIAS (MODIFICADA: programa_id NOT NULL, + directivo_id, + formato_version)
+  // 10. CONSTANCIAS
   db.exec(`DROP TABLE IF EXISTS constancias`);
   db.exec(`CREATE TABLE IF NOT EXISTS constancias (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -186,10 +182,6 @@ function initSchema(db) {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_constancias_folio ON constancias(folio)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_constancias_programa ON constancias(programa_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_constancias_fecha ON constancias(fecha_emision DESC)`);
-
-  // ==========================================================
-  // TABLAS RESTANTES (EXISTENTES)
-  // ==========================================================
 
   // 11. HISTORIAL
   db.exec(`CREATE TABLE IF NOT EXISTS historial_auditoria (

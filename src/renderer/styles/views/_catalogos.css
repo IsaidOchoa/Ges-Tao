@@ -1,7 +1,4 @@
-/* =======================================================
-   CATÁLOGOS ACADÉMICOS
-   Estilos completos reorganizados por bloques funcionales.
-   ======================================================= */
+/* styles/views/_catalogos.css */
 
 /* =========================================
    1. NAVEGACIÓN (TABS) - Scroll Horizontal
@@ -135,55 +132,6 @@
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-/* =========================================
-   4. TABLAS DE DATOS (GENÉRICA)
-   ========================================= */
-.table-responsive {
-  overflow-x: auto;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.data-table thead {
-  background-color: var(--bg-light);
-  border-bottom: 2px solid var(--border-color);
-}
-
-.data-table th {
-  padding: 12px 15px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
-}
-
-.data-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-dark);
-  vertical-align: middle;
-}
-
-.data-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.data-table tbody tr:hover {
-  background-color: rgba(0,0,0,0.02);
-}
-
-.data-row.selected {
-  background-color: var(--bg-light) !important;
-  border-left: 4px solid var(--accent-color);
-}
 
 /* =========================================
    COLUMNA DE CONTROL (Expansión)
@@ -217,62 +165,6 @@
   color: var(--text-dark);
 }
 
-/* =========================================
-   5. INDICADORES DE ESTADO (DOTS CON HALO) ✅ CORREGIDO
-   ========================================= */
-.data-row .status-dot-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-.data-row .status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-/* Activo (Verde + Halo) */
-.data-row .status-active {
-  background-color: #27ae60 !important;
-  box-shadow: 0 0 5px rgba(39, 174, 96, 0.5) !important;
-}
-
-/* Inactivo (Rojo + Halo) */
-.data-row .status-inactive {
-  background-color: #e74c3c !important;
-  box-shadow: 0 0 5px rgba(231, 76, 60, 0.5) !important;
-}
-
-/* Dark Mode: Halos más brillantes para contraste */
-body[data-theme="dark"] .data-row .status-active {
-  background-color: #2ecc71 !important;
-  box-shadow: 0 0 8px rgba(46, 204, 113, 0.7) !important;
-}
-
-body[data-theme="dark"] .data-row .status-inactive {
-  background-color: #ff6b6b !important;
-  box-shadow: 0 0 8px rgba(255, 107, 107, 0.7) !important;
-}
-
-/* =========================================
-   6. BOTONES DE ACCIÓN Y MENÚ CONTEXTUAL
-   ========================================= */
-.action-icon-container {
-  position: absolute;
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.data-row:hover .action-icon-container,
-.data-row.selected .action-icon-container {
-  opacity: 1;
-}
 
 .btn-action-menu {
   background: transparent;
@@ -718,3 +610,4 @@ body[data-theme="dark"] .data-row .status-inactive {
   color: var(--text-dark);
   padding-left: 10px;
 }
+

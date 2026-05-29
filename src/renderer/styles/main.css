@@ -18,5 +18,6 @@
 @import './modals/modal-asignaciones.css';
 
 @import './components/_toast.css';
+@import './components/_dataTable.css';
 
 @import '@fortawesome/fontawesome-free/css/all.min.css';
