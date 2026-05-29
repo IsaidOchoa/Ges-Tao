@@ -1,5 +1,4 @@
 // src/renderer/components/DataTable/DataTable.js
-// Contenedor principal de tabla
 import { DataTableRow } from './DataTableRow.js';
 
 export class DataTable {
@@ -10,18 +9,54 @@ export class DataTable {
     this.actions = config.actions ?? true;
     this.data = [];
     
-    // Callbacks desde configuración
+    // Callbacks
     this.onRowClick = config.onRowClick ?? null;
     this.onExpand = config.onExpand ?? null;
     this.onAction = config.onAction ?? null;
-    
-    // ✅ NUEVO: Callback para el botón "Gestionar" en fila expandible
     this.onExpandAction = config.onExpandAction ?? null;
   }
 
   setData(data) {
     this.data = data;
     this.render();
+  }
+
+  // 🔹 NUEVO: Renderizar header dinámico según configuración
+  renderHeader() {
+    const tbody = document.getElementById(this.tbodyId);
+    if (!tbody) return;
+    
+    const table = tbody.closest('table');
+    if (!table) return;
+    
+    let thead = table.querySelector('thead');
+    if (!thead) {
+      thead = document.createElement('thead');
+      table.insertBefore(thead, tbody);
+    }
+    
+    let headerHTML = '<tr>';
+    
+    // 1. Columna de expansión (SOLO si expandable = true)
+    if (this.expandable) {
+      headerHTML += '<th class="col-expand" scope="col" style="width:40px;min-width:40px;"></th>';
+    }
+    
+    // 2. Columnas dinámicas
+    this.columns.forEach(col => {
+      const style = col.width ? `style="width:${col.width};"` : '';
+      headerHTML += `<th scope="col" ${style}>${col.label}</th>`;
+    });
+    
+    // 3. Columna de acciones (SOLO si actions = true)
+    if (this.actions) {
+      headerHTML += '<th scope="col" style="width:80px;text-align:center">ACCIONES</th>';
+    }
+    
+    headerHTML += '</tr>';
+    thead.innerHTML = headerHTML;
+    
+    console.log(`✅ DataTable: Header renderizado con ${this.columns.length} columnas + expandable:${this.expandable} + actions:${this.actions}`);
   }
 
   render() {
@@ -31,6 +66,9 @@ export class DataTable {
       return;
     }
     
+    // 🔹 Renderizar header dinámico PRIMERO
+    this.renderHeader();
+    
     tbody.innerHTML = '';
     
     if (!this.data?.length) {
@@ -38,7 +76,6 @@ export class DataTable {
       return;
     }
 
-    // ✅ Configurar cada fila PASANDO onExpandAction correctamente
     const rowConfig = {
       columns: this.columns,
       expandable: this.expandable,
@@ -46,10 +83,9 @@ export class DataTable {
       onRowClick: this.onRowClick,
       onAction: this.onAction,
       onExpand: this.onExpand,
-      onExpandAction: this.onExpandAction  // ✅ USAR la config que viene del módulo, NO hardcodear
+      onExpandAction: this.onExpandAction
     };
 
-    // Renderizar filas
     this.data.forEach(rowData => {
       const row = new DataTableRow(rowData, rowConfig);
       tbody.innerHTML += row.render();
@@ -59,13 +95,16 @@ export class DataTable {
   }
 
   renderEmptyState() {
-    return `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">
-              <i class="fa-regular fa-folder-open" style="font-size:2rem; margin-bottom:10px; display:block;"></i>
-              Sin registros
+    // Calcular colspan dinámico: columnas + (expandable?1:0) + (actions?1:0)
+    const extraCols = (this.expandable ? 1 : 0) + (this.actions ? 1 : 0);
+    const colspan = this.columns.length + extraCols;
+    
+    return `<tr class="empty-state"><td colspan="${colspan}" style="text-align:center; padding:50px; color:var(--text-muted)">
+              <i class="fa-regular fa-folder-open" style="font-size:2.5rem;margin:0 auto 15px;display:block;opacity:0.6"></i>
+              <p style="margin:0">No hay registros</p>
             </td></tr>`;
   }
 
-  // Método para actualizar una fila específica (optimización futura)
   updateRow(rowId, newData) {
     const index = this.data.findIndex(r => {
       const id = r.codigo || r.clave_ee || r.clave || r.id;
@@ -74,7 +113,7 @@ export class DataTable {
     
     if (index !== -1) {
       this.data[index] = newData;
-      this.render(); // Por ahora re-renderiza todo, luego optimizamos
+      this.render();
     }
   }
 }
