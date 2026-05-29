@@ -1,0 +1,181 @@
+
+/* Contenedor principal más ancho para 2 columnas */
+.modal-ee-2col .modal-content {
+  max-width: 1100px !important;
+  width: 95%;
+}
+
+/* Grid de 2 columnas */
+.ee-form-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+/* Columnas */
+.ee-col-left,
+.ee-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Tarjetas de sección (Créditos y Horas) */
+.ee-section-card {
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  border-left: 4px solid var(--accent-color);
+}
+
+.ee-section-card .section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.ee-section-card .section-header i {
+  color: var(--accent-color);
+}
+
+/* Grid de créditos (3 columnas) */
+.creditos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.creditos-item label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.creditos-componente {
+  width: 100%;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 10px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-white);
+  transition: all 0.2s;
+}
+
+.creditos-componente:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  outline: none;
+}
+
+/* Total de créditos */
+.creditos-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-white);
+  border-radius: var(--radius-sm);
+  border-top: 2px dashed var(--border-color);
+  margin-top: 8px;
+}
+
+.creditos-total > span:first-child {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.creditos-total-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  transition: all 0.2s;
+}
+
+.creditos-total-value.animate {
+  animation: creditosPulse 0.3s ease;
+}
+
+@keyframes creditosPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); color: var(--success-color); }
+  100% { transform: scale(1); }
+}
+
+/* Responsive: 1 columna en pantallas pequeñas */
+@media (max-width: 768px) {
+  .ee-form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .creditos-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-ee-2col .modal-content {
+    max-width: 100% !important;
+  }
+}
+
+/* Mejoras visuales generales */
+.help-text {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Selects */
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-white);
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  outline: none;
+}
+
+/* Inputs numéricos */
+input[type="number"] {
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* En src/renderer/styles/modals/modal-ee.css */
+
+/* Alinear inputs al fondo para que coincidan aunque los títulos tengan distinto largo */
+.form-row-flex .form-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Empuja el input hacia abajo */
+}
+
+/* Opcional: Ajustar etiquetas para que no hagan salto de línea feo */
+.form-group label {
+  margin-bottom: 8px;
+  line-height: 1.2; /* Mejora la lectura de títulos largos */
+}

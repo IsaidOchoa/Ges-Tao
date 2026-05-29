@@ -290,7 +290,14 @@ export class PeriodoModule {
       this._openModal();
     };
 
-    const cerrar = () => modal.classList.add("hidden");
+    const cerrar = () => {
+      // 1. Restaurar título a "Nuevo Periodo Escolar"
+      const modalTitle = this.modalElement?.querySelector(".modal-header h3");
+      if (modalTitle) {
+        modalTitle.textContent = "Nuevo Periodo Escolar";
+      }
+      modal.classList.add("hidden");
+    };
     document
       .getElementById("btn-cerrar-modal-periodo")
       ?.addEventListener("click", cerrar);
@@ -1071,6 +1078,194 @@ export class PeriodoModule {
     )?.previousElementSibling;
     if (menu?.classList.contains("context-menu"))
       menu.classList.toggle("hidden");
+  }
+
+  // =========================================
+  // ABRIR MODAL DE EDICIÓN (Reutiliza modal de creación)
+  // =========================================
+  async openEditModalFromMenu(rowId) {
+    console.log("🔍 openEditModalFromMenu llamado con rowId:", rowId);
+
+    // 1. Buscar el periodo en los datos locales
+    const periodo = this.data.find(
+      (p) =>
+        String(p.id) === String(rowId) ||
+        String(p.clave) === String(rowId) ||
+        p.id == rowId ||
+        p.clave == rowId,
+    );
+
+    if (!periodo) {
+      console.error("❌ Periodo no encontrado para editar:", rowId);
+      Toast.error("No se encontró el periodo para editar", 5000);
+      return;
+    }
+
+    console.log("✅ Periodo encontrado para editar:", periodo);
+
+    // 2. Asegurar que el modal esté inyectado
+    if (!this.modalElement) {
+      this._injectModal();
+    }
+
+    const modal = this.modalElement;
+    const form = document.getElementById("form-periodo");
+    const modalTitle = modal?.querySelector(".modal-header h3");
+
+    if (!form) {
+      console.error("❌ Formulario no encontrado");
+      return;
+    }
+
+    // 3. Cambiar título del modal a "Editar Periodo"
+    if (modalTitle) {
+      modalTitle.textContent = "Editar Periodo";
+    }
+
+    // 4. Resetear formulario y campos ocultos
+    form.reset();
+    [
+      "periodo-id",
+      "periodo-clave",
+      "periodo-descripcion",
+      "periodo-estado",
+      "periodo-fecha-inicio-hidden",
+      "periodo-fecha-fin-hidden",
+    ].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+
+    // 5. Ocultar fechas personalizadas e inicializar selector de años
+    this._ocultarFechasPersonalizadas();
+    this._initAnioSelector();
+
+    // 6. Cargar datos del periodo en el formulario
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val ?? "";
+    };
+
+    // Campos básicos
+    setVal("periodo-id", periodo.id);
+    setVal("periodo-clave", periodo.clave);
+    setVal("periodo-descripcion", periodo.descripcion);
+    setVal("periodo-estado", periodo.estado || "activo");
+
+    // Fechas (formato YYYY-MM-DD para inputs type="date")
+    if (periodo.fecha_inicio) {
+      const fechaInicio = periodo.fecha_inicio.split("T")[0];
+      setVal("periodo-fecha-inicio-hidden", fechaInicio);
+      // Si está en modo personalizado, cargar también en el input visible
+      const inputInicio = document.getElementById("periodo-fecha-inicio");
+      if (inputInicio) inputInicio.value = fechaInicio;
+    }
+    if (periodo.fecha_fin) {
+      const fechaFin = periodo.fecha_fin.split("T")[0];
+      setVal("periodo-fecha-fin-hidden", fechaFin);
+      const inputFin = document.getElementById("periodo-fecha-fin");
+      if (inputFin) inputFin.value = fechaFin;
+    }
+
+    // Actualizar displays visuales
+    const displayClave = document.getElementById("display-clave");
+    const displayInicio = document.getElementById("display-fecha-inicio");
+    const displayFin = document.getElementById("display-fecha-fin");
+    const resultRango = document.getElementById("result-rango");
+
+    if (displayClave) displayClave.textContent = periodo.clave || "---";
+    if (displayInicio && periodo.fecha_inicio) {
+      displayInicio.textContent = this._formatDateDisplay(periodo.fecha_inicio);
+    }
+    if (displayFin && periodo.fecha_fin) {
+      displayFin.textContent = this._formatDateDisplay(periodo.fecha_fin);
+    }
+    if (resultRango) resultRango.textContent = periodo.descripcion || "---";
+
+    // 7. Detectar y seleccionar la plantilla correcta según la clave
+    // Dentro de openEditModalFromMenu(), en la sección de detectar plantilla:
+
+    if (periodo.clave) {
+      if (periodo.clave.startsWith("FEB-JUL")) {
+        const plantillaA = document.querySelector(
+          'input[name="plantilla"][value="semestre-a"]',
+        );
+        if (plantillaA) plantillaA.checked = true;
+      } else if (periodo.clave.startsWith("AGO-ENE")) {
+        const plantillaB = document.querySelector(
+          'input[name="plantilla"][value="semestre-b"]',
+        );
+        if (plantillaB) plantillaB.checked = true;
+      } else {
+        // 🔹 Clave personalizada → activar modo personalizado
+        const plantillaPersonalizado = document.querySelector(
+          'input[name="plantilla"][value="personalizado"]',
+        );
+        if (plantillaPersonalizado) plantillaPersonalizado.checked = true;
+        this._activarModoPersonalizado(); // ← Esto faltaba
+
+        // Cargar fechas en inputs visibles si están en modo personalizado
+        if (periodo.fecha_inicio) {
+          const inputInicio = document.getElementById("periodo-fecha-inicio");
+          if (inputInicio)
+            inputInicio.value = periodo.fecha_inicio.split("T")[0];
+        }
+        if (periodo.fecha_fin) {
+          const inputFin = document.getElementById("periodo-fecha-fin");
+          if (inputFin) inputFin.value = periodo.fecha_fin.split("T")[0];
+        }
+      }
+    }
+
+    // 8. Configurar checkbox de vigencia forzada
+    const chkVigencia = document.getElementById("chk-vigencia-forzada");
+    const msgVigencia = document.getElementById("vigencia-status-msg");
+    if (chkVigencia) {
+      chkVigencia.checked = periodo.es_vigente_forzado === 1;
+      if (periodo.es_vigente_forzado === 1 && msgVigencia) {
+        msgVigencia.innerHTML = "⚠️ Vigencia forzada manualmente";
+        msgVigencia.style.color = "var(--warning-color)";
+      }
+    }
+
+    // 9. Inicializar Tooltip para el botón de info (si no existe)
+    const btnInfoVigencia = document.getElementById("btn-info-vigencia");
+    if (btnInfoVigencia && !btnInfoVigencia._tooltipInitialized) {
+      new Tooltip({
+        target: btnInfoVigencia,
+        position: "top",
+        delay: 200,
+        content: `
+        <strong>Forzar vigencia manual</strong>
+        <p style="margin: 8px 0;">Úsalo solo si:</p>
+        <ul style="margin: 0 0 12px 0; padding-left: 20px;">
+          <li>Las fechas no coinciden con el calendario real</li>
+          <li>Hay una extensión académica</li>
+          <li>El reloj del servidor está desincronizado</li>
+        </ul>
+        <div class="tooltip-warning">
+          ⚠️ Solo UN periodo puede tener esta opción activa.
+        </div>
+      `,
+      });
+      btnInfoVigencia._tooltipInitialized = true; // Flag para no crear duplicados
+    }
+
+    // 10. Actualizar estado del panel
+    this._actualizarEstado(
+      "valid",
+      "Editando periodo",
+      "Modifica y guarda los cambios",
+    );
+
+    // 11. Mostrar modal y enfocar primer campo
+    modal.classList.remove("hidden");
+    setTimeout(() => {
+      const primerCampo = document.getElementById("periodo-anio-base");
+      if (primerCampo) primerCampo.focus();
+    }, 100);
+
+    console.log("✅ Modal de edición abierto para periodo:", periodo.clave);
   }
 
   // CLEANUP

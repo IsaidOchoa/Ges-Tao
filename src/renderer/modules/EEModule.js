@@ -1,10 +1,12 @@
 // src/renderer/modules/EEModule.js
 import { DataTable } from '../components/DataTable/DataTable.js';
-import modalEEHtml from '../views/partials/modals/modal-ee.html';
 import { FormAutosave } from '../utils/formAutosave.js';
 import { UnsavedChangesGuard } from '../utils/unsavedChanges.js';
 import { globalConfirm } from '../utils/confirmationModal.js';
-import { Toast } from '../components/common/Toast.js'; // 🔹 IMPORTAR TOAST
+import { Toast } from '../components/common/Toast.js';
+
+import modalEEHtml from '../views/partials/modals/modal-ee.html';
+import '../styles/modals/modal-ee.css';
 
 export class EEModule {
   constructor() {
@@ -61,7 +63,7 @@ export class EEModule {
       onExpand: `${this.instanceName}.loadRowSummary(event)`,
       onExpandAction: `${this.instanceName}.openAssignmentModal(this)`,
       onEdit: `${this.instanceName}.openEditModalFromMenu`,
-      onToggleStatus: `${this.instanceName}.toggleEEStatus`,  // 🔹 Callback para toggle
+      onToggleStatus: `${this.instanceName}.toggleEEStatus`,
     });
 
     // 6. Renderizar datos o estado vacío
@@ -84,10 +86,8 @@ export class EEModule {
       const action = menuItem.dataset.action;
       const rowId = menuItem.dataset.id;
       
-      // Cerrar todos los menús primero
       document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
       
-      // Ejecutar acción
       if (action === 'toggle' && typeof this.toggleEEStatus === 'function') {
         this.toggleEEStatus(rowId);
       } else if (action === 'edit' && typeof this.openEditModalFromMenu === 'function') {
@@ -254,9 +254,19 @@ export class EEModule {
       btnSave.parentNode.replaceChild(newBtn, btnSave);
       newBtn.addEventListener('click', async (e) => { e.preventDefault(); await this._saveEE(modal); });
     }
+    
+    // 🔹 Vincular listeners para cálculo automático de créditos
+    this._setupCreditosListeners();
   }
 
+  // =========================================
+  // CERRAR MODAL (con restauración de título)
+  // =========================================
   _ejecutarCierre() {
+    // 🔹 Restaurar título a "Nueva Experiencia Educativa"
+    const modalTitle = this.modalElement?.querySelector('.modal-header h3');
+    if (modalTitle) modalTitle.textContent = 'Nueva Experiencia Educativa';
+    
     this.unsavedGuard?.destroy(); this.unsavedGuard = null;
     this.formAutosave?.clear(); this.formAutosave = null;
     const form = document.getElementById('form-ee'); if (form) form.reset();
@@ -264,72 +274,133 @@ export class EEModule {
   }
 
   // =========================================
-  // ABRIR MODAL
+  // 🔹 CÁLCULO DE CRÉDITOS EN TIEMPO REAL
   // =========================================
-  _openModal(ee = null) {
-    const modal = this.modalElement; const form = document.getElementById('form-ee');
-    if (!modal || !form) return;
-    form.reset();
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
-    setVal('ee-id', '');
-    this.unsavedGuard = new UnsavedChangesGuard('#form-ee');
-    this.formAutosave = new FormAutosave('form-ee', 'ee-form');
+  _calcularCreditosTotales() {
+    const teoria = parseInt(document.getElementById('ee-creditos-teoria')?.value) || 0;
+    const practica = parseInt(document.getElementById('ee-creditos-practica')?.value) || 0;
+    const otros = parseInt(document.getElementById('ee-creditos-otros')?.value) || 0;
     
-    if (ee) {
-      setVal('ee-id', ee.id); setVal('ee-clave', ee.clave_ee); setVal('ee-nombre', ee.nombre);
-      setVal('ee-tipo', ee.tipo || 'Obligatoria'); setVal('ee-creditos', ee.creditos ?? 0);
-      setVal('ee-h-teoria', ee.horas_teoria ?? 0); setVal('ee-h-practica', ee.horas_practica ?? 0);
-      setVal('ee-programa', ee.programa_academico); setVal('ee-area', ee.area);
-      setVal('ee-linea', ee.linea_investigacion); setVal('ee-estado', ee.estado || 'activa');
-      this.formAutosave?.clear();
-    } else {
-      setVal('ee-estado', 'activa'); setVal('ee-tipo', 'Obligatoria');
+    const total = teoria + practica + otros;
+    
+    // Actualizar display visual con animación
+    const totalEl = document.getElementById('ee-creditos-total');
+    if (totalEl) {
+      totalEl.textContent = total;
+      totalEl.classList.remove('animate');
+      void totalEl.offsetWidth; // Trigger reflow para reiniciar animación
+      totalEl.classList.add('animate');
     }
-    modal.classList.remove('hidden');
-    setTimeout(() => document.getElementById('ee-clave')?.focus(), 100);
+    
+    // Actualizar campo oculto para enviar al backend
+    const hiddenEl = document.getElementById('ee-creditos');
+    if (hiddenEl) hiddenEl.value = total;
+    
+    return total;
+  }
+
+  // 🔹 Vincular listeners para cálculo automático
+  _setupCreditosListeners() {
+    ['ee-creditos-teoria', 'ee-creditos-practica', 'ee-creditos-otros'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', () => this._calcularCreditosTotales());
+        el.addEventListener('change', () => this._calcularCreditosTotales());
+      }
+    });
+    
+    // Calcular inicial al cargar (si el modal ya está en DOM)
+    if (document.getElementById('ee-creditos-teoria')) {
+      this._calcularCreditosTotales();
+    }
   }
 
   // =========================================
-  // GUARDAR EE (con Toast en lugar de alert)
+  // ABRIR MODAL (Creación o Edición)
   // =========================================
-  async _saveEE(modal) {
-    const getVal = (id) => document.getElementById(id)?.value?.trim();
-    const datos = {
-      id: getVal('ee-id') ? parseInt(getVal('ee-id')) : null,
-      clave_ee: getVal('ee-clave'), nombre: getVal('ee-nombre'),
-      tipo: document.getElementById('ee-tipo')?.value,
-      creditos: parseInt(getVal('ee-creditos')) || 0,
-      creditos_teoria: parseInt(getVal('ee-h-teoria')) || 0,
-      creditos_practica: parseInt(getVal('ee-h-practica')) || 0,
-      creditos_otros: 0,
-      horas_teoria: parseInt(getVal('ee-h-teoria')) || 0,
-      horas_practica: parseInt(getVal('ee-h-practica')) || 0,
-      area: getVal('ee-area'), linea_investigacion: getVal('ee-linea'),
-      programa_academico: getVal('ee-programa'),
-      estado: document.getElementById('ee-estado')?.value || 'activa'
-    };
+  _openModal(ee = null) {
+  const modal = this.modalElement;
+  const form = document.getElementById('form-ee');
+  if (!modal || !form) return;
+  
+  const modalTitle = modal.querySelector('.modal-header h3');
+  if (modalTitle) modalTitle.textContent = ee ? 'Editar Experiencia Educativa' : 'Nueva Experiencia Educativa';
+  
+  form.reset();
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+  setVal('ee-id', '');
+  
+  this.unsavedGuard = new UnsavedChangesGuard('#form-ee');
+  this.formAutosave = new FormAutosave('form-ee', 'ee-form');
+  
+  if (ee) {
+    // MODO EDICIÓN
+    setVal('ee-id', ee.id);
+    setVal('ee-clave', ee.clave_ee);
+    setVal('ee-nombre', ee.nombre);
+    setVal('ee-tipo', ee.tipo || 'Obligatoria');
+    setVal('ee-creditos-teoria', ee.creditos_teoria ?? 0);
+    setVal('ee-creditos-practica', ee.creditos_practica ?? 0);
+    setVal('ee-creditos-otros', ee.creditos_otros ?? 0);
     
-    if (!datos.clave_ee || !datos.nombre) {
-      Toast.error('Campos obligatorios: Clave EE y Nombre', 6000); return;
+    // Fallback si solo hay total
+    if (ee.creditos && !ee.creditos_teoria && !ee.creditos_practica && !ee.creditos_otros) {
+      setVal('ee-creditos-teoria', ee.creditos);
+      setVal('ee-creditos-practica', 0);
+      setVal('ee-creditos-otros', 0);
     }
     
-    const btnSave = document.getElementById('btn-guardar-ee');
-    const originalText = btnSave?.innerHTML || '';
-    if (btnSave) { btnSave.disabled = true; btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; }
+    this._calcularCreditosTotales();
     
-    try {
-      const res = await window.electronAPI.guardarEE(datos);
-      if (res.success) {
-        const accion = datos.id ? 'actualizada' : 'registrada';
-        Toast.success(`EE ${accion} correctamente: ${datos.nombre}`, 5000);
-        this._ejecutarCierre(); await this._loadData(); this.table?.setData(this.data);
-      } else { Toast.error(`Error: ${res.error || 'No se pudo guardar'}`, 7000); }
-    } catch (error) {
-      console.error('💥 Error guardando EE:', error);
-      Toast.error('Error de conexión al guardar EE', 6000);
-    } finally {
-      if (btnSave) { btnSave.disabled = false; btnSave.innerHTML = originalText; }
+    setVal('ee-h-teoria', ee.horas_teoria ?? 0);
+    setVal('ee-h-practica', ee.horas_practica ?? 0);
+    setVal('ee-programa', ee.programa_academico);
+    setVal('ee-area', ee.area);
+    setVal('ee-linea', ee.linea_investigacion);
+    
+    this.formAutosave?.clear();
+  } else {
+    setVal('ee-estado', 'activa');
+    setVal('ee-tipo', 'Obligatoria');
+    setVal('ee-creditos-teoria', 0);
+    setVal('ee-creditos-practica', 0);
+    setVal('ee-creditos-otros', 0);
+    this._calcularCreditosTotales();
+  }
+  
+  modal.classList.remove('hidden');
+  setTimeout(() => document.getElementById('ee-clave')?.focus(), 100);
+}
+
+  // =========================================
+  // 🔹 ABRIR MODAL DE EDICIÓN DESDE MENÚ CONTEXTUAL
+  // =========================================
+  async openEditModalFromMenu(rowId) {
+    console.log('🔍 openEditModalFromMenu llamado con rowId:', rowId);
+    
+    // 1. Buscar la EE en los datos locales
+    const ee = this.data.find(e => 
+      String(e.id) === String(rowId) || 
+      String(e.clave_ee) === String(rowId) ||
+      e.id == rowId || 
+      e.clave_ee == rowId
+    );
+    
+    if (!ee) {
+      console.error('❌ EE no encontrada para editar:', rowId);
+      Toast.error('No se encontró la experiencia educativa para editar', 5000);
+      return;
     }
+    
+    console.log('✅ EE encontrada para editar:', ee);
+    
+    // 2. Asegurar que el modal esté inyectado
+    if (!this.modalElement) this._injectModal();
+    
+    // 3. Abrir modal en modo edición (reutiliza _openModal)
+    this._openModal(ee);
+    
+    console.log('✅ Modal de edición abierto para EE:', ee.clave_ee);
   }
 
   // =========================================
@@ -385,6 +456,71 @@ export class EEModule {
   }
 
   // =========================================
+  // GUARDAR EE (con cálculo de créditos correcto)
+  // =========================================
+  async _saveEE(modal) {
+    const getVal = (id) => document.getElementById(id)?.value?.trim();
+    
+    // 🔹 Leer créditos desglosados desde los campos CORRECTOS
+    const creditosTeoria = parseInt(document.getElementById('ee-creditos-teoria')?.value) || 0;
+    const creditosPractica = parseInt(document.getElementById('ee-creditos-practica')?.value) || 0;
+    const creditosOtros = parseInt(document.getElementById('ee-creditos-otros')?.value) || 0;
+    const creditosTotal = creditosTeoria + creditosPractica + creditosOtros;
+    
+    const datos = {
+      id: getVal('ee-id') ? parseInt(getVal('ee-id')) : null,
+      clave_ee: getVal('ee-clave'),
+      nombre: getVal('ee-nombre'),
+      tipo: document.getElementById('ee-tipo')?.value,
+      
+      // 🔹 Créditos: total calculado + componentes individuales
+      creditos: creditosTotal,
+      creditos_teoria: creditosTeoria,
+      creditos_practica: creditosPractica,
+      creditos_otros: creditosOtros,
+      
+      // Horas (separado de créditos)
+      horas_teoria: parseInt(getVal('ee-h-teoria')) || 0,
+      horas_practica: parseInt(getVal('ee-h-practica')) || 0,
+      
+      // Otros campos
+      area: getVal('ee-area'),
+      linea_investigacion: getVal('ee-linea'),
+      programa_academico: getVal('ee-programa'),
+      estado: "activa"
+    };
+    
+    // Validaciones
+    if (!datos.clave_ee || !datos.nombre) {
+      Toast.error('Campos obligatorios: Clave EE y Nombre', 6000);
+      return;
+    }
+    
+    // UI: Loading state
+    const btnSave = document.getElementById('btn-guardar-ee');
+    const originalText = btnSave?.innerHTML || '';
+    if (btnSave) { btnSave.disabled = true; btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; }
+    
+    try {
+      const res = await window.electronAPI.guardarEE(datos);
+      if (res.success) {
+        const accion = datos.id ? 'actualizada' : 'registrada';
+        Toast.success(`EE ${accion} correctamente: ${datos.nombre}`, 5000);
+        this._ejecutarCierre();
+        await this._loadData();
+        this.table?.setData(this.data);
+      } else {
+        Toast.error(`Error: ${res.error || 'No se pudo guardar'}`, 7000);
+      }
+    } catch (error) {
+      console.error('💥 Error guardando EE:', error);
+      Toast.error('Error de conexión al guardar EE', 6000);
+    } finally {
+      if (btnSave) { btnSave.disabled = false; btnSave.innerHTML = originalText; }
+    }
+  }
+
+  // =========================================
   // ESTADO VACÍO
   // =========================================
   _renderEmptyState() {
@@ -396,7 +532,12 @@ export class EEModule {
   }
 
   // =========================================
-  // INTERACCIÓN DE FILAS (con bloqueo para inactivas)
+  // HELPERS GLOBALES
+  // =========================================
+  _setupGlobalHelpers() { window.eeModuleInstance = this; }
+
+  // =========================================
+  // INTERACCIÓN DE FILAS
   // =========================================
   handleRowClick(event) {
     const row = event.target.closest('.data-row');
@@ -446,8 +587,13 @@ export class EEModule {
     
     const nombreEE = ee.nombre || ee.clave_ee;
     window.assignmentModal.open({
-      entityType: 'ee', entityId: ee.id, entityName: nombreEE,
-      clave_ee: ee.clave_ee, tipo: ee.tipo, creditos: ee.creditos, area: ee.area
+      entityType: 'ee',
+      entityId: ee.id,
+      entityName: nombreEE,
+      clave_ee: ee.clave_ee,
+      tipo: ee.tipo,
+      creditos: ee.creditos,
+      area: ee.area
     });
     console.log(`✅ [EEModule] Modal abierto para: ${nombreEE}`);
   }

@@ -86,16 +86,23 @@ function initSchema(db) {
 
   // 6. EXPERIENCIAS EDUCATIVAS
   db.exec(`CREATE TABLE IF NOT EXISTS experiencias_educativas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    clave_ee TEXT UNIQUE NOT NULL,
-    nombre TEXT NOT NULL,
-    tipo TEXT,
-    creditos INTEGER DEFAULT 0,
-    area TEXT,
-    nrc TEXT UNIQUE,
-    estado TEXT DEFAULT 'activa',
-    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  clave_ee TEXT UNIQUE NOT NULL,
+  nombre TEXT NOT NULL,
+  tipo TEXT,
+  creditos INTEGER DEFAULT 0,
+  creditos_teoria INTEGER DEFAULT 0,
+  creditos_practica INTEGER DEFAULT 0,
+  creditos_otros INTEGER DEFAULT 0,
+  horas_teoria INTEGER DEFAULT 0,
+  horas_practica INTEGER DEFAULT 0,
+  area TEXT,
+  linea_investigacion TEXT,
+  programa_academico TEXT,
+  nrc TEXT UNIQUE,
+  estado TEXT DEFAULT 'activa',
+  fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
 
   // 7. MALLA CURRICULAR
   db.exec(`CREATE TABLE IF NOT EXISTS malla_curricular (
