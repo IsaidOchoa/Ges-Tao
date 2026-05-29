@@ -113,6 +113,100 @@
 
 
 /* =========================================
+   MENÚ CONTEXTUAL DE FILAS
+   ========================================= */
+
+.context-menu {
+  position: fixed !important;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  width: 200px; 
+  max-width: 200px;
+  z-index: 10000;
+  padding: 5px 0;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.context-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.context-item:hover {
+  background-color: var(--bg-light);
+}
+
+.context-item i {
+  width: 18px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.context-item:hover i {
+  color: var(--accent-color);
+}
+
+.col-actions {
+  padding: 0 !important;
+  vertical-align: middle;
+}
+
+.action-icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.btn-action-menu {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.btn-action-menu:hover {
+  background: var(--bg-light);
+  color: var(--text-dark);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modo oscuro */
+body[data-theme="dark"] .context-menu {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+body[data-theme="dark"] .context-item:hover {
+  background: #333;
+}
+
+
+/* =========================================
    3. MODO OSCURO
    ========================================= */
 body[data-theme="dark"] .data-table thead th {

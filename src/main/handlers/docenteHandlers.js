@@ -93,6 +93,22 @@ module.exports = () => {
   }
 });
 
+// src/main/handlers/docenteHandlers.js
+ipcMain.handle('actualizar-estado-docente', async (event, { id, nuevoEstado }) => {
+  try {
+    const db = getDB();
+    if (!['activo', 'inactivo'].includes(nuevoEstado)) {
+      return { success: false, error: 'Estado inválido' };
+    }
+    
+    db.prepare('UPDATE docentes SET estado = ? WHERE id = ?').run(nuevoEstado, id);
+    return { success: true };
+  } catch (err) {
+    console.error('Error actualizando estado docente:', err);
+    return { success: false, error: err.message };
+  }
+});
+
   ipcMain.handle('eliminar-docente', async (event, id) => {
     try {
       const db = getDB();

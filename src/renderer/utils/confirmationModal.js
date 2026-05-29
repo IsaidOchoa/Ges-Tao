@@ -18,15 +18,16 @@ export class ConfirmationModal {
         return true;
       }
       
+      // 🔹 HTML con título y mensaje separados
       const html = `
         <div id="modal-confirmacion" class="modal-overlay hidden" style="z-index:10000; position:fixed; top:0; left:0; width:100%; height:100%;">
-          <div class="modal-content modal-sm" style="max-width:400px; margin:20vh auto;">
+          <div class="modal-content modal-sm" style="max-width:450px; margin:15vh auto;">
             <div class="modal-header">
-              <h3>Confirmación</h3>
+              <h3 id="confirmacion-titulo">Confirmación</h3>
               <button class="btn-close" id="btn-cerrar-confirmacion" type="button" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
             </div>
             <div class="modal-body">
-              <p id="confirmacion-mensaje" style="margin:20px 0; text-align:center; font-size:1.05rem; color:var(--text-dark);"></p>
+              <div id="confirmacion-mensaje" style="margin:20px 0; text-align:left; font-size:0.95rem; color:var(--text-dark); line-height:1.6;"></div>
             </div>
             <div class="modal-footer" style="display:flex; justify-content:center; gap:12px; padding:16px;">
               <button class="btn btn-secondary" id="btn-confirmacion-cancelar" type="button" style="padding:8px 20px; cursor:pointer;">Cancelar</button>
@@ -82,7 +83,8 @@ export class ConfirmationModal {
     document.addEventListener('keydown', escHandler);
   }
 
-  ask(message) {
+  // 🔹 MÉTODO CORREGIDO: Acepta 2 parámetros
+  ask(titulo, mensaje = '') {
     return new Promise((resolve, reject) => {
       if (!this._initialized) {
         const ok = this.init();
@@ -102,8 +104,23 @@ export class ConfirmationModal {
       this._resolve = resolve;
       this._reject = reject;
       
+      // 🔹 Actualizar título
+      const tituloEl = document.getElementById('confirmacion-titulo');
+      if (tituloEl) {
+        tituloEl.textContent = titulo || 'Confirmación';
+      }
+      
+      // 🔹 Actualizar mensaje (con soporte para HTML)
       const msgEl = document.getElementById('confirmacion-mensaje');
-      if (msgEl) msgEl.textContent = message || '¿Estás seguro?';
+      if (msgEl) {
+        if (mensaje) {
+          msgEl.innerHTML = mensaje;  // Usar innerHTML para permitir <strong>
+          msgEl.style.display = 'block';
+        } else {
+          msgEl.textContent = titulo || '¿Estás seguro?';  // Si no hay mensaje, usar título como fallback
+          msgEl.style.display = 'block';
+        }
+      }
       
       this.modal.classList.remove('hidden');
       

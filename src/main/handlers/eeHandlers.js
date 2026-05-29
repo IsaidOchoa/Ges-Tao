@@ -114,6 +114,17 @@ module.exports = () => {
     }
   });
 
+  ipcMain.handle('actualizar-estado-ee', async (event, { id, nuevoEstado }) => {
+  try {
+    const db = getDB();
+    if (!['activa', 'inactiva'].includes(nuevoEstado)) return { success: false, error: 'Estado inválido' };
+    const ee = db.prepare('SELECT id FROM experiencias_educativas WHERE id = ?').get(id);
+    if (!ee) return { success: false, error: 'EE no encontrada' };
+    db.prepare('UPDATE experiencias_educativas SET estado = ? WHERE id = ?').run(nuevoEstado, id);
+    return { success: true };
+  } catch (err) { console.error('❌ Error actualizando EE:', err); return { success: false, error: err.message }; }
+});
+
   // ==========================================
   // ELIMINAR EE
   // ==========================================

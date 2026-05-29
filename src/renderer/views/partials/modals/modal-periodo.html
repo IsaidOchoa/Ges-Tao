@@ -1,27 +1,24 @@
 <!-- MODAL PERIODO - Layout Corregido UX -->
 <div id="modal-periodo" class="modal-overlay hidden">
   <div class="modal-content modal-periodo-2col">
-    
     <!-- Header -->
     <div class="modal-header">
       <h3>Nuevo Periodo Escolar</h3>
       <button class="btn-close" id="btn-cerrar-modal-periodo">&times;</button>
     </div>
-    
+
     <form id="form-periodo">
-      <input type="hidden" id="periodo-id">
-      
+      <input type="hidden" id="periodo-id" />
+
       <!-- GRID DE 2 COLUMNAS -->
       <div class="periodo-grid-2col">
-        
         <!-- COLUMNA IZQUIERDA: Plantillas (Full Width) -->
         <div class="periodo-col-left">
           <label class="form-label">Tipo de Periodo</label>
-          
+
           <div class="template-options-vertical">
-            
             <label class="template-card-full">
-              <input type="radio" name="plantilla" value="semestre-a" checked>
+              <input type="radio" name="plantilla" value="semestre-a" checked />
               <div class="template-card-content">
                 <div class="radio-custom"></div>
                 <div class="template-info">
@@ -30,9 +27,9 @@
                 </div>
               </div>
             </label>
-            
+
             <label class="template-card-full">
-              <input type="radio" name="plantilla" value="semestre-b">
+              <input type="radio" name="plantilla" value="semestre-b" />
               <div class="template-card-content">
                 <div class="radio-custom"></div>
                 <div class="template-info">
@@ -41,9 +38,9 @@
                 </div>
               </div>
             </label>
-            
+
             <label class="template-card-full">
-              <input type="radio" name="plantilla" value="personalizado">
+              <input type="radio" name="plantilla" value="personalizado" />
               <div class="template-card-content">
                 <div class="radio-custom"></div>
                 <div class="template-info">
@@ -52,13 +49,11 @@
                 </div>
               </div>
             </label>
-            
           </div>
         </div>
-        
+
         <!-- COLUMNA DERECHA: Campos -->
         <div class="periodo-col-right">
-          
           <!-- CAMPOS PRINCIPALES -->
           <div class="form-row-flex">
             <!-- Año Base -->
@@ -72,12 +67,15 @@
               <div class="clave-badge-container">
                 <span class="clave-badge" id="display-clave">FEB-JUL26</span>
               </div>
-              <input type="hidden" id="periodo-clave">
+              <input type="hidden" id="periodo-clave" />
             </div>
           </div>
 
           <!-- FECHAS PERSONALIZADAS (Solo modo personalizado) -->
-          <div id="section-fechas-personalizadas" class="custom-dates-section hidden">
+          <div
+            id="section-fechas-personalizadas"
+            class="custom-dates-section hidden"
+          >
             <div class="section-alert">
               <i class="fa-solid fa-circle-info"></i>
               <span>Modo personalizado: define manualmente las fechas</span>
@@ -85,11 +83,19 @@
             <div class="form-row-flex">
               <div class="form-group flex-1">
                 <label>Fecha de Inicio *</label>
-                <input type="date" id="periodo-fecha-inicio" class="form-control">
+                <input
+                  type="date"
+                  id="periodo-fecha-inicio"
+                  class="form-control"
+                />
               </div>
               <div class="form-group flex-1">
                 <label>Fecha de Fin *</label>
-                <input type="date" id="periodo-fecha-fin" class="form-control">
+                <input
+                  type="date"
+                  id="periodo-fecha-fin"
+                  class="form-control"
+                />
               </div>
             </div>
           </div>
@@ -99,15 +105,70 @@
             <div class="form-row-flex">
               <div class="form-group flex-1">
                 <label>Fecha de Inicio</label>
-                <div class="date-display" id="display-fecha-inicio">01/02/2026</div>
-                <input type="hidden" id="periodo-fecha-inicio-hidden">
+                <div class="date-display" id="display-fecha-inicio">
+                  01/02/2026
+                </div>
+                <input type="hidden" id="periodo-fecha-inicio-hidden" />
               </div>
               <div class="form-group flex-1">
                 <label>Fecha de Fin</label>
-                <div class="date-display" id="display-fecha-fin">31/07/2026</div>
-                <input type="hidden" id="periodo-fecha-fin-hidden">
+                <div class="date-display" id="display-fecha-fin">
+                  31/07/2026
+                </div>
+                <input type="hidden" id="periodo-fecha-fin-hidden" />
               </div>
             </div>
+          </div>
+
+          <!-- 🔹 CHECKBOX: Vigencia Forzada (Minimalista) -->
+          <div
+            class="form-group"
+            style="
+              margin-top: 15px;
+              padding: 10px;
+              background: rgba(0, 0, 0, 0.02);
+              border-radius: var(--radius-sm);
+              border-left: 3px solid var(--accent-color);
+            "
+          >
+            <div style="display: flex; align-items: center; gap: 10px">
+              <input
+                type="checkbox"
+                id="chk-vigencia-forzada"
+                value="1"
+                style="width: auto; margin: 0"
+              />
+              <label
+                for="chk-vigencia-forzada"
+                style="margin: 0; font-weight: 500; cursor: pointer; flex: 1"
+              >
+                Forzar vigencia manual
+              </label>
+              <button
+                type="button"
+                id="btn-info-vigencia"
+                class="btn-icon-info"
+                style="
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  padding: 5px;
+                  color: var(--text-muted);
+                  font-size: 1rem;
+                "
+              >
+                <i class="fa-solid fa-circle-info"></i>
+              </button>
+            </div>
+            <p
+              id="vigencia-status-msg"
+              class="help-text"
+              style="
+                margin: 5px 0 0 26px;
+                font-size: 0.8rem;
+                font-style: italic;
+              "
+            ></p>
           </div>
 
           <!-- PANEL DE ESTADO/VALIDACIÓN (Ahora al final) -->
@@ -115,23 +176,25 @@
             <div class="status-icon">✓</div>
             <div class="status-content">
               <div class="status-title" id="status-title">Periodo válido</div>
-              <div class="status-message" id="status-message">Listo para guardar</div>
+              <div class="status-message" id="status-message">
+                Listo para guardar
+              </div>
             </div>
           </div>
 
           <!-- Campos ocultos -->
-          <input type="hidden" id="periodo-descripcion">
-          <input type="hidden" id="periodo-estado" value="abierto">
-
+          <input type="hidden" id="periodo-descripcion" />
+          <input type="hidden" id="periodo-estado" value="abierto" />
         </div>
       </div>
     </form>
-    
+
     <!-- Footer -->
     <div class="modal-footer">
       <button class="btn btn-cancel" id="btn-cancelar-periodo">Cancelar</button>
-      <button class="btn btn-primary" id="btn-guardar-periodo">Guardar Periodo</button>
+      <button class="btn btn-primary" id="btn-guardar-periodo">
+        Guardar Periodo
+      </button>
     </div>
-    
   </div>
 </div>

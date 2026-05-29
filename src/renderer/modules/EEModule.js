@@ -4,75 +4,107 @@ import modalEEHtml from '../views/partials/modals/modal-ee.html';
 import { FormAutosave } from '../utils/formAutosave.js';
 import { UnsavedChangesGuard } from '../utils/unsavedChanges.js';
 import { globalConfirm } from '../utils/confirmationModal.js';
+import { Toast } from '../components/common/Toast.js'; // 🔹 IMPORTAR TOAST
 
 export class EEModule {
   constructor() {
+    // Estado interno
     this.data = [];
     this.modalElement = null;
     this.initialized = false;
     this.table = null;
     this.formAutosave = null;
     this.unsavedGuard = null;
-    this._modalInjected = false; // ✅ Track para evitar re-inyección
+    this._modalInjected = false;
+    this.tbodyId = 'tabla-ee-body';
+    this.instanceName = 'eeModuleInstance';
+    this.expandable = true;
+    this.actions = true;
   }
 
   // =========================================
-  // INICIALIZACIÓN PRINCIPAL
+  // INICIALIZACIÓN PRINCIPAL (Plantilla Canónica)
   // =========================================
-    async init() {
-    console.log('📘 [EEModule] Sincronizando módulo...');
+  async init() {
+    console.log(`📘 [${this.constructor.name}] Iniciando...`);
 
-    // 1. Inyectar modal (solo una vez)
+    // 1. Inyectar modal (idempotente)
     this._injectModal();
+    
+    // 2. Esperar que el tbody esté en el DOM
+    await this._waitForDOM(this.tbodyId);
 
-    // 2. Esperar que el tbody esté listo en el DOM
-    await this._waitForDOM('tabla-ee-body');
-
-    // 3. Cargar datos (lazy: solo si está vacío)
-    if (!this.data || this.data.length === 0) {
-      console.log('📡 [EEModule] Cargando datos desde IPC...');
+    // 3. Cargar datos (lazy load)
+    if (!this.data?.length) {
+      console.log(`📡 [${this.constructor.name}] Cargando datos desde IPC...`);
       await this._loadData();
     } else {
-      console.log('💾 [EEModule] Usando datos en caché...');
+      console.log(`💾 [${this.constructor.name}] Usando datos en caché...`);
     }
 
-    // 4. Renderizar tabla
-    const tbody = document.getElementById('tabla-ee-body');
+    // 4. Validar tbody
+    const tbody = document.getElementById(this.tbodyId);
     if (!tbody) {
-      console.error('❌ [EEModule] tbody no encontrado');
+      console.error(`❌ [${this.constructor.name}] tbody "${this.tbodyId}" no encontrado`);
+      Toast.error('Error de inicialización: tabla no encontrada', 5000);
       return;
     }
 
-    if (this.data.length > 0) {
-      this.table = new DataTable({
-        tbodyId: 'tabla-ee-body',
-        columns: this._getColumns(),
-        expandable: true,
-        actions: true,
-        // ✅ Callbacks para interacción
-        onRowClick: 'eeModuleInstance.handleRowClick(event)',
-        onAction: 'eeModuleInstance.toggleActionMenu(event)',
-        onExpand: 'eeModuleInstance.loadRowSummary(event)', // ✅ Corregido: era 'true'
-        // ✅ NUEVO: Acción del botón "Gestionar" en fila expandible
-        onExpandAction: 'eeModuleInstance.openAssignmentModal(this)'
-      });
+    // 5. Crear y configurar DataTable
+    this.table = new DataTable({
+      tbodyId: this.tbodyId,
+      columns: this._getColumns(),
+      expandable: this.expandable,
+      actions: this.actions,
+      onRowClick: `${this.instanceName}.handleRowClick(event)`,
+      onAction: `${this.instanceName}.toggleActionMenu(event)`,
+      onExpand: `${this.instanceName}.loadRowSummary(event)`,
+      onExpandAction: `${this.instanceName}.openAssignmentModal(this)`,
+      onEdit: `${this.instanceName}.openEditModalFromMenu`,
+      onToggleStatus: `${this.instanceName}.toggleEEStatus`,  // 🔹 Callback para toggle
+    });
+
+    // 6. Renderizar datos o estado vacío
+    if (this.data?.length) {
       this.table.setData(this.data);
-      console.log(`✅ Tabla EE renderizada con ${this.data.length} registros`);
+      console.log(`✅ [${this.constructor.name}] Tabla renderizada con ${this.data.length} registros`);
     } else {
       this._renderEmptyState();
-      console.log('ℹ️ [EEModule] Sin registros para mostrar');
+      console.log(`ℹ️ [${this.constructor.name}] Sin registros para mostrar`);
     }
 
-    // 5. Vincular eventos
+    // 7. Delegación de eventos para menú contextual (scoped a esta tabla)
+    tbody.addEventListener('click', (e) => {
+      const menuItem = e.target.closest('.context-item');
+      if (!menuItem) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const action = menuItem.dataset.action;
+      const rowId = menuItem.dataset.id;
+      
+      // Cerrar todos los menús primero
+      document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
+      
+      // Ejecutar acción
+      if (action === 'toggle' && typeof this.toggleEEStatus === 'function') {
+        this.toggleEEStatus(rowId);
+      } else if (action === 'edit' && typeof this.openEditModalFromMenu === 'function') {
+        this.openEditModalFromMenu(rowId);
+      }
+    });
+
+    // 8. Configurar utilidades
     this._setupSearch();
     this._setupModalEvents();
-    this._setupGlobalHelpers();
-
-    // ✅ EXPONER INSTANCIA GLOBAL (CRÍTICO para que funcione el onclick del HTML)
-    window.eeModuleInstance = this;
-
+    
+    // 9. Exponer instancia global (CRÍTICO para callbacks inline)
+    window[this.instanceName] = this;
+    
+    // 10. Marcar como inicializado
     this.initialized = true;
-    console.log('✅ [EEModule] Inicialización completa');
+    console.log(`✅ [${this.constructor.name}] Inicialización completa`);
   }
 
   // =========================================
@@ -84,11 +116,9 @@ export class EEModule {
       this._modalInjected = true;
       return;
     }
-
     const template = document.createElement('div');
     template.innerHTML = modalEEHtml;
     document.body.appendChild(template.firstElementChild);
-    
     this.modalElement = document.getElementById('modal-ee');
     this._modalInjected = true;
     console.log('✅ [EEModule] Modal inyectado');
@@ -103,7 +133,7 @@ export class EEModule {
       if (document.getElementById(elementId)) return true;
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    console.error(`❌ [EEModule] Timeout: "${elementId}" no encontrado`);
+    console.error(`❌ [${this.constructor.name}] Timeout: "${elementId}" no encontrado`);
     return false;
   }
 
@@ -117,14 +147,15 @@ export class EEModule {
         this.data = res.rows || res.data;
         if (this.data.length > 0) {
           console.log('📄 [EEModule] Primer registro:', this.data[0]);
-          console.log('🔑 [EEModule] Keys disponibles:', Object.keys(this.data[0]));
         }
         return true;
       }
       console.warn('⚠️ [EEModule] Error en respuesta IPC:', res.error);
+      Toast.warning('No se pudieron cargar las EE', 4000);
       return false;
     } catch (error) {
       console.error('❌ [EEModule] Error cargando datos:', error);
+      Toast.error('Error de conexión al cargar EE', 5000);
       return false;
     }
   }
@@ -133,12 +164,6 @@ export class EEModule {
   // CONFIGURACIÓN DE COLUMNAS
   // =========================================
   _getColumns() {
-    const estadoMap = {
-      'activa': { label: 'Vigente', class: 'badge-success' },
-      'inactiva': { label: 'Inactiva', class: 'badge-warning' },
-      'archivada': { label: 'Archivada', class: 'badge-secondary' }
-    };
-
     return [
       { 
         key: 'clave_ee', 
@@ -148,7 +173,7 @@ export class EEModule {
       { 
         key: 'nombre', 
         label: 'Nombre',
-        format: (v) => `<span title="${v}">${v.length > 30 ? v.substring(0, 30) + '...' : v}</span>`
+        format: (v) => `<span title="${v}">${v?.length > 30 ? v.substring(0, 30) + '...' : v || '-'}</span>`
       },
       { 
         key: 'tipo', 
@@ -168,9 +193,15 @@ export class EEModule {
         key: 'estado', 
         label: 'Estado',
         badge: true,
-        format: (v) => {
-          const map = estadoMap[v] || { label: v, class: 'badge-secondary' };
-          return `<span class="badge ${map.class}">${map.label}</span>`;
+        format: (v, row) => {
+          const estado = (row?.estado || v || '').toLowerCase();
+          const map = {
+            'activa': { label: 'Vigente', class: 'badge-success' },
+            'inactiva': { label: 'Inactiva', class: 'badge-warning' },
+            'archivada': { label: 'Archivada', class: 'badge-secondary' }
+          };
+          const config = map[estado] || { label: estado, class: 'badge-secondary' };
+          return `<span class="badge ${config.class}">${config.label}</span>`;
         }
       }
     ];
@@ -182,101 +213,53 @@ export class EEModule {
   _setupSearch() {
     const input = document.getElementById('buscador-ee');
     if (!input) return;
-
     const newInput = input.cloneNode(true);
     input.parentNode.replaceChild(newInput, input);
-
     newInput.addEventListener('input', (e) => {
       const txt = e.target.value.toLowerCase().trim();
-      if (!txt) {
-        this.table?.setData(this.data);
-        return;
-      }
-      
+      if (!txt) { this.table?.setData(this.data); return; }
       const filtered = this.data.filter(item => {
-        const searchable = [
-          item.clave_ee,
-          item.nombre,
-          item.tipo,
-          item.area,
-          item.linea_investigacion
-        ].filter(v => v).join(' ').toLowerCase();
+        const searchable = [item.clave_ee, item.nombre, item.tipo, item.area, item.linea_investigacion].filter(v => v).join(' ').toLowerCase();
         return searchable.includes(txt);
       });
-      
       this.table?.setData(filtered);
     });
   }
 
   // =========================================
-  // EVENTOS DEL MODAL (CON CONFIRMACIÓN ASÍNCRONA)
+  // EVENTOS DEL MODAL
   // =========================================
   _setupModalEvents() {
     const btnNuevo = document.getElementById('btn-nuevo-ee');
     const modal = this.modalElement;
+    if (!btnNuevo || !modal) { console.warn('⚠️ [EEModule] Elementos del modal no encontrados'); return; }
     
-    if (!btnNuevo || !modal) {
-      console.warn('⚠️ [EEModule] Elementos del modal no encontrados');
-      return;
-    }
-
-    // Abrir modal
-    btnNuevo.onclick = (e) => {
-      e.preventDefault();
-      this._openModal();
-    };
-
-    // ✅ Función de cierre ASÍNCRONA con confirmación global
+    btnNuevo.onclick = (e) => { e.preventDefault(); this._openModal(); };
+    
     const intentarCerrar = async () => {
-      // Si hay cambios sin guardar, preguntar con modal global (no bloqueante)
       if (this.unsavedGuard?.hasUnsavedChanges) {
         const confirmado = await globalConfirm.ask('Tienes cambios sin guardar. ¿Deseas salir sin guardar?');
-        if (!confirmado) return; // Usuario canceló → NO cerrar
+        if (!confirmado) return;
       }
-      
-      // Proceder a cerrar limpiamente
       this._ejecutarCierre();
     };
-
-    // Vincular botones de cierre a la función asíncrona
+    
     document.getElementById('btn-cerrar-modal-ee')?.addEventListener('click', intentarCerrar);
     document.getElementById('btn-cancelar-ee')?.addEventListener('click', intentarCerrar);
+    modal.addEventListener('click', (e) => { if (e.target === modal) { e.preventDefault(); intentarCerrar(); } });
     
-    // ✅ Click en overlay: ahora usa confirmación asíncrona (FIX del bloqueo)
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        e.preventDefault();
-        intentarCerrar();
-      }
-    });
-
-    // Botón guardar
     const btnSave = document.getElementById('btn-guardar-ee');
     if (btnSave) {
       const newBtn = btnSave.cloneNode(true);
       btnSave.parentNode.replaceChild(newBtn, btnSave);
-      newBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        await this._saveEE(modal);
-      });
+      newBtn.addEventListener('click', async (e) => { e.preventDefault(); await this._saveEE(modal); });
     }
   }
 
-  // ✅ Método privado para ejecutar cierre limpio (reutilizable)
   _ejecutarCierre() {
-    // 1. Destruir guard PRIMERO (libera listeners y beforeunload)
-    this.unsavedGuard?.destroy();
-    this.unsavedGuard = null;
-    
-    // 2. Limpiar auto-guardado
-    this.formAutosave?.clear();
-    this.formAutosave = null;
-    
-    // 3. Resetear formulario
-    const form = document.getElementById('form-ee');
-    if (form) form.reset();
-    
-    // 4. Ocultar modal
+    this.unsavedGuard?.destroy(); this.unsavedGuard = null;
+    this.formAutosave?.clear(); this.formAutosave = null;
+    const form = document.getElementById('form-ee'); if (form) form.reset();
     if (this.modalElement) this.modalElement.classList.add('hidden');
   }
 
@@ -284,61 +267,36 @@ export class EEModule {
   // ABRIR MODAL
   // =========================================
   _openModal(ee = null) {
-    const modal = this.modalElement;
-    const form = document.getElementById('form-ee');
+    const modal = this.modalElement; const form = document.getElementById('form-ee');
     if (!modal || !form) return;
-
     form.reset();
-    
-    // ✅ Helper seguro para setear valores (evita errores de null)
-    const setVal = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.value = val ?? '';
-    };
-    
-    // Limpiar ID
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
     setVal('ee-id', '');
-    
-    // ✅ Inicializar protecciones (nueva instancia por sesión)
     this.unsavedGuard = new UnsavedChangesGuard('#form-ee');
     this.formAutosave = new FormAutosave('form-ee', 'ee-form');
-
+    
     if (ee) {
-      // Modo edición: precargar datos
-      setVal('ee-id', ee.id);
-      setVal('ee-clave', ee.clave_ee);
-      setVal('ee-nombre', ee.nombre);
-      setVal('ee-tipo', ee.tipo || 'Obligatoria');
-      setVal('ee-creditos', ee.creditos ?? 0);
-      setVal('ee-h-teoria', ee.horas_teoria ?? 0);
-      setVal('ee-h-practica', ee.horas_practica ?? 0);
-      setVal('ee-programa', ee.programa_academico);
-      setVal('ee-area', ee.area);
-      setVal('ee-linea', ee.linea_investigacion);
-      setVal('ee-estado', ee.estado || 'activa');
+      setVal('ee-id', ee.id); setVal('ee-clave', ee.clave_ee); setVal('ee-nombre', ee.nombre);
+      setVal('ee-tipo', ee.tipo || 'Obligatoria'); setVal('ee-creditos', ee.creditos ?? 0);
+      setVal('ee-h-teoria', ee.horas_teoria ?? 0); setVal('ee-h-practica', ee.horas_practica ?? 0);
+      setVal('ee-programa', ee.programa_academico); setVal('ee-area', ee.area);
+      setVal('ee-linea', ee.linea_investigacion); setVal('ee-estado', ee.estado || 'activa');
+      this.formAutosave?.clear();
     } else {
-      // Modo nuevo: valores por defecto
-      setVal('ee-estado', 'activa');
-      setVal('ee-tipo', 'Obligatoria');
+      setVal('ee-estado', 'activa'); setVal('ee-tipo', 'Obligatoria');
     }
-    
     modal.classList.remove('hidden');
-    
-    // Enfocar primer campo con pequeño delay
     setTimeout(() => document.getElementById('ee-clave')?.focus(), 100);
   }
 
   // =========================================
-  // GUARDAR EE
+  // GUARDAR EE (con Toast en lugar de alert)
   // =========================================
   async _saveEE(modal) {
-    // ✅ Helper seguro para obtener valores
     const getVal = (id) => document.getElementById(id)?.value?.trim();
-    
     const datos = {
       id: getVal('ee-id') ? parseInt(getVal('ee-id')) : null,
-      clave_ee: getVal('ee-clave'),
-      nombre: getVal('ee-nombre'),
+      clave_ee: getVal('ee-clave'), nombre: getVal('ee-nombre'),
       tipo: document.getElementById('ee-tipo')?.value,
       creditos: parseInt(getVal('ee-creditos')) || 0,
       creditos_teoria: parseInt(getVal('ee-h-teoria')) || 0,
@@ -346,34 +304,83 @@ export class EEModule {
       creditos_otros: 0,
       horas_teoria: parseInt(getVal('ee-h-teoria')) || 0,
       horas_practica: parseInt(getVal('ee-h-practica')) || 0,
-      area: getVal('ee-area'),
-      linea_investigacion: getVal('ee-linea'),
+      area: getVal('ee-area'), linea_investigacion: getVal('ee-linea'),
       programa_academico: getVal('ee-programa'),
       estado: document.getElementById('ee-estado')?.value || 'activa'
     };
-
-    // Validaciones obligatorias
+    
     if (!datos.clave_ee || !datos.nombre) {
-      alert('⚠️ Campos obligatorios:\n• Clave EE\n• Nombre');
-      return;
+      Toast.error('Campos obligatorios: Clave EE y Nombre', 6000); return;
     }
-
+    
+    const btnSave = document.getElementById('btn-guardar-ee');
+    const originalText = btnSave?.innerHTML || '';
+    if (btnSave) { btnSave.disabled = true; btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; }
+    
     try {
       const res = await window.electronAPI.guardarEE(datos);
-      
       if (res.success) {
-        // ✅ Limpiar y cerrar tras guardar exitosamente
-        this._ejecutarCierre();
-        
-        // Refrescar tabla
-        await this._loadData();
-        this.table?.setData(this.data);
-      } else {
-        alert(`❌ Error: ${res.error || 'No se pudo guardar'}`);
-      }
+        const accion = datos.id ? 'actualizada' : 'registrada';
+        Toast.success(`EE ${accion} correctamente: ${datos.nombre}`, 5000);
+        this._ejecutarCierre(); await this._loadData(); this.table?.setData(this.data);
+      } else { Toast.error(`Error: ${res.error || 'No se pudo guardar'}`, 7000); }
     } catch (error) {
       console.error('💥 Error guardando EE:', error);
-      alert('Error de conexión con la base de datos');
+      Toast.error('Error de conexión al guardar EE', 6000);
+    } finally {
+      if (btnSave) { btnSave.disabled = false; btnSave.innerHTML = originalText; }
+    }
+  }
+
+  // =========================================
+  // 🔹 MÉTODO: Activar/Desactivar EE
+  // =========================================
+  async toggleEEStatus(rowId) {
+    console.log('🔍 toggleEEStatus llamado con rowId:', rowId);
+    
+    // Búsqueda robusta: por id o clave_ee
+    const ee = this.data.find(e => 
+      String(e.id) === String(rowId) || 
+      String(e.clave_ee) === String(rowId) ||
+      e.id == rowId || 
+      e.clave_ee == rowId
+    );
+    
+    if (!ee) {
+      console.error('❌ EE no encontrada para rowId:', rowId);
+      Toast.error('No se encontró la EE para realizar la acción', 5000);
+      return;
+    }
+    
+    console.log('✅ EE encontrada:', { id: ee.id, clave_ee: ee.clave_ee, nombre: ee.nombre, estado: ee.estado });
+
+    const nuevoEstado = ee.estado === 'activa' ? 'inactiva' : 'activa';
+    const accionInfinitivo = nuevoEstado === 'activa' ? 'Activar' : 'Desactivar';
+    const accionPasado = nuevoEstado === 'activa' ? 'activada' : 'desactivada';
+    
+    const nombreEE = ee.nombre || ee.clave_ee || 'esta experiencia educativa';
+
+    const mensajeConfirmacion = nuevoEstado === 'inactiva' 
+      ? `La experiencia educativa <strong>${nombreEE}</strong> quedará oculta en listas, búsquedas y no podrá ser asignada a docentes o alumnos.`
+      : `La experiencia educativa <strong>${nombreEE}</strong> volverá a estar disponible para asignaciones y matrículas.`;
+
+    const confirmado = await globalConfirm.ask(`¿${accionInfinitivo} experiencia educativa?`, mensajeConfirmacion);
+    if (!confirmado) { console.log('⚠️ Usuario canceló la acción'); return; }
+
+    try {
+      console.log('📡 Enviando actualización a backend:', { id: ee.id, nuevoEstado });
+      const res = await window.electronAPI.actualizarEstadoEE({ id: ee.id, nuevoEstado });
+      
+      if (res.success) {
+        Toast.success(`EE ${accionPasado} correctamente: ${nombreEE}`, 5000);
+        await this._loadData(); this.table?.setData(this.data);
+      } else {
+        console.error('❌ Error del backend:', res.error);
+        Toast.error(`Error: ${res.error || 'No se pudo actualizar el estado'}`, 6000);
+      }
+    } catch (err) {
+      console.error('💥 Error de conexión:', err);
+      Toast.error('Error de conexión al actualizar estado', 6000);
     }
   }
 
@@ -381,48 +388,27 @@ export class EEModule {
   // ESTADO VACÍO
   // =========================================
   _renderEmptyState() {
-    const tbody = document.getElementById('tabla-ee-body');
+    const tbody = document.getElementById(this.tbodyId);
     if (!tbody) return;
-    
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align:center; padding: 50px 20px; color:var(--text-muted);">
-          <i class="fa-solid fa-book-open" 
-             style="font-size: 2.5rem; margin: 0 auto 15px auto; display: block; opacity: 0.6;"></i>
-          <p style="margin: 0; font-size: 1rem;">Sin experiencias educativas registradas</p>
-        </td>
-      </tr>
-    `;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:50px; color:var(--text-muted)">
+      <i class="fa-solid fa-book-open" style="font-size:2.5rem; margin:0 auto 15px; display:block; opacity:0.6"></i>
+      <p style="margin:0">No hay experiencias educativas registradas</p></td></tr>`;
   }
 
   // =========================================
-  // HELPERS GLOBALES
-  // =========================================
-  _setupGlobalHelpers() {
-    window.eeModuleInstance = this;
-  }
-
-  // =========================================
-  // INTERACCIÓN DE FILAS
+  // INTERACCIÓN DE FILAS (con bloqueo para inactivas)
   // =========================================
   handleRowClick(event) {
     const row = event.target.closest('.data-row');
-    if (!row) return;
-    
-    if (event.target.closest('.btn-action-menu') || event.target.closest('.context-menu')) {
-      return;
-    }
+    if (!row || row.dataset.estado === 'inactivo' || row.dataset.estado === 'inactiva') return;
+    if (event.target.closest('.btn-action-menu') || event.target.closest('.context-menu')) return;
     
     row.classList.toggle('expanded');
     const detailsRow = row.nextElementSibling;
-    
     if (detailsRow?.classList.contains('sub-row-details')) {
       detailsRow.classList.toggle('hidden');
-      if (!detailsRow.classList.contains('hidden')) {
-        this._loadRowSummary(row.dataset.id, detailsRow);
-      }
+      if (!detailsRow.classList.contains('hidden')) { this._loadRowSummary(row.dataset.id, detailsRow); }
     }
-    
     document.querySelectorAll('.data-row.selected').forEach(r => r.classList.remove('selected'));
     row.classList.add('selected');
   }
@@ -430,115 +416,49 @@ export class EEModule {
   async _loadRowSummary(rowId, container) {
     const chips = container.querySelector('.summary-chips');
     if (!chips) return;
-    
     chips.innerHTML = '<span class="chip">⏳ Cargando...</span>';
-    
     try {
       setTimeout(() => {
-        chips.innerHTML = `
-          <span class="chip accent">👨‍🏫 2 Docentes</span>
-          <span class="chip">📅 2024-A</span>
-          <span class="chip">📚 8 Créditos</span>
-        `;
+        chips.innerHTML = `<span class="chip accent">👨‍🏫 2 Docentes</span><span class="chip">📅 2024-A</span><span class="chip">📚 8 Créditos</span>`;
       }, 300);
     } catch (error) {
       chips.innerHTML = '<span class="chip" style="color:var(--danger-color)">Error</span>';
     }
   }
 
-  // =========================================
-  // MENÚ CONTEXTUAL
-  // =========================================
   toggleActionMenu(event) {
     event.stopPropagation();
     document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
-    
     const menu = event.target.closest('.action-icon-container')?.previousElementSibling;
-    if (menu?.classList.contains('context-menu')) {
-      menu.classList.toggle('hidden');
-    }
+    if (menu?.classList.contains('context-menu')) menu.classList.toggle('hidden');
   }
 
-    // src/renderer/modules/EEModule.js
-  
   openAssignmentModal(buttonEl) {
-    // 1. Navegación DOM para encontrar la fila principal
     const expandedRow = buttonEl?.closest('.sub-row-details');
-    const row = expandedRow 
-      ? expandedRow.previousElementSibling 
-      : buttonEl?.closest('.data-row');
+    const row = expandedRow ? expandedRow.previousElementSibling : buttonEl?.closest('.data-row');
+    if (!row?.classList.contains('data-row')) { console.warn('⚠️ [EEModule] No se encontró fila válida'); return; }
     
-    if (!row?.classList.contains('data-row')) {
-      console.warn('⚠️ [EEModule] No se encontró fila de datos válida');
-      return;
-    }
-    
-    // 2. Obtener identificador (clave_ee) desde el dataset de la fila
     const identificador = row.dataset.id?.trim();
-    if (!identificador) {
-      console.error('❌ [EEModule] La fila no tiene dataset.id');
-      return;
-    }
-
-    // 3. Validar que tenemos datos cargados
-    if (!this.data || this.data.length === 0) {
-      console.error('❌ [EEModule] No hay datos cargados en la tabla (this.data está vacío)');
-      return;
-    }
-
-    // 4. Buscar la EE en los datos locales por su clave única (clave_ee)
-    const ee = this.data.find(e => e.clave_ee === identificador);
-
-    // Fallback: si no encuentra por clave_ee, intentar por id numérico
-    const eeFallback = !ee ? this.data.find(e => e.id == identificador) : null;
-    const eeCompleto = ee || eeFallback;
-
-    if (!eeCompleto) {
-      console.error(`❌ [EEModule] EE no encontrada con clave: ${identificador}`);
-      console.warn('💡 Pista: Revisa si el identificador en el HTML es clave_ee o id');
-      console.log('🔍 [Debug] Primeras EE en this.data:', this.data.slice(0, 2).map(e => ({ id: e.id, clave_ee: e.clave_ee, nombre: e.nombre })));
-      return;
-    }
-
-    // 5. Debug opcional (puedes quitarlo en producción)
-    console.log('🔍 [EEModule] Datos encontrados:', {
-      id: eeCompleto.id,
-      clave_ee: eeCompleto.clave_ee,
-      nombre: eeCompleto.nombre,
-      tipo: eeCompleto.tipo,
-      creditos: eeCompleto.creditos
-    });
-
-    // 6. Abrir modal con contexto completo de EE
-    window.assignmentModal.open({
-      entityType: 'ee',                    // 🔑 Clave: define qué cards mostrar
-      entityId: eeCompleto.id,             // ID interno para backend (número)
-      entityName: eeCompleto.nombre,       // Nombre visual para el sidebar
-      clave_ee: eeCompleto.clave_ee,       // Clave visible para UI (ej: "PROG-101")
-      // Campos extra opcionales para futuras cards:
-      tipo: eeCompleto.tipo,
-      creditos: eeCompleto.creditos,
-      area: eeCompleto.area
-    });
+    if (!identificador || !this.data?.length) return;
     
-    console.log(`✅ [EEModule] Modal abierto para EE: ${eeCompleto.nombre} (${eeCompleto.clave_ee})`);
+    const ee = this.data.find(e => e.clave_ee === identificador) || this.data.find(e => e.id == identificador);
+    if (!ee) { console.error(`❌ EE no encontrada: ${identificador}`); return; }
+    
+    const nombreEE = ee.nombre || ee.clave_ee;
+    window.assignmentModal.open({
+      entityType: 'ee', entityId: ee.id, entityName: nombreEE,
+      clave_ee: ee.clave_ee, tipo: ee.tipo, creditos: ee.creditos, area: ee.area
+    });
+    console.log(`✅ [EEModule] Modal abierto para: ${nombreEE}`);
   }
 
   // =========================================
-  // CLEANUP (Para liberar recursos si se destruye el módulo)
+  // CLEANUP
   // =========================================
   destroy() {
-    // Destruir guard y autosave
-    this.unsavedGuard?.destroy();
-    this.unsavedGuard = null;
-    this.formAutosave?.clear();
-    this.formAutosave = null;
-    
-    // Liberar referencias
-    this.modalElement = null;
-    this._modalInjected = false;
-    this.table = null;
-    
+    this.unsavedGuard?.destroy(); this.unsavedGuard = null;
+    this.formAutosave?.clear(); this.formAutosave = null;
+    this.modalElement = null; this._modalInjected = false; this.table = null;
     console.log('🧹 [EEModule] Recursos liberados');
   }
 }

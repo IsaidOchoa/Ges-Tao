@@ -1,16 +1,15 @@
 // src/main/handlers/alumnoHandlers.js
-const { ipcMain } = require('electron');
-const { getDB } = require('../database');
+const { ipcMain } = require("electron");
+const { getDB } = require("../database");
 
 module.exports = () => {
-  
   // ==========================================
   // LISTAR ALUMNOS (CON TUTOR ASIGNADO)
   // ==========================================
-  ipcMain.handle('obtener-alumnos', async () => {
+  ipcMain.handle("obtener-alumnos", async () => {
     try {
       const db = getDB();
-      
+
       const query = `
         SELECT 
           a.*,
@@ -30,12 +29,11 @@ module.exports = () => {
         WHERE a.estado != 'archivado'
         ORDER BY a.apellido_paterno, a.nombres
       `;
-      
+
       const rows = db.prepare(query).all();
       return { success: true, rows };
-      
     } catch (error) {
-      console.error('❌ [IPC] Error en obtener-alumnos:', error);
+      console.error("❌ [IPC] Error en obtener-alumnos:", error);
       return { success: false, error: error.message };
     }
   });
@@ -43,13 +41,13 @@ module.exports = () => {
   // ==========================================
   // GUARDAR ALUMNO (Insertar o Actualizar)
   // ==========================================
-  ipcMain.handle('guardar-alumno', async (event, datos) => {
-    console.log('[IPC] Guardando alumno:', datos.nombres);
-    
+  ipcMain.handle("guardar-alumno", async (event, datos) => {
+    console.log("[IPC] Guardando alumno:", datos.nombres);
+
     try {
       const db = getDB();
       let stmt;
-      
+
       if (datos.id) {
         stmt = db.prepare(`
           UPDATE alumnos SET 
@@ -66,20 +64,20 @@ module.exports = () => {
             estado = ?
           WHERE id = ?
         `);
-        
+
         stmt.run(
           datos.matricula,
           datos.apellido_paterno,
-          datos.apellido_materno || '',
+          datos.apellido_materno || "",
           datos.nombres,
-          datos.correo_contacto || '',
-          datos.telefono_contacto || '',
-          datos.programa_academico || '',
+          datos.correo_contacto || "",
+          datos.telefono_contacto || "",
+          datos.programa_academico || "",
           datos.periodo_ingreso || null,
-          datos.tratamiento || 'Est.',
-          datos.articulo || 'El',
-          'activo',
-          datos.id
+          datos.tratamiento || "Est.",
+          datos.articulo || "El",
+          "activo",
+          datos.id,
         );
       } else {
         stmt = db.prepare(`
@@ -97,47 +95,70 @@ module.exports = () => {
             estado
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
-        
+
         stmt.run(
           datos.matricula,
           datos.apellido_paterno,
-          datos.apellido_materno || '',
+          datos.apellido_materno || "",
           datos.nombres,
-          datos.correo_contacto || '',
-          datos.telefono_contacto || '',
-          datos.programa_academico || '',
+          datos.correo_contacto || "",
+          datos.telefono_contacto || "",
+          datos.programa_academico || "",
           datos.periodo_ingreso || null,
-          datos.tratamiento || 'Est.',
-          datos.articulo || 'El',
-          'activo'
+          datos.tratamiento || "Est.",
+          datos.articulo || "El",
+          "activo",
         );
       }
-      
-      return { success: true, message: 'Alumno guardado correctamente' };
-      
+
+      return { success: true, message: "Alumno guardado correctamente" };
     } catch (error) {
-      console.error('[IPC] Error guardando alumno:', error);
-      
-      if (error.message.includes('UNIQUE constraint failed: alumnos.matricula')) {
-        return { success: false, error: 'La matrícula ya existe.' };
+      console.error("[IPC] Error guardando alumno:", error);
+
+      if (
+        error.message.includes("UNIQUE constraint failed: alumnos.matricula")
+      ) {
+        return { success: false, error: "La matrícula ya existe." };
       }
-      
+
       return { success: false, error: error.message };
     }
   });
+
+  ipcMain.handle(
+    "actualizar-estado-alumno",
+    async (event, { id, nuevoEstado }) => {
+      try {
+        const db = getDB();
+        if (!["activo", "inactivo"].includes(nuevoEstado))
+          return { success: false, error: "Estado inválido" };
+        const alumno = db
+          .prepare("SELECT id FROM alumnos WHERE id = ?")
+          .get(id);
+        if (!alumno) return { success: false, error: "Alumno no encontrado" };
+        db.prepare("UPDATE alumnos SET estado = ? WHERE id = ?").run(
+          nuevoEstado,
+          id,
+        );
+        return { success: true };
+      } catch (err) {
+        console.error("❌ Error actualizando alumno:", err);
+        return { success: false, error: err.message };
+      }
+    },
+  );
 
   // ==========================================
   // ELIMINAR ALUMNO
   // ==========================================
-  ipcMain.handle('eliminar-alumno', async (event, id) => {
+  ipcMain.handle("eliminar-alumno", async (event, id) => {
     try {
       const db = getDB();
-      db.prepare('DELETE FROM alumnos WHERE id = ?').run(id);
+      db.prepare("DELETE FROM alumnos WHERE id = ?").run(id);
       return { success: true };
     } catch (error) {
-      console.error('[IPC] Error eliminando alumno:', error);
+      console.error("[IPC] Error eliminando alumno:", error);
       return { success: false, error: error.message };
     }
   });
-
 };

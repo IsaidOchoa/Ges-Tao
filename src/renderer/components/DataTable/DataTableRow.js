@@ -1,4 +1,4 @@
-// Componente de fila individual
+// renderer/components/DataTable/DataTableRow.js
 export class DataTableRow {
   constructor(rowData, config) {
     this.data = rowData;
@@ -8,14 +8,17 @@ export class DataTableRow {
   }
 
   getId() {
-    return (
-      this.data.codigo ||
-      this.data.clave_ee ||
-      this.data.clave ||
-      this.data.id ||
-      `temp-${Math.random().toString(36).substr(2, 9)}`
-    );
-  }
+
+  const id = (
+    this.data.codigo ||
+    this.data.clave_ee ||
+    this.data.clave ||
+    this.data.id ||
+    `temp-${Math.random().toString(36).substr(2, 9)}`
+  );
+  
+  return String(id);
+}
 
   isActive() {
     const estado = (this.data.estado || this.data.estatus || "").toLowerCase();
@@ -27,15 +30,16 @@ export class DataTableRow {
 
     // Fila principal
     let html = `<tr class="data-row" 
-                    data-id="${this.rowId}" 
-                    data-estado="${esActivo ? "activo" : "inactivo"}"
-                    ${this.config.onRowClick ? `onclick="${this.config.onRowClick}"` : ""}>`;
+                  data-id="${this.rowId}" 
+                  data-estado="${esActivo ? "activo" : "inactivo"}"
+                  ${this.config.onRowClick ? `onclick="${this.config.onRowClick}"` : ""}
+                  oncontextmenu="event.preventDefault(); window.toggleRowContextMenu(event, '${this.rowId}')">`;
 
     // Columna de expansión
     if (this.config.expandable) {
       html += `<td class="col-expand">
-                 <i class="fa-solid fa-chevron-right row-arrow"></i>
-               </td>`;
+               <i class="fa-solid fa-chevron-right row-arrow"></i>
+             </td>`;
     }
 
     // Columnas dinámicas
@@ -45,7 +49,7 @@ export class DataTableRow {
 
     // Columna de acciones
     if (this.config.actions) {
-      html += this.renderActionsColumn();
+      html += this.renderActionsColumn(esActivo);
     }
 
     html += `</tr>`;
@@ -78,18 +82,32 @@ export class DataTableRow {
     return `<td>${val || "-"}</td>`;
   }
 
-  renderActionsColumn() {
-    return `<td style="text-align:right; position:relative; width:50px;">
-              <div id="menu-${this.rowId}" class="context-menu hidden"></div>
-              <div class="action-icon-container">
-                <button class="btn-action-menu" 
-                        onclick="event.stopPropagation(); ${this.config.onAction || ""}"
-                        title="Opciones">
-                  <i class="fa-solid fa-ellipsis-vertical"></i>
-                </button>
-              </div>
-            </td>`;
-  }
+  renderActionsColumn(esActivo) {
+  const menuId = `menu-${this.rowId}`;
+  const safeRowId = this.rowId.replace(/'/g, "\\'"); // Escapar comillas por seguridad
+
+  return `
+    <td class="col-actions" style="position:relative; width:60px;">
+      <div id="${menuId}" class="context-menu hidden">
+        <!-- 🔹 Usamos data-action y data-id en lugar de onclick -->
+        <div class="context-item" data-action="edit" data-id="${safeRowId}">
+          <i class="fa-solid fa-pen-to-square"></i> Editar
+        </div>
+        <div class="context-item" data-action="toggle" data-id="${safeRowId}">
+          <i class="fa-solid ${esActivo ? 'fa-toggle-on' : 'fa-toggle-off'}"></i> 
+          ${esActivo ? 'Desactivar' : 'Activar'}
+        </div>
+      </div>
+      
+      <div class="action-icon-container">
+        <button class="btn-action-menu" 
+                onclick="event.stopPropagation(); window.toggleRowContextMenu(event, '${safeRowId}')"
+                title="Opciones">
+          <i class="fa-solid fa-ellipsis-vertical"></i>
+        </button>
+      </div>
+    </td>`;
+}
 
   renderExpandableRow() {
     const action = this.config.onExpandAction;

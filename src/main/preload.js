@@ -37,6 +37,8 @@ try {
       return ipcRenderer.invoke("eliminar-docente", id);
     },
 
+    actualizarEstadoDocente: (data) => ipcRenderer.invoke('actualizar-estado-docente', data),
+
     // ==========================================
     // 3. EMISIÓN DE CONSTANCIAS
     // ==========================================
@@ -90,10 +92,14 @@ try {
       return ipcRenderer.invoke("guardar-ee", datos);
     },
 
+    actualizarEstadoEE: (data) => ipcRenderer.invoke('actualizar-estado-ee', data),
+
     listarPeriodos: () => {
-      console.log("[PRELOAD] Obteniendo lista de periodos...");
+      
       return ipcRenderer.invoke("obtener-periodos");
     },
+
+      actualizarEstadoPeriodo: (data) => ipcRenderer.invoke('actualizar-estado-periodo', data),
     guardarPeriodo: (datos) => {
       console.log("[PRELOAD] Guardando periodo:", datos.clave);
       return ipcRenderer.invoke("guardar-periodo", datos);
@@ -136,6 +142,8 @@ try {
       console.log("[PRELOAD] Guardando alumno:", datos.nombres);
       return ipcRenderer.invoke("guardar-alumno", datos);
     },
+
+    actualizarEstadoAlumno: (data) => ipcRenderer.invoke('actualizar-estado-alumno', data),
 
     eliminarAlumno: (id) => {
       console.log("[PRELOAD] Eliminando alumno ID:", id);

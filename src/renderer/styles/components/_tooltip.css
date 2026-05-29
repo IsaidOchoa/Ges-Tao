@@ -1,0 +1,68 @@
+/* =========================================
+   TOOLTIP REUTILIZABLE (Usa Variables Globales)
+   ========================================= */
+
+.tooltip-custom {
+  /* Usa tus variables globales automáticamente */
+  background: var(--bg-white);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  
+  /* Estilos base */
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  max-width: 300px;
+  font-family: inherit;
+  
+  /* Animación */
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+/* Contenido del tooltip */
+.tooltip-custom strong {
+  color: var(--accent-color);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.tooltip-custom p {
+  color: var(--text-muted) !important; /* Sobrescribe global si es necesario */
+  margin: 0 0 8px 0;
+}
+
+.tooltip-custom ul {
+  margin: 8px 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+}
+
+.tooltip-custom li {
+  margin: 4px 0;
+  color: var(--text-muted);
+}
+
+/* Clases de utilidad dentro del tooltip */
+.tooltip-custom .tooltip-warning {
+  color: var(--warning-color) !important;
+  font-weight: 600;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.tooltip-custom .tooltip-success {
+  color: var(--success-color) !important;
+  font-weight: 600;
+}
+
+.tooltip-custom .tooltip-error {
+  color: var(--danger-color) !important;
+  font-weight: 600;
+}

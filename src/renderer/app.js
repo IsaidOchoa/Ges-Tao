@@ -121,6 +121,41 @@ window.handleGestionDatosClick = function(event) { event.stopPropagation(); cons
 window.toggleCatalogosPopover = function(event) { if (event) event.stopPropagation(); const popover = document.getElementById('catalogos-popover'), trigger = document.getElementById('gestion-datos-trigger'); if (!popover || !trigger) return; const isOpen = !popover.classList.contains('hidden'); if (isOpen) { closeCatalogosPopover(); } else { const triggerRect = trigger.getBoundingClientRect(), sidebarRect = document.getElementById('main-sidebar')?.getBoundingClientRect(); if (sidebarRect) { const topPosition = triggerRect.top - sidebarRect.top + (triggerRect.height / 2); popover.style.top = `${topPosition}px`; } popover.classList.remove('hidden'); trigger.classList.add('active'); } };
 window.closeCatalogosPopover = function() { const popover = document.getElementById('catalogos-popover'), trigger = document.getElementById('gestion-datos-trigger'); if (popover) popover.classList.add('hidden'); if (trigger) trigger.classList.remove('active'); };
 
+// Función global para manejar menú contextual de filas
+window.toggleRowContextMenu = function(event, rowId) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  // Cerrar todos los menús abiertos
+  document.querySelectorAll('.context-menu').forEach(menu => {
+    menu.classList.add('hidden');
+  });
+  
+  // Mostrar menú de esta fila
+  const menu = document.getElementById(`menu-${rowId}`);
+  if (menu) {
+    // Posicionar menú (clic derecho: en el mouse | 3 puntos: debajo del botón)
+    if (event.type === 'contextmenu') {
+      menu.style.left = `${event.pageX}px`;
+      menu.style.top = `${event.pageY}px`;
+    } else {
+      const rect = event.target.closest('td').getBoundingClientRect();
+      menu.style.left = `${rect.right - 180}px`; // 180px = ancho del menú
+      menu.style.top = `${rect.bottom + window.scrollY}px`;
+    }
+    
+    menu.classList.remove('hidden');
+    
+    // Cerrar al hacer clic fuera
+    setTimeout(() => {
+      document.addEventListener('click', function closeMenu() {
+        menu.classList.add('hidden');
+        document.removeEventListener('click', closeMenu);
+      }, { once: true });
+    }, 100);
+  }
+};
+
 // Listeners globales
 document.addEventListener('click', function(event) { const sidebar = document.getElementById('main-sidebar'); if (!sidebar) return; const isCollapsed = sidebar.classList.contains('collapsed'), trigger = document.getElementById('gestion-datos-trigger'); if (isCollapsed) { const popover = document.getElementById('catalogos-popover'); if (popover && !popover.classList.contains('hidden') && !popover.contains(event.target) && !trigger?.contains(event.target)) { closeCatalogosPopover(); } } else { const dropdown = document.getElementById('catalogos-dropdown-inline'); if (dropdown && !dropdown.classList.contains('hidden') && !dropdown.contains(event.target) && !trigger?.contains(event.target)) { closeCatalogosDropdown(); } } });
 window.addEventListener('resize', () => { closeCatalogosPopover(); closeCatalogosDropdown(); });
