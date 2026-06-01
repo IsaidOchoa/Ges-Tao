@@ -1,0 +1,150 @@
+/* =========================================
+   CORTINA DE BIENVENIDA (Post-Login)
+   ========================================= */
+
+.welcome-curtain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999; /* Muy alto para estar por encima de todo */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.welcome-curtain.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Backdrop con blur */
+.curtain-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Contenido centrado */
+.curtain-content {
+  position: relative;
+  z-index: 1;
+  width: 90%;
+  max-width: 700px;
+  padding: 20px;
+}
+
+/* Tarjeta principal */
+.curtain-card {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: translateY(20px);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.welcome-curtain.visible .curtain-card {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Header */
+.curtain-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.curtain-header i {
+  font-size: 3rem;
+  color: var(--accent-color);
+  margin-bottom: 15px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.curtain-header h2 {
+  color: var(--text-dark);
+  font-size: 1.8rem;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Body */
+.curtain-body {
+  margin-bottom: 30px;
+}
+
+.curtain-body p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0 0 15px 0;
+  text-align: center;
+}
+
+.curtain-body p.highlight {
+  color: var(--text-dark);
+  font-weight: 500;
+  font-size: 1.05rem;
+  border-left: 4px solid var(--accent-color);
+  padding-left: 15px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+/* Footer */
+.curtain-footer {
+  text-align: center;
+}
+
+.btn-curtain-continue {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 30px;
+  background: var(--accent-color);
+  color: #ffffff !important;;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-curtain-continue:hover {
+  background: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+.btn-curtain-continue:active {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .curtain-card {
+    padding: 30px 20px;
+  }
+
+  .curtain-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .curtain-body p {
+    font-size: 0.95rem;
+  }
+}

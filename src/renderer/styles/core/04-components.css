@@ -296,13 +296,25 @@ button:disabled, .btn:disabled {
 }
 
 /* =========================================
-   7. TOGGLE SWITCH (INTERRUPTOR)
+   TOGGLE SWITCH
    ========================================= */
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  margin-bottom: 15px;
+  display: flex !important;
+  width: 100% !important;
+}
+
 .toggle-switch {
   position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 26px;
+  display: inline-block !important;
+  width: 50px !important;
+  height: 26px !important;
 }
 
 .toggle-switch input {
@@ -311,6 +323,7 @@ button:disabled, .btn:disabled {
   height: 0;
 }
 
+/* ESTO ES LO QUE NO SE VE - FORZAR VISIBILIDAD */
 .slider {
   position: absolute;
   cursor: pointer;
@@ -318,9 +331,11 @@ button:disabled, .btn:disabled {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--secondary-color); /* Variable dinámica (gris) */
-  transition: .4s;
+  background-color: #ccc;
+  transition: 0.4s;
   border-radius: 34px;
+  display: block !important;  /* 🔹 FORZAR QUE SE VEA */
+  visibility: visible !important; /* 🔹 FORZAR VISIBILIDAD */
 }
 
 .slider:before {
@@ -331,30 +346,26 @@ button:disabled, .btn:disabled {
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-input:checked + .slider {
-  background-color: var(--success-color); /* Verde éxito */
+/* Activado */
+.toggle-switch input:checked + .slider {
+  background-color: #27ae60;
 }
 
-input:focus + .slider {
-  box-shadow: 0 0 1px var(--success-color);
-}
-
-input:checked + .slider:before {
+.toggle-switch input:checked + .slider:before {
   transform: translateX(24px);
 }
 
-.toggle-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.95rem;
-  color: var(--text-dark);
-  margin-bottom: 15px;
+/* Modo oscuro (solo cambia colores) */
+body[data-theme="dark"] .slider {
+  background-color: #555;
+}
+
+body[data-theme="dark"] .toggle-switch input:checked + .slider {
+  background-color: #2ecc71;
 }
 
 /* =========================================

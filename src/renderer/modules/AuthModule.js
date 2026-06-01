@@ -1,8 +1,16 @@
 /* /renderer/modules/AuthModule.js */
+import { WelcomeCurtain } from '../components/WelcomeCurtain.js';
+
+// 🔹 CONFIGURACIÓN RÁPIDA (Cambiar aquí para activar/desactivar)
+const CONFIG = {
+  SHOW_WELCOME_CURTAIN: true, // ← Cambiar a false para desactivar la cortina
+};
+
 export class AuthModule {
   constructor() {
     this.currentUser = null;
     this.loaderElement = null;
+    this.welcomeCurtain = null; // Referencia a la cortina
     
     // Referencias al DOM (se inicializan cuando el DOM está listo)
     this.loginForm = null;
@@ -84,6 +92,7 @@ export class AuthModule {
 
   /**
    * Cambia la vista de Login a Dashboard
+   * Muestra la cortina de bienvenida si está activada
    */
   switchToDashboard() {
     if (this.viewLogin) this.viewLogin.classList.add('hidden');
@@ -94,11 +103,45 @@ export class AuthModule {
       setTimeout(() => {
         if (this.currentUser) {
           this.updateUserInfo();
-          // Notificar al app principal que el login fue exitoso para cargar Home
-          if (window.onLoginSuccess) window.onLoginSuccess();
+          
+          // 🔹 MOSTRAR CORTINA DE BIENVENIDA (si está activada)
+          if (CONFIG.SHOW_WELCOME_CURTAIN) {
+            this.showWelcomeCurtain();
+          } else {
+            // Si no hay cortina, notificar directamente
+            if (window.onLoginSuccess) window.onLoginSuccess();
+          }
         }
       }, 150);
     }
+  }
+
+  /**
+   * Muestra la cortina de bienvenida post-login
+   */
+  showWelcomeCurtain() {
+    // Destruir cortina anterior si existe
+    if (this.welcomeCurtain) {
+      this.welcomeCurtain.destroy();
+    }
+
+    // Crear nueva instancia
+    this.welcomeCurtain = new WelcomeCurtain({
+      enabled: true,
+      autoDismiss: false, // false = requiere clic en "Continuar"
+      onDismiss: () => {
+        console.log('✅ Cortina cerrada, navegando al sistema...');
+        this.welcomeCurtain = null;
+        
+        // Notificar al app principal que el login fue exitoso
+        if (window.onLoginSuccess) {
+          window.onLoginSuccess();
+        }
+      }
+    });
+
+    // Mostrar cortina
+    this.welcomeCurtain.show();
   }
 
   /**
@@ -124,6 +167,12 @@ export class AuthModule {
    * Cierra sesión y vuelve al login
    */
   logout() {
+    // Destruir cortina si está abierta
+    if (this.welcomeCurtain) {
+      this.welcomeCurtain.destroy();
+      this.welcomeCurtain = null;
+    }
+
     this.currentUser = null;
     sessionStorage.removeItem('userSession');
     
@@ -148,7 +197,7 @@ export class AuthModule {
   }
 
   // =======================================================
-  // UTILIDADES: LOADER (Podrían ir a un UtilsModule, pero aquí están bien)
+  // UTILIDADES: LOADER
   // =======================================================
 
   showLoading(message, subMessage = "Procesando...") {

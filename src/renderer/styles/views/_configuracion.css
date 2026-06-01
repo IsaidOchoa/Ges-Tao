@@ -1,11 +1,10 @@
-/* Contenedor principal de configuraciones */
+/* styles/views/_configuracion.css */
 .settings-container {
   max-width: 900px;
   margin: 0 auto;
   padding-bottom: 50px;
 }
 
-/* Títulos de Sección (Estilo Sidebar pero en horizontal) */
 .section-title {
   font-size: 1.1rem;
   margin-bottom: 5px;
@@ -22,7 +21,6 @@
   margin-top: 0;
 }
 
-/* Línea Divisoria Gruesa entre secciones */
 .settings-divider {
   border: 0;
   height: 1px;
@@ -30,7 +28,7 @@
   margin: 40px 0;
 }
 
-/* Ajustes para inputs dentro de config */
+/* Inputs Generales */
 .settings-section input[type="text"],
 .settings-section input[type="email"],
 .settings-section input[type="password"] {
@@ -43,38 +41,20 @@
   transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
-/* Switch Label simple */
-.switch-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  color: var(--text-dark);
-}
-
-/* =======================================================
-   CORRECCIÓN ESPECÍFICA: BOTONES OUTLINE EN MODO OSCURO
-   (Solo para "Examinar" y "Contactar Soporte")
-   ======================================================= */
-
-/* 1. El Input de ruta (quitar el gris claro fijo) */
+/* Input readonly en modo oscuro */
 body[data-theme="dark"] .settings-section input[readonly] {
-
-  background-color: #333 !important; /* Gris oscuro acorde al tema */
-  color: #ecf0f1 !important;         /* Texto claro */
+  background-color: #333 !important;
+  color: #ecf0f1 !important;
   border-color: #555 !important;
 }
 
-/* 2. Los Botones Outline (.btn-outline) */
+/* Botones Outline en modo oscuro */
 body[data-theme="dark"] .btn-outline {
-  /* Usamos un color claro para el borde y el texto */
   border-color: var(--text-muted) !important; 
   color: var(--text-muted) !important;
   background-color: transparent !important;
 }
 
-/* Efecto Hover: Se vuelven blancos al pasar el mouse */
 body[data-theme="dark"] .btn-outline:hover {
   border-color: #ffffff !important;
   color: #ffffff !important;

@@ -1,3 +1,4 @@
+/* src/renderer/views/pages/configuracion.html */
 <div class="fade-in">
   <div class="settings-container">
     <!-- SECCIÓN 2: PREFERENCIAS DE LA APP -->
@@ -9,16 +10,17 @@
         Personalice la apariencia y comportamiento del sistema.
       </p>
 
-      <!-- Fila 1: Tema Visual (Botones) -->
+      <!-- Fila 1: Tema Visual -->
       <div class="form-group" style="margin-bottom: 25px">
-        <label class="toggle-label" style="font-size: 1rem; font-weight: 600">
+        <div class="toggle-label" style="font-size: 1rem; font-weight: 600">
           <span>Modo Oscuro</span>
+
           <label class="toggle-switch">
-            <!-- El ID es importante para luego guardar la preferencia -->
             <input type="checkbox" id="toggle-dark-mode" />
             <span class="slider"></span>
           </label>
-        </label>
+        </div>
+
         <p
           style="
             font-size: 0.85rem;
@@ -33,34 +35,34 @@
 
       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0" />
 
-      <!-- Fila 2: Interruptores (Toggles) -->
+      <!-- Fila 2: Interruptores -->
       <div class="form-group">
-        <!-- Toggle 1: Animaciones -->
-        <label class="toggle-label">
+        <div class="toggle-label">
           <span>Activar efectos visuales y animaciones</span>
+
           <label class="toggle-switch">
             <input type="checkbox" checked />
             <span class="slider"></span>
           </label>
-        </label>
+        </div>
 
-        <!-- Toggle 2: Notificaciones (Ejemplo extra) -->
-        <label class="toggle-label">
+        <div class="toggle-label">
           <span>Mostrar notificaciones de éxito</span>
+
           <label class="toggle-switch">
             <input type="checkbox" checked />
             <span class="slider"></span>
           </label>
-        </label>
+        </div>
 
-        <!-- Toggle 3: Confirmaciones -->
-        <label class="toggle-label">
+        <div class="toggle-label">
           <span>Pedir confirmación antes de eliminar</span>
+
           <label class="toggle-switch">
             <input type="checkbox" />
             <span class="slider"></span>
           </label>
-        </label>
+        </div>
       </div>
 
       <!-- Ruta de Guardado -->
@@ -69,6 +71,7 @@
           <i class="fa-solid fa-folder-tree"></i> Ruta de Guardado de
           Constancias (PDF)
         </label>
+
         <div style="display: flex; gap: 10px; align-items: center">
           <input
             type="text"
@@ -84,6 +87,7 @@
               color: var(--text-dark);
             "
           />
+
           <button
             id="btn-seleccionar-ruta"
             class="btn btn-outline"
@@ -92,6 +96,7 @@
             <i class="fa-solid fa-folder-open"></i> Examinar
           </button>
         </div>
+
         <p
           id="msg-estado-ruta"
           style="

@@ -142,7 +142,7 @@ export class AssignmentModal {
         });
       } else {
         select.innerHTML =
-          '<option value="" disabled>No hay materias disponibles</option>';
+          '<option value="" disabled>Se han asignado todas las EE disponibles</option>';
       }
 
       select.disabled = false;
@@ -313,7 +313,7 @@ export class AssignmentModal {
         });
       } else {
         select.innerHTML =
-          '<option value="" disabled>No hay alumnos disponibles</option>';
+          '<option value="" disabled>Se han asignado todos los alumnos disponibles</option>';
       }
 
       // Habilitar controles

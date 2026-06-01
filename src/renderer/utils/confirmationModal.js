@@ -18,7 +18,6 @@ export class ConfirmationModal {
         return true;
       }
       
-      // 🔹 HTML con título y mensaje separados
       const html = `
         <div id="modal-confirmacion" class="modal-overlay hidden" style="z-index:10000; position:fixed; top:0; left:0; width:100%; height:100%;">
           <div class="modal-content modal-sm" style="max-width:450px; margin:15vh auto;">
@@ -83,21 +82,29 @@ export class ConfirmationModal {
     document.addEventListener('keydown', escHandler);
   }
 
-  // 🔹 MÉTODO CORREGIDO: Acepta 2 parámetros
-  ask(titulo, mensaje = '') {
+  /**
+   * Muestra un modal de confirmación
+   * @param {string} titulo - Título claro y conciso (ej: "¿Desasignar materia?")
+   * @param {string} mensaje - Descripción detallada (ej: "¿Estás seguro de desasignar 'Base de Datos' del periodo 2024-A?")
+   * @param {object} options - Opciones adicionales
+   * @param {string} options.btnAceptar - Texto del botón aceptar (default: "Aceptar")
+   * @param {string} options.btnCancelar - Texto del botón cancelar (default: "Cancelar")
+   * @returns {Promise<boolean>}
+   */
+  ask(titulo, mensaje = '', options = {}) {
     return new Promise((resolve, reject) => {
       if (!this._initialized) {
         const ok = this.init();
         if (!ok) {
-          console.warn('⚠️ [ConfirmationModal] No se pudo inicializar, asumiendo "Aceptar"');
-          resolve(true);
+          console.warn('⚠️ [ConfirmationModal] No se pudo inicializar, asumiendo "Cancelar"');
+          resolve(false); // 🔹 Cambiado: mejor asumir "Cancelar" por seguridad
           return;
         }
       }
       
       if (!this.modal) {
-        console.warn('⚠️ [ConfirmationModal] Modal no disponible, asumiendo "Aceptar"');
-        resolve(true);
+        console.warn('⚠️ [ConfirmationModal] Modal no disponible, asumiendo "Cancelar"');
+        resolve(false); // 🔹 Cambiado: mejor asumir "Cancelar" por seguridad
         return;
       }
       
@@ -107,26 +114,63 @@ export class ConfirmationModal {
       // 🔹 Actualizar título
       const tituloEl = document.getElementById('confirmacion-titulo');
       if (tituloEl) {
-        tituloEl.textContent = titulo || 'Confirmación';
+        tituloEl.textContent = titulo || '¿Confirmar acción?';
       }
       
-      // 🔹 Actualizar mensaje (con soporte para HTML)
+      // 🔹 Actualizar mensaje (CORRECCIÓN PRINCIPAL)
       const msgEl = document.getElementById('confirmacion-mensaje');
       if (msgEl) {
-        if (mensaje) {
-          msgEl.innerHTML = mensaje;  // Usar innerHTML para permitir <strong>
+        if (mensaje && mensaje.trim() !== '') {
+          // Si hay mensaje explícito, usarlo
+          msgEl.innerHTML = mensaje;
           msgEl.style.display = 'block';
         } else {
-          msgEl.textContent = titulo || '¿Estás seguro?';  // Si no hay mensaje, usar título como fallback
+          // 🔹 Si NO hay mensaje, NO duplicar el título
+          // En su lugar, mostrar un mensaje genérico o vacío
+          msgEl.textContent = '¿Estás seguro de continuar?';
           msgEl.style.display = 'block';
         }
       }
+      
+      // 🔹 Actualizar textos de botones si se proporcionan
+      const btnAceptar = document.getElementById('btn-confirmacion-aceptar');
+      const btnCancelar = document.getElementById('btn-confirmacion-cancelar');
+      
+      if (btnAceptar) btnAceptar.textContent = options.btnAceptar || 'Aceptar';
+      if (btnCancelar) btnCancelar.textContent = options.btnCancelar || 'Cancelar';
       
       this.modal.classList.remove('hidden');
       
       setTimeout(() => {
         document.getElementById('btn-confirmacion-cancelar')?.focus();
       }, 50);
+    });
+  }
+  
+  /**
+   * Método helper para confirmaciones simples (solo título)
+   * @param {string} mensaje - Mensaje descriptivo completo
+   * @returns {Promise<boolean>}
+   */
+  askSimple(mensaje) {
+    return this.ask('¿Confirmar?', mensaje);
+  }
+  
+  /**
+   * Método helper para confirmaciones destructivas
+   * @param {string} recurso - Nombre del recurso a eliminar/desasignar
+   * @param {string} detalle - Detalles adicionales
+   * @returns {Promise<boolean>}
+   */
+  askDestructive(recurso, detalle = '') {
+    const titulo = `¿Eliminar ${recurso}?`;
+    const mensaje = detalle 
+      ? `Esta acción no se puede deshacer. <strong>${detalle}</strong>`
+      : 'Esta acción no se puede deshacer.';
+    
+    return this.ask(titulo, mensaje, {
+      btnAceptar: 'Eliminar',
+      btnCancelar: 'Cancelar'
     });
   }
   
