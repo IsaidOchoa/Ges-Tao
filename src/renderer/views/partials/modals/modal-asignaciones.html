@@ -1,4 +1,5 @@
-<!-- modal-asignaciones.html -->
+<!-- src/renderer/config/relationships/templates/modal-asignaciones.html -->
+
 <div id="modal-asignaciones" class="modal-overlay hidden">
   <div class="modal-content">
 
@@ -79,10 +80,12 @@
               <span class="section-desc">Gestiona en qué contextos históricos existe esta entidad</span>
             </div>
             
-            <div class="adhesion-card workspace-card">
+            <!-- 🔹 REMOVIDO: class="adhesion-card workspace-card" → solo "adhesion-card" -->
+            <!-- Esto elimina el border duplicado de workspace-card -->
+            <div class="adhesion-card">
               <div class="card-body">
                 <div class="adhesion-list" id="adhesion-list">
-                  <span class="adhesion-item empty">Cargando periodos...</span>
+                  <span class="adhesion-item empty">Sin periodos asignados</span>
                 </div>
                 <div class="adhesion-controls">
                   <select id="adhesion-period-select" class="form-select form-select-sm">
@@ -107,7 +110,7 @@
             
             <!-- Grid de cards de acción -->
             <div class="workspace-grid" id="operational-relations-grid">
-              <!-- JS renderiza cards aquí -->
+              <!-- JS renderiza cards dinámicamente -->
             </div>
 
             <!-- Overlay de bloqueo sin periodo -->

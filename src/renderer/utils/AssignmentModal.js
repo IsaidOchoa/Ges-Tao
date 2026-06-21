@@ -99,6 +99,7 @@ export class AssignmentModal {
       }
       if (rel.tabId === "tutorados") {
         await this._loadTutoradosSelector(context.entityId, periodId);
+        await this._renderAssignedTutoradosList(context.entityId, periodId);
       }
     }
   }
@@ -149,39 +150,104 @@ export class AssignmentModal {
       btnAssign.disabled = false;
       btnAssign.innerHTML = '<i class="fa-solid fa-link"></i> Asignar Materia';
 
+      // 🔹 MANEJADOR DE ASIGNACIÓN CON LÓGICA DE REEMPLAZO
       btnAssign.onclick = async () => {
-        const eeId = select.value;
-        if (!eeId) {
-          Toast.warning("Seleccione una materia");
+        const newEeId = select.value;
+        if (!newEeId) {
+          Toast.warning("Seleccione una materia para continuar", 4000);
           return;
         }
 
+        // 🔍 Verificar si ya existe una EE activa en este periodo
+        const listContainer = document.getElementById(
+          `assigned-ee-list-${docenteId}`,
+        );
+        const existingItem = listContainer
+          ?.querySelector('[data-action="remove-ee"]')
+          ?.closest(".assigned-ee-item");
+
+        // ✅ CORRECCIÓN: Obtener nombres de forma más robusta
+        const currentEeId = existingItem?.querySelector(
+          '[data-action="remove-ee"]',
+        )?.dataset.eeId;
+        const currentEeName = existingItem?.querySelector(
+          '[data-action="remove-ee"]',
+        )?.dataset.eeName;
+
+        // Nombre de la nueva EE desde el select
+        const newEeOption = select.options[select.selectedIndex];
+        const newEeName =
+          newEeOption?.text?.split("(")[0]?.trim() || "la nueva materia";
+
+        // 🔄 LÓGICA DE REEMPLAZO
+        if (currentEeId && currentEeId !== newEeId) {
+          const confirmed = await globalConfirm.ask(
+            `¿Reemplazar Experiencia Educativa?`,
+            `Actualmente tienes asignada <strong>"${this._escapeHtml(currentEeName || "la materia actual")}"</strong> en este periodo.<br><br>
+       Al continuar, el sistema desasignará automáticamente la actual y asignará <strong>"${this._escapeHtml(newEeName)}"</strong>.<br>
+       ¿Deseas continuar?`,
+          );
+
+          if (!confirmed) {
+            console.log("⚠️ Usuario canceló el reemplazo de EE");
+            return;
+          }
+
+          // Paso 1: Desasignar la EE actual
+          btnAssign.disabled = true;
+          btnAssign.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin"></i> Desasignando...';
+
+          const removeRes = await window.electronAPI.removerDocenteEE({
+            docenteId,
+            eeId: currentEeId,
+            periodoId: periodId,
+          });
+
+          if (!removeRes?.success) {
+            Toast.error(`No se pudo desasignar: ${removeRes?.error}`, 8000);
+            btnAssign.disabled = false;
+            btnAssign.innerHTML =
+              '<i class="fa-solid fa-link"></i> Asignar Materia';
+            return;
+          }
+        }
+
+        // Paso 2: Asignar la nueva EE
         btnAssign.disabled = true;
-        btnAssign.textContent = "Asignando...";
+        btnAssign.innerHTML =
+          '<i class="fa-solid fa-spinner fa-spin"></i> Asignando...';
 
         try {
           const resSave = await window.electronAPI.asignarEEAdocente({
             docenteId,
-            eeId,
-            periodoId: periodId, // ✅ CORREGIDO: mapear variable local 'periodId' al nombre que espera el backend
+            eeId: newEeId,
+            periodoId: periodId,
             cargaHoraria: 0,
           });
 
           if (resSave?.success) {
-            Toast.success("Experiencia Educativa asignada correctamente");
+            const msg = currentEeId
+              ? "Experiencia Educativa reemplazada correctamente"
+              : "Experiencia Educativa asignada correctamente";
+            Toast.success(msg, 4000);
+
             this._invalidateCache();
-            await this._renderSidebarRelations();
-            this._renderGestionarView();
+            await Promise.all([
+              this._renderSidebarRelations(),
+              this._loadEESelector(docenteId, periodId),
+              this._renderAssignedEEList(docenteId, periodId),
+            ]);
           } else {
             Toast.error(
               resSave?.error || "Error al guardar la Experiencia Educativa",
+              8000,
             );
           }
         } catch (error) {
           console.error("❌ Error al asignar:", error);
-          Toast.error(error.message);
+          Toast.error(error.message || "Error de conexión", 8000);
         } finally {
-          // Restaurar botón en cualquier caso
           btnAssign.disabled = false;
           btnAssign.innerHTML =
             '<i class="fa-solid fa-link"></i> Asignar Materia';
@@ -196,71 +262,426 @@ export class AssignmentModal {
 
   async _renderAssignedEEList(docenteId, periodId) {
     const container = document.getElementById(`assigned-ee-list-${docenteId}`);
-    if (!container) return;
+    if (!container) {
+      if (process?.env?.NODE_ENV === "development") {
+        console.warn(
+          `[AssignmentModal] Contenedor #assigned-ee-list-${docenteId} no encontrado`,
+        );
+      }
+      return;
+    }
 
+    // Estado de carga inicial
     container.innerHTML =
-      '<span style="color: #666; font-size: 0.85rem;">Cargando...</span>';
+      '<span class="loading-text" style="color: var(--text-muted); font-size: 0.85rem;">' +
+      '<i class="fa-solid fa-spinner fa-spin"></i> Cargando asignaciones...</span>';
 
     try {
+      // 🔹 Validar API disponible antes de llamar
+      if (!window.electronAPI?.obtenerEEDelDocente) {
+        throw new Error(
+          "API 'obtenerEEDelDocente' no disponible. Verificar preload.js",
+        );
+      }
+
+      // 🔹 Logging para auditoría (solo desarrollo)
+      if (process?.env?.NODE_ENV === "development") {
+        console.group(`🔍 [DEBUG] _renderAssignedEEList`);
+        console.log("Timestamp:", new Date().toISOString());
+        console.log("Parámetros:", { docenteId, periodId });
+        console.groupEnd();
+      }
+
+      // 🔹 Solicitar datos al backend
       const res = await window.electronAPI.obtenerEEDelDocente({
         docenteId,
-        periodoId: periodId,
+        periodoId: periodId, // ✅ Nombre correcto que espera el backend
       });
+
+      // 🔹 Validar respuesta del backend
+      if (!res?.success) {
+        throw new Error(res?.error || "Respuesta inválida del servidor");
+      }
+
+      // 🔹 Limpiar contenedor
       container.innerHTML = "";
 
-      if (!res?.success || res.data.length === 0) {
+      // 🔹 Estado vacío: mensaje amigable
+      if (!res.data || res.data.length === 0) {
         container.innerHTML =
-          '<span style="color: #666; font-size: 0.85rem;">Ninguna EE asignada en este periodo</span>';
+          '<span class="empty-text" style="color: var(--text-muted); font-size: 0.85rem;">' +
+          "Ninguna EE asignada en este periodo</span>";
         return;
       }
 
+      // 🔹 Renderizar cada EE asignada con DocumentFragment (optimización)
+      const fragment = document.createDocumentFragment();
+
       res.data.forEach((ee) => {
+        // Crear contenedor del item
         const item = document.createElement("div");
-        item.style.cssText =
-          "display:flex; justify-content:space-between; align-items:center; padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:6px; border-left:3px solid var(--accent-color);";
-        item.innerHTML = `
-        <div>
-          <div style="font-weight:600; font-size:0.9rem; color:var(--text-light);">${ee.nombre}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">${ee.clave_ee} • ${ee.carga_horaria || 0} hrs</div>
+item.className = "ee-assigned-item";
+item.innerHTML = `
+  <div class="ee-info-header">
+    <strong class="ee-name" style="color: var(--text-dark); font-size: 0.95rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">
+      ${this._escapeHtml(ee.nombre)}
+    </strong>
+    <div class="ee-meta-tags" style="display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap;">
+      <span><i class="fa-solid fa-key"></i> ${this._escapeHtml(ee.clave_ee)}</span>
+      <span><i class="fa-regular fa-clock"></i> ${Number(ee.carga_horaria) || 0} hrs/sem</span>
+    </div>
+  </div>
+  <button class="btn-action-remove-ee" data-action="remove-ee" data-ee-id="${ee.id}" data-ee-name="${this._escapeHtml(ee.nombre)}" style="width: 100%; margin-top: 0.75rem;">
+    <i class="fa-solid fa-trash"></i> Desasignar Materia
+  </button>
+`;
+        // Efecto hover (mejor UX)
+        item.onmouseenter = () =>
+          (item.style.background = "rgba(255,255,255,0.1)");
+        item.onmouseleave = () =>
+          (item.style.background = "rgba(255,255,255,0.05)");
+
+        // 🔹 Contenido informativo (escapado para prevenir XSS)
+        const infoDiv = document.createElement("div");
+        infoDiv.style.cssText = "flex:1; min-width:0;";
+        infoDiv.innerHTML = `
+        <div style="font-weight:600; font-size:0.95rem; color:var(--text-dark); margin-bottom:0.25rem;">
+          ${this._escapeHtml(ee.nombre)}
         </div>
-        <button class="btn btn-sm btn-secondary" data-action="remove-ee" data-ee-id="${ee.id}" style="padding:4px 8px; font-size:0.75rem;">
-          <i class="fa-solid fa-trash"></i> Quitar
-        </button>
+        <div style="font-size:0.8rem; color:var(--text-muted); display:flex; gap:0.75rem; flex-wrap:wrap;">
+          <span title="Clave de la experiencia educativa">
+            <i class="fa-solid fa-key" style="margin-right:4px;"></i>
+            ${this._escapeHtml(ee.clave_ee)}
+          </span>
+          <span title="Carga horaria semanal">
+            <i class="fa-regular fa-clock" style="margin-right:4px;"></i>
+            ${Number(ee.carga_horaria) || 0} hrs/sem
+          </span>
+          ${
+            ee.fecha_asignacion
+              ? `
+            <span title="Fecha de asignación">
+              <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>
+              ${new Date(ee.fecha_asignacion).toLocaleDateString("es-MX")}
+            </span>
+          `
+              : ""
+          }
+        </div>
       `;
-        container.appendChild(item);
 
-        // Bind evento de desasignación
-        item.querySelector('[data-action="remove-ee"]').onclick = async () => {
-          const confirmed = await globalConfirm.ask(
-            `¿Desasignar "${ee.nombre}" de este periodo?`,
-            0,
-          );
-          if (!confirmed) return;
+        // 🔹 Botón de acción: Quitar asignación
+        const btnRemove = document.createElement("button");
+        btnRemove.className = "btn btn-sm btn-secondary";
+        btnRemove.dataset.action = "remove-ee";
+        btnRemove.dataset.eeId = ee.id;
+        btnRemove.dataset.eeName = ee.nombre; // Para usar en confirmación
+        btnRemove.style.cssText =
+          "padding:0.4rem 0.75rem; font-size:0.8rem; white-space:nowrap; " +
+          "display:flex; align-items:center; gap:6px;";
+        btnRemove.innerHTML =
+          '<i class="fa-solid fa-trash"></i> <span class="btn-text">Quitar</span>';
 
-          // ✅ CORREGIDO: Usar nombre exacto de preload.js
-          const removeRes = await window.electronAPI.removerDocenteEE({
-            docenteId,
-            eeId: ee.id,
-            periodoId: periodId,
-          });
+        // Tooltip accesible
+        btnRemove.title = `Desasignar "${ee.nombre}" de este periodo`;
+        btnRemove.setAttribute("aria-label", `Desasignar ${ee.nombre}`);
 
-          if (removeRes?.success) {
-            Toast.success("EE desasignada correctamente");
+        // 🔹 Bind del evento de desasignación (CORRECCIÓN PRINCIPAL)
+        // 🔹 CORRECCIÓN: btnRemove.onclick con scope correcto
+        btnRemove.onclick = async (e) => {
+          e.stopPropagation();
+
+          // ✅ Declarar variables de estado ANTES del try (scope de función)
+          let originalBtnState = null;
+
+          try {
+            // ✅ Confirmación con mensaje string válido
+            const confirmed = await globalConfirm.ask(
+              `¿Desasignar "${ee.nombre}"?`,
+              `¿Estás seguro de remover <strong>"${this._escapeHtml(ee.nombre)}"</strong> de este periodo?<br><br>
+       <small>Podrás volver a asignarla posteriormente.</small>`,
+            );
+
+            if (!confirmed) return;
+
+            // ✅ Validar API disponible
+            if (!window.electronAPI?.removerDocenteEE) {
+              throw new Error("API 'removerDocenteEE' no disponible");
+            }
+
+            // ✅ GUARDAR estado del botón AHORA (la variable ya está en scope)
+            originalBtnState = {
+              html: btnRemove.innerHTML,
+              disabled: btnRemove.disabled,
+            };
+
+            // ✅ Mostrar estado de carga
+            btnRemove.disabled = true;
+            btnRemove.innerHTML =
+              '<i class="fa-solid fa-spinner fa-spin"></i> Quitando...';
+
+            // ✅ Ejecutar llamada al backend
+            const removeRes = await window.electronAPI.removerDocenteEE({
+              docenteId,
+              eeId: ee.id,
+              periodoId: periodId,
+            });
+
+            // ✅ Validar respuesta
+            if (!removeRes?.success) {
+              throw new Error(
+                removeRes?.error || "El backend rechazó la operación",
+              );
+            }
+
+            // ✅ Éxito: actualizar UI
+            Toast.success("EE desasignada correctamente", 4000);
             this._invalidateCache();
-            await this._renderSidebarRelations();
-            await this._loadEESelector(docenteId, periodId);
-            await this._renderAssignedEEList(docenteId, periodId);
-          } else {
-            Toast.error(removeRes?.error || "Error al desasignar");
+
+            await Promise.all([
+              this._renderSidebarRelations(),
+              this._loadEESelector(docenteId, periodId),
+              this._renderAssignedEEList(docenteId, periodId),
+            ]);
+          } catch (error) {
+            console.error("❌ Error al desasignar:", error);
+            Toast.error(`No se pudo desasignar: ${error.message}`, 8000);
+            await this._loadInitialData(); // Recuperación ante inconsistencia
+          } finally {
+            // ✅ AHORA SÍ: originalBtnState está en scope y puede usarse
+            if (btnRemove && originalBtnState) {
+              btnRemove.disabled = originalBtnState.disabled;
+              btnRemove.innerHTML = originalBtnState.html;
+            }
           }
         };
+
+        // 🔹 Ensamblar item completo
+        item.appendChild(infoDiv);
+        item.appendChild(btnRemove);
+        fragment.appendChild(item);
       });
+
+      // 🔹 Insertar todo el fragmento de una vez (mejor rendimiento)
+      container.appendChild(fragment);
     } catch (error) {
-      console.error("❌ Error cargando EE asignadas:", error);
-      container.innerHTML =
-        '<span style="color: #e74c3c; font-size: 0.85rem;">Error al cargar</span>';
+      // 🔹 Manejo de errores a nivel de método
+      console.error("❌ [AssignmentModal] Error en _renderAssignedEEList:", {
+        error: error.message,
+        stack: error.stack,
+        params: { docenteId, periodId },
+      });
+
+      container.innerHTML = `<span class="error-text" style="color: var(--danger-color); font-size: 0.85rem;">
+        <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i>
+        Error al cargar: ${this._escapeHtml(error.message)}
+      </span>`;
+
+      // Notificar al usuario solo si es un error crítico
+      if (
+        error.message.includes("API no disponible") ||
+        error.message.includes("timeout")
+      ) {
+        Toast.error("Error de conexión al cargar asignaciones", 6000);
+      }
     }
   }
+
+  /**
+ * Renderiza la lista de alumnos tutorados asignados a un docente en un periodo
+ * @private
+ * @param {number} docenteId - ID del docente
+ * @param {number} periodId - ID del periodo seleccionado
+ * @returns {Promise<void>}
+ */
+async _renderAssignedTutoradosList(docenteId, periodId) {
+  const container = document.getElementById(`assigned-tutorados-list-${docenteId}`);
+  if (!container) {
+    if (process?.env?.NODE_ENV === "development") {
+      console.warn(`[AssignmentModal] Contenedor #assigned-tutorados-list-${docenteId} no encontrado`);
+    }
+    return;
+  }
+
+  // Estado de carga inicial
+  container.innerHTML = 
+    '<span class="loading-text" style="color: var(--text-muted); font-size: 0.85rem;">' +
+    '<i class="fa-solid fa-spinner fa-spin"></i> Cargando tutorados...</span>';
+
+  try {
+    // Validar API disponible
+    if (!window.electronAPI?.obtenerTutorados) {
+      throw new Error("API 'obtenerTutorados' no disponible. Verificar preload.js");
+    }
+
+    // Logging para auditoría (solo desarrollo)
+    if (process?.env?.NODE_ENV === "development") {
+      console.group(`🔍 [DEBUG] _renderAssignedTutoradosList`);
+      console.log("Timestamp:", new Date().toISOString());
+      console.log("Parámetros:", { docenteId, periodId });
+      console.groupEnd();
+    }
+
+    // Solicitar datos al backend
+    const res = await window.electronAPI.obtenerTutorados({
+      docenteId,
+      periodoId: periodId,
+    });
+
+    // Validar respuesta del backend
+    if (!res?.success) {
+      throw new Error(res?.error || "Respuesta inválida del servidor");
+    }
+
+    // Limpiar contenedor
+    container.innerHTML = "";
+
+    // Estado vacío: mensaje amigable
+    if (!res.data || res.data.length === 0) {
+      container.innerHTML = 
+        '<span class="empty-text" style="color: var(--text-muted); font-size: 0.85rem;">' +
+        'Ningún alumno tutorado en este periodo</span>';
+      return;
+    }
+
+    // Renderizar cada tutorado con DocumentFragment (optimización)
+    const fragment = document.createDocumentFragment();
+    
+    res.data.forEach((alumno) => {
+      // ✅ ESTRUCTURA VERTICAL (STACKED) - Sin estilos inline conflictivos
+      const item = document.createElement("div");
+      item.className = "tutorado-assigned-item";
+      item.setAttribute("data-alumno-id", alumno.id);
+      
+      // Template limpio con estructura apilada
+      item.innerHTML = `
+        <div class="tutorado-info-header">
+          <strong class="tutorado-name" style="color: var(--text-dark); font-size: 0.95rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">
+            ${this._escapeHtml(alumno.nombre_completo || `${alumno.nombres} ${alumno.apellido_paterno}`)}
+          </strong>
+          <div class="tutorado-meta-tags" style="display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap;">
+            <span title="Matrícula">
+              <i class="fa-solid fa-id-card" style="margin-right: 4px;"></i>
+              ${this._escapeHtml(alumno.matricula)}
+            </span>
+            ${alumno.programa_academico ? `
+              <span title="Programa académico">
+                <i class="fa-solid fa-graduation-cap" style="margin-right: 4px;"></i>
+                ${this._escapeHtml(alumno.programa_academico)}
+              </span>
+            ` : ''}
+          </div>
+        </div>
+        <button class="btn-action-remove-tutorado" data-action="remove-tutorado" data-alumno-id="${alumno.id}" data-alumno-name="${this._escapeHtml(alumno.nombre_completo || alumno.nombres)}" style="width: 100%; margin-top: 0.75rem;">
+          <i class="fa-solid fa-user-slash"></i> Remover Tutoría
+        </button>
+      `;
+
+      // Bind del evento de desasignación
+      const btnRemove = item.querySelector('.btn-action-remove-tutorado');
+      
+      btnRemove.onclick = async (e) => {
+        e.stopPropagation();
+        
+        let originalBtnState = null;
+        
+        try {
+          // Confirmación con mensaje claro
+          const alumnoNombre = this._escapeHtml(alumno.nombre_completo || alumno.nombres);
+          const confirmed = await globalConfirm.ask(
+            `¿Remover tutoría de "${alumnoNombre}"?`,
+            `¿Estás seguro de quitar la tutoría de <strong>"${alumnoNombre}"</strong>?<br><br>
+             <small>El alumno podrá ser asignado a otro docente posteriormente.</small>`
+          );
+          
+          if (!confirmed) {
+            console.log("⚠️ Usuario canceló la remoción de tutoría:", alumnoNombre);
+            return;
+          }
+
+          // Validar API disponible
+          if (!window.electronAPI?.removerTutor) {
+            throw new Error("API 'removerTutor' no disponible. Verificar preload.js");
+          }
+
+          // Guardar estado del botón
+          originalBtnState = { 
+            html: btnRemove.innerHTML, 
+            disabled: btnRemove.disabled 
+          };
+          
+          // Mostrar estado de carga
+          btnRemove.disabled = true;
+          btnRemove.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Quitando...';
+
+          // Ejecutar llamada al backend
+          const removeRes = await window.electronAPI.removerTutor({
+            docenteId,
+            alumnoId: alumno.id,
+            periodId: periodId,  // ✅ Usa el nombre correcto del parámetro
+          });
+
+          // Validar respuesta
+          if (!removeRes?.success) {
+            throw new Error(removeRes?.error || "El backend rechazó la operación");
+          }
+
+          // Éxito: actualizar UI
+          Toast.success("Tutoría removida correctamente", 4000);
+          
+          // Invalidar cache y re-renderizar
+          this._invalidateCache();
+          
+          await Promise.all([
+            this._renderSidebarRelations(),
+            this._loadTutoradosSelector(docenteId, periodId),
+            this._renderAssignedTutoradosList(docenteId, periodId)
+          ]);
+          
+        } catch (error) {
+          console.error("❌ [AssignmentModal] Error al remover tutorado:", {
+            message: error.message,
+            stack: error.stack,
+            contexto: { docenteId, alumnoId: alumno.id, periodId }
+          });
+          
+          Toast.error(
+            `No se pudo remover: ${error.message}. ` +
+            "Verifica tu conexión o contacta a soporte.",
+            8000
+          );
+          
+          // Recuperación ante inconsistencia
+          await this._loadInitialData();
+          
+        } finally {
+          // Restaurar estado del botón (siempre)
+          if (btnRemove && originalBtnState) {
+            btnRemove.disabled = originalBtnState.disabled;
+            btnRemove.innerHTML = originalBtnState.html;
+          }
+        }
+      };
+
+      fragment.appendChild(item);
+    });
+    
+    // Insertar todo el fragmento de una vez
+    container.appendChild(fragment);
+    
+  } catch (error) {
+    console.error("❌ [AssignmentModal] Error en _renderAssignedTutoradosList:", {
+      error: error.message,
+      params: { docenteId, periodId }
+    });
+    
+    container.innerHTML = 
+      `<span class="error-text" style="color: var(--danger-color); font-size: 0.85rem;">
+        <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i>
+        Error: ${this._escapeHtml(error.message)}
+      </span>`;
+  }
+}
 
   async _loadTutoradosSelector(docenteId, periodId) {
     // Validación de seguridad
@@ -1064,6 +1485,23 @@ export class AssignmentModal {
         await this._openRelationConfigFlow(relation, this.state.activePeriod);
       }
     });
+  }
+
+  _escapeHtml(str) {
+    if (typeof str !== "string") return String(str ?? "");
+
+    const map = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+      "/": "&#x2F;",
+      "`": "&#x60;",
+      "=": "&#x3D;",
+    };
+
+    return str.replace(/[&<>"'`=/]/g, (m) => map[m]);
   }
 
   // =========================================================

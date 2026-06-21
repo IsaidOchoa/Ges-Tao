@@ -3,7 +3,7 @@ import { WelcomeCurtain } from '../components/WelcomeCurtain.js';
 
 // 🔹 CONFIGURACIÓN RÁPIDA (Cambiar aquí para activar/desactivar)
 const CONFIG = {
-  SHOW_WELCOME_CURTAIN: true, // ← Cambiar a false para desactivar la cortina
+  SHOW_WELCOME_CURTAIN: false, // ← Cambiar a false para desactivar la cortina
 };
 
 export class AuthModule {

@@ -68,23 +68,48 @@ module.exports = () => {
   });
 
   // ✅ Remover asignación (sin cambios)
-  ipcMain.handle('removerTutor', async (event, { docenteId, alumnoId }) => {
-    try {
-      const result = db.prepare(`
-        UPDATE tutor_alumno 
-        SET estado = 'inactivo', fecha_baja = datetime('now')
-        WHERE docente_id = ? AND alumno_id = ? AND estado = 'activo'
-      `).run(docenteId, alumnoId);
-      
-      if (result.changes === 0) {
-        return { success: false, error: 'Asignación no encontrada o ya inactiva.' };
-      }
-      return { success: true, message: 'Tutorado removido correctamente.' };
-    } catch (error) {
-      console.error('❌ Error removiendo tutorado:', error);
-      return { success: false, error: error.message };
+  // src/main/handlers/relaciones/docenteTutoradosHandlers.js
+
+// ✅ Versión mejorada con periodoId (opcional pero recomendado)
+ipcMain.handle('removerTutor', async (event, { docenteId, alumnoId, periodoId }) => {
+  try {
+    const db = getDB();
+    
+    // Validar parámetros
+    if (!docenteId || !alumnoId) {
+      return { success: false, error: 'Se requiere docenteId y alumnoId' };
     }
-  });
+    
+    // Query con periodoId opcional (para mayor precisión)
+    let query = `
+      UPDATE tutor_alumno 
+      SET estado = 'inactivo', fecha_baja = datetime('now')
+      WHERE docente_id = ? AND alumno_id = ? AND estado = 'activo'
+    `;
+    const params = [docenteId, alumnoId];
+    
+    if (periodoId) {
+      query += ` AND periodo_id = ?`;
+      params.push(periodoId);
+    }
+    
+    const result = db.prepare(query).run(...params);
+    
+    if (result.changes === 0) {
+      return { success: false, error: 'Asignación no encontrada o ya inactiva' };
+    }
+    
+    return { 
+      success: true, 
+      message: 'Tutoría removida correctamente',
+      changes: result.changes 
+    };
+    
+  } catch (error) {
+    console.error('❌ Error en removerTutor:', error);
+    return { success: false, error: error.message };
+  }
+});
 
   // ✅ Obtener tutorados (CORREGIDO: columnas reales)
   ipcMain.handle('obtenerTutorados', async (event, { docenteId, periodoId }) => {
