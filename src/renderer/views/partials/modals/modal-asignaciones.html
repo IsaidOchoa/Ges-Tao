@@ -2,7 +2,6 @@
 
 <div id="modal-asignaciones" class="modal-overlay hidden">
   <div class="modal-content">
-
     <!-- ======================================
          TOPBAR GLOBAL
     ======================================= -->
@@ -12,7 +11,9 @@
         <span class="topbar-subtitle">Workspace contextual de relaciones</span>
       </div>
       <div class="topbar-right">
-        <button id="btn-close-modal" class="btn-icon-close" aria-label="Cerrar">&times;</button>
+        <button id="btn-close-modal" class="btn-icon-close" aria-label="Cerrar">
+          &times;
+        </button>
       </div>
     </header>
 
@@ -20,13 +21,8 @@
          LAYOUT PRINCIPAL (2 COLUMNAS)
     ======================================= -->
     <div class="modal-main-layout">
-
-      <!-- ======================================
-           SIDEBAR: Contexto + Estado Relacional
-      ======================================= -->
       <aside class="modal-sidebar">
         <div class="sidebar-body">
-          
           <!-- 1. Contexto de Entidad -->
           <div id="ctx-context-info" class="context-info">
             <!-- JS renderiza badge de entidad aquí -->
@@ -44,7 +40,6 @@
           <div id="sidebar-relations-panel">
             <!-- JS renderiza relaciones actuales aquí -->
           </div>
-
         </div>
 
         <!-- Footer Sidebar -->
@@ -59,8 +54,6 @@
            WORKSPACE: Acciones Operativas
       ======================================= -->
       <main class="modal-workspace">
-
-        <!-- Navegación -->
         <nav class="workspace-nav" id="workspace-tabs">
           <button class="tab-btn active" data-tab="gestionar">
             <i class="fa-solid fa-screwdriver-wrench"></i> Gestionar
@@ -70,25 +63,41 @@
           </button>
         </nav>
 
-        <!-- Cuerpo del Workspace -->
+        <!-- Overlay AQUÍ, al mismo nivel que workspace-body -->
+        <div class="relations-overlay hidden" id="relations-overlay">
+          <div class="overlay-content">
+            <i class="fa-solid fa-circle-info"></i>
+            <p>
+              Seleccione un periodo académico para habilitar las relaciones
+              operativas
+            </p>
+          </div>
+        </div>
+
         <section id="workspace-content" class="workspace-body">
-          
-          <!-- SECCIÓN 1: Adhesión a Periodos (Siempre visible) -->
-          <div class="workspace-section section-period-adhesion" id="section-period-adhesion">
+          <!-- SECCIÓN 1: Adhesión a Periodos -->
+          <div
+            class="workspace-section section-period-adhesion"
+            id="section-period-adhesion"
+          >
             <div class="section-header">
               <h4>Disponibilidad en Periodos</h4>
-              <span class="section-desc">Gestiona en qué contextos históricos existe esta entidad</span>
+              <span class="section-desc"
+                >Gestiona en qué contextos históricos existe esta entidad</span
+              >
             </div>
-            
-            <!-- 🔹 REMOVIDO: class="adhesion-card workspace-card" → solo "adhesion-card" -->
-            <!-- Esto elimina el border duplicado de workspace-card -->
             <div class="adhesion-card">
               <div class="card-body">
                 <div class="adhesion-list" id="adhesion-list">
-                  <span class="adhesion-item empty">Sin periodos asignados</span>
+                  <span class="adhesion-item empty"
+                    >Sin periodos asignados</span
+                  >
                 </div>
                 <div class="adhesion-controls">
-                  <select id="adhesion-period-select" class="form-select form-select-sm">
+                  <select
+                    id="adhesion-period-select"
+                    class="form-select form-select-sm"
+                  >
                     <option value="">Seleccionar periodo...</option>
                   </select>
                   <button class="btn btn-sm btn-primary" id="btn-add-adhesion">
@@ -99,29 +108,31 @@
             </div>
           </div>
 
-          <!-- SECCIÓN 2: Relaciones Operativas (Requiere periodo activo) -->
-          <div class="workspace-section section-operational-relations" id="section-operational-relations">
+          <!-- SECCIÓN 2: Relaciones Operativas -->
+          <div
+            class="workspace-section section-operational-relations"
+            id="section-operational-relations"
+          >
             <div class="section-header">
               <h4>Relaciones Operativas</h4>
               <span class="section-desc" id="relations-section-desc">
                 Seleccione un periodo en el sidebar para habilitar relaciones
               </span>
             </div>
-            
-            <!-- Grid de cards de acción -->
-            <div class="workspace-grid" id="operational-relations-grid">
-              <!-- JS renderiza cards dinámicamente -->
-            </div>
 
-            <!-- Overlay de bloqueo sin periodo -->
-            <div class="relations-overlay hidden" id="relations-overlay">
-              <div class="overlay-content">
-                <i class="fa-solid fa-circle-info"></i>
-                <p>Seleccione un periodo académico para habilitar las relaciones operativas</p>
-              </div>
+            <nav class="option-tabs" id="option-tabs" style="display: none">
+              <button class="option-tab-btn active" data-option="ee_asignadas">
+                <i class="fa-solid fa-book-open"></i> Experiencias Educativas
+              </button>
+              <button class="option-tab-btn" data-option="tutorados">
+                <i class="fa-solid fa-user-graduate"></i> Tutorados
+              </button>
+            </nav>
+
+            <div id="option-content" class="option-content">
+              <!-- JS renderiza aquí -->
             </div>
           </div>
-
         </section>
       </main>
     </div>

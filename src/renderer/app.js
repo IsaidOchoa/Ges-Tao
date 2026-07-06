@@ -20,7 +20,7 @@ import { ConfiguracionModule } from './modules/ConfiguracionModule.js';
 
 // Utilidades
 import { globalConfirm } from './utils/confirmationModal.js';
-import { AssignmentModal } from './utils/AssignmentModal.js';
+import { AssignmentModal } from './components/modals/AssignmentModal/AssignmentModal.js';
 import { allRelationships } from './config/relationships/index.js';
 import { Toast } from './components/common/Toast.js';
 

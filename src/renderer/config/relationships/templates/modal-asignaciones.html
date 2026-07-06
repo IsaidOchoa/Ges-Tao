@@ -1,4 +1,4 @@
-<!-- modal-asignaciones.html (v2.0) -->
+<!-- modal-asignaciones.html (v2.2 - Limpio) -->
 <div id="modal-asignaciones" class="modal-overlay hidden">
   <div class="modal-content">
     <!-- TOPBAR -->
@@ -8,23 +8,21 @@
         <span class="topbar-subtitle">Cree nuevas relaciones</span>
       </div>
       <div class="topbar-right">
-        <button id="btn-close-modal" class="btn-icon-close" aria-label="Cerrar">
-          &times;
-        </button>
+        <button id="btn-close-modal" class="btn-icon-close" aria-label="Cerrar">&times;</button>
       </div>
     </header>
 
     <!-- MAIN LAYOUT -->
     <div class="modal-main-layout">
-      <!-- SIDEBAR -->
+      <!-- SIDEBAR (Aquí vive la gestión de periodos) -->
       <aside class="modal-sidebar">
         <div class="sidebar-body">
-          <!-- 1. CONTEXTO DE ENTIDAD -->
+          <!-- 1. Contexto de Entidad -->
           <section class="context-section">
             <div id="ctx-context-info" class="context-info"></div>
           </section>
 
-          <!-- 2. SELECTOR DE PERIODO ACTIVO -->
+          <!-- 2. Selector de Periodo Activo -->
           <section class="context-section">
             <div class="section-label">Contexto activo</div>
             <div class="sidebar-controls">
@@ -35,21 +33,24 @@
             </div>
           </section>
 
-          <!-- 3. PANEL DE ESTADO RELACIONAL (NUEVO v2.0) -->
+          <!-- 3. Panel de Estado Relacional -->
           <div id="sidebar-relations-panel"></div>
+          
+          <!-- 4. Gestión de Periodos (Chips y agregar) -->
+          <!-- Este contenedor debe estar en tu Sidebar, no en el workspace -->
+          <div id="sidebar-periods-manager" class="sidebar-periods-manager" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+             <!-- JS inyecta aquí los chips y el botón de engranaje -->
+          </div>
         </div>
 
-        <!-- FOOTER -->
         <div class="sidebar-footer">
-          <button class="btn btn-secondary btn-block" id="btn-cancelar-asig">
-            Cerrar workspace
-          </button>
+          <button class="btn btn-secondary btn-block" id="btn-cancelar-asig">Cerrar workspace</button>
         </div>
       </aside>
 
       <!-- WORKSPACE -->
       <main class="modal-workspace">
-        <!-- NAV -->
+        <!-- TABS PRINCIPALES -->
         <nav class="workspace-nav" id="workspace-tabs">
           <button class="tab-btn active" data-tab="gestionar">
             <i class="fa-solid fa-screwdriver-wrench"></i> Gestionar
@@ -59,68 +60,41 @@
           </button>
         </nav>
 
-        <!-- BODY (Estructura v2.0: Estado vs Acciones) -->
+        <!-- BODY -->
         <section id="workspace-content" class="workspace-body">
-          <!-- ========================= -->
           <!-- VIEW: GESTIONAR -->
-          <!-- ========================= -->
           <div id="view-gestionar" class="workspace-view">
-            <!-- SECCIÓN 1: Adhesión -->
-            <div
-              class="workspace-section section-period-adhesion"
-              id="section-period-adhesion"
-            >
-              <div class="section-header">
-                <h4>Periodos disponibles para asignar</h4>
-              </div>
-
-              <div class="adhesion-controls">
-                <select
-                  id="adhesion-period-select"
-                  class="form-select form-select-sm"
-                >
-                  <option value="">Seleccionar periodo...</option>
-                </select>
-
-                <button class="btn btn-sm btn-primary" id="btn-add-adhesion">
-                  <i class="fa-solid fa-plus"></i> Asignar
+            
+            <!-- SECCIÓN: RELACIONES OPERATIVAS -->
+            <div class="workspace-section section-operational-relations" id="section-operational-relations">
+              
+              <!-- NUEVO: Tabs internos (EE / Tutorados) -->
+              <nav class="option-tabs" id="option-tabs">
+                <button class="option-tab-btn active" data-option="ee_asignadas">
+                  <i class="fa-solid fa-book-open"></i> Experiencias Educativas
                 </button>
+                <button class="option-tab-btn" data-option="tutorados">
+                  <i class="fa-solid fa-user-graduate"></i> Tutorados
+                </button>
+              </nav>
+
+              <!-- Contenido dinámico -->
+              <div id="option-content" class="option-content">
+                <!-- JS inyecta la card de asignación aquí -->
               </div>
 
-              <div class="adhesion-list" id="adhesion-list">
-                <span class="adhesion-item empty">
-                  Sin periodos asignados
-                </span>
-              </div>
-            </div>
-
-            <!-- SECCIÓN 2 -->
-            <div
-              class="workspace-section section-operational-relations"
-              id="section-operational-relations"
-            >
-              <div class="section-header">
-                <h4>Relaciones Operativas</h4>
-              </div>
-
-              <div class="workspace-grid" id="operational-relations-grid"></div>
-
+              <!-- Overlay sin periodo -->
               <div class="relations-overlay hidden" id="relations-overlay">
                 <div class="overlay-content">
                   <i class="fa-solid fa-circle-info"></i>
-
-                  <p>
-                    Seleccione un periodo académico para habilitar las
-                    relaciones operativas
-                  </p>
+                  <p>Seleccione un periodo académico para habilitar las relaciones operativas</p>
                 </div>
               </div>
+
             </div>
           </div>
 
-          <!-- ========================= -->
           <!-- VIEW: CONSULTAR -->
-          <!-- ========================= -->
           <div id="view-consultar" class="workspace-view hidden"></div>
         </section>
       </main>
