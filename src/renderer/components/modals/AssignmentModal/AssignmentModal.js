@@ -33,37 +33,92 @@ export class AssignmentModal {
     });
 
     this.workspaceManager.registerRenderer('ee_asignadas', new EEListRenderer({ 
-      api: window.electronAPI, toast: Toast, confirm: globalConfirm 
+      api: window.electronAPI, 
+      toast: Toast, 
+      confirm: globalConfirm,
+      stateManager: this.stateManager,
+      uiLoader: uiLoader
     }));
     
     this.workspaceManager.registerRenderer('tutorados', new TutoradoListRenderer({ 
-      api: window.electronAPI, toast: Toast, confirm: globalConfirm 
+      api: window.electronAPI, 
+      toast: Toast, 
+      confirm: globalConfirm,
+      stateManager: this.stateManager,
+      uiLoader: uiLoader
     }));
 
     this._initialized = false;
   }
 
   open(context) {
-    this._ensureInitialized();
+    // Resetear estado completamente
+    this.stateManager = new StateManager();
     this.stateManager.setContext(context);
     this.stateManager.setActivePeriod(null);
     this.stateManager.setActiveTab("gestionar");
+
+    // Re-inicializar managers con nuevo stateManager
+    this.sidebarManager = new SidebarManager({ 
+      api: window.electronAPI, 
+      stateManager: this.stateManager 
+    });
+
+    this.workspaceManager = new WorkspaceManager({ 
+      api: window.electronAPI, 
+      stateManager: this.stateManager,
+      toast: Toast,
+      confirm: globalConfirm,
+      uiLoader: uiLoader
+    });
+
+    this.workspaceManager.registerRenderer('ee_asignadas', new EEListRenderer({ 
+      api: window.electronAPI, 
+      toast: Toast, 
+      confirm: globalConfirm,
+      stateManager: this.stateManager,
+      uiLoader: uiLoader
+    }));
+    
+    this.workspaceManager.registerRenderer('tutorados', new TutoradoListRenderer({ 
+      api: window.electronAPI, 
+      toast: Toast, 
+      confirm: globalConfirm,
+      stateManager: this.stateManager,
+      uiLoader: uiLoader
+    }));
+
+    this._ensureInitialized();
     
     this.elements.overlay.classList.remove("hidden");
     this._loadInitialData();
   }
 
   close() {
-    if (!this.elements.overlay) return;
-    this.elements.overlay.classList.add("hidden");
-    
-    if (this._abortController) {
-      this._abortController.abort();
-      this._abortController = null;
-    }
-    
-    this.workspaceManager.cleanup(); 
+  if (!this.elements.overlay) return;
+  
+  // Ocultar modal
+  this.elements.overlay.classList.add("hidden");
+
+  // Destruir todos los componentes
+  this.workspaceManager.cleanup();
+  this.sidebarManager.cleanup();
+
+  // Abortar todos los listeners globales
+  if (this._abortController) {
+    this._abortController.abort();
+    this._abortController = null;
   }
+
+  // Eliminar el modal del DOM completamente
+  if (this.elements.overlay) {
+    this.elements.overlay.remove();
+    this.elements = {};
+  }
+
+  // Resetear estado
+  this._initialized = false;
+}
 
   _ensureInitialized() {
     if (this._initialized) return;
@@ -85,27 +140,34 @@ export class AssignmentModal {
   }
 
   _bindGlobalEvents() {
-    this._abortController = new AbortController();
-    const signal = this._abortController.signal;
+  this._abortController = new AbortController();
+  const signal = this._abortController.signal;
 
-    const closeHandler = () => this.close();
+  const closeHandler = () => this.close();
 
-    document.getElementById("btn-close-modal").addEventListener("click", closeHandler, { signal });
-    document.getElementById("btn-cancelar-asig").addEventListener("click", closeHandler, { signal });
+  document.getElementById("btn-close-modal").addEventListener("click", closeHandler, { signal });
+  document.getElementById("btn-cancelar-asig").addEventListener("click", closeHandler, { signal });
+  
+  this.elements.overlay.addEventListener("click", (e) => { 
+    if (e.target === this.elements.overlay) closeHandler(); 
+  }, { signal });
+
+  // Tabs de workspace (Gestionar/Consultar)
+  this.elements.workspaceTabs.addEventListener("click", (e) => {
+    const btn = e.target.closest(".tab-btn");
+    if (!btn) return;
+
+    const tabId = btn.dataset.tab;
+    console.log('Tab principal clickeado:', tabId); // Debug
     
-    this.elements.overlay.addEventListener("click", (e) => { 
-      if (e.target === this.elements.overlay) closeHandler(); 
-    }, { signal });
+    this._switchTab(tabId);
+  }, { signal });
 
-    this.elements.workspaceTabs.addEventListener("click", (e) => {
-      const btn = e.target.closest(".tab-btn");
-      if (btn) this._switchTab(btn.dataset.tab);
-    }, { signal });
-
-    this.elements.sidebarPeriodSelect.addEventListener("change", (e) => {
-      this._handlePeriodChange(e.target.value || null);
-    }, { signal });
-  }
+  // Selector de periodo
+  this.elements.sidebarPeriodSelect.addEventListener("change", (e) => {
+    this._handlePeriodChange(e.target.value || null);
+  }, { signal });
+}
 
   async _loadInitialData() {
     try {
@@ -123,33 +185,29 @@ export class AssignmentModal {
   }
 
   async _switchTab(tabId) {
-    if (this.stateManager.isLoading || this.stateManager.activeTab === tabId) return;
-    
-    this.stateManager.setActiveTab(tabId);
-    
-    this.elements.workspaceTabs.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.tab === tabId);
-    });
+  if (this.stateManager.isLoading || this.stateManager.activeTab === tabId) return;
+  
+  // Actualizar UI de tabs primero
+  this.elements.workspaceTabs.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
 
-    await this.workspaceManager.switchView(tabId);
-  }
+  // Cambiar la vista
+  await this.workspaceManager.switchView(tabId);
+  
+  // Actualizar el estado después
+  this.stateManager.setActiveTab(tabId);
+}
 
   async _handlePeriodChange(periodId) {
-  this.stateManager.setActivePeriod(periodId);
-  this.stateManager.invalidateCache();
-  
-  // Refrescar panel lateral
-  await this.sidebarManager.renderRelationsPanel(this.elements.sidebarRelationsPanel);
-  
-  // Re-renderizar el workspace completo para que se actualice el overlay
-  if (this.elements.workspaceContent) {
-    await this.workspaceManager.render(this.elements.workspaceContent);
+    this.stateManager.setActivePeriod(periodId);
+    this.stateManager.invalidateAll();
+    
+    await this._refreshAll();
   }
-}
 
   async _refreshAll(relationType = null) {
     await this.sidebarManager.renderRelationsPanel(this.elements.sidebarRelationsPanel);
-    
     await this.workspaceManager.refresh(relationType);
   }
 

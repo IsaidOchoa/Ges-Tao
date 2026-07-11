@@ -1,10 +1,17 @@
 // src/renderer/components/modals/AssignmentModal/relations/ee/EEListRenderer.js
 
-import { BaseRelationRenderer } from '../BaseRelationRenderer.js';
+import { BaseRelationRenderer } from "../BaseRelationRenderer.js";
 
 export class EEListRenderer extends BaseRelationRenderer {
-  constructor({ api, toast, confirm }) {
-    super({ api, toast, confirm });
+  constructor({ api, toast, confirm, stateManager, uiLoader }) {
+    super({
+      api,
+      toast,
+      confirm,
+      stateManager,
+      moduleName: "ee_asignadas",
+      uiLoader,
+    });
   }
 
   async loadSelect() {
@@ -13,146 +20,181 @@ export class EEListRenderer extends BaseRelationRenderer {
     const { select } = this._cardRefs;
     const { entityId } = this._context;
 
-    select.disabled = true;
-    select.innerHTML = '<option value="">Cargando...</option>';
-
     try {
-      const res = await this.api.listarEEDisponibles({ 
-        periodoId: this._periodId, 
-        excludeAsignadasA: entityId 
+      const res = await this.api.listarEEDisponibles({
+        periodoId: this._periodId,
+        excludeAsignadasA: entityId,
       });
-      
+
       const items = res?.success ? res.data : [];
-      
-      if (items.length === 0) {
-        select.innerHTML = '<option value="" disabled>Todas las EE asignadas</option>';
-      } else {
-        select.innerHTML = '<option value="">Seleccionar materia...</option>' +
-          items.map(ee => `<option value="${ee.id}">${this.helpers.escapeHtml(ee.nombre)} (${this.helpers.escapeHtml(ee.clave_ee)})</option>`).join('');
+
+      const currentOptions = Array.from(select.options)
+        .map((opt) => opt.value)
+        .filter((v) => v);
+      const newOptions = items.map((ee) => ee.id);
+
+      if (arraysEqual(currentOptions, newOptions)) {
+        return;
       }
-      
+
+      select.disabled = true;
+      select.innerHTML = '<option value="">Cargando...</option>';
+
+      if (items.length === 0) {
+        select.innerHTML =
+          '<option value="" disabled>Todas las EE asignadas</option>';
+      } else {
+        select.innerHTML =
+          '<option value="">Seleccionar materia...</option>' +
+          items
+            .map(
+              (ee) =>
+                `<option value="${ee.id}">${this.helpers.escapeHtml(ee.nombre)} (${this.helpers.escapeHtml(ee.clave_ee)})</option>`,
+            )
+            .join("");
+      }
+
       select.disabled = items.length === 0;
     } catch (error) {
-      console.error('Error cargando EE disponibles:', error);
+      console.error("Error cargando EE disponibles:", error);
       select.innerHTML = '<option value="" disabled>Error al cargar</option>';
       select.disabled = true;
     }
   }
 
   async renderList() {
-    if (!this._cardRefs?.listContainer || !this._context || !this._periodId) return;
+    if (!this._cardRefs?.listContainer || !this._context || !this._periodId)
+      return;
 
     const { listContainer } = this._cardRefs;
     const { entityId } = this._context;
 
-    listContainer.innerHTML = this.helpers.loadingTemplate('Cargando asignaciones...');
-
     try {
-      const res = await this.api.obtenerEEDelDocente({ 
-        docenteId: entityId, 
-        periodoId: this._periodId 
+      const res = await this.api.obtenerEEDelDocente({
+        docenteId: entityId,
+        periodoId: this._periodId,
       });
-      
-      if (!res?.success) throw new Error(res?.error || 'Respuesta inválida');
-      
-      const items = res.data || [];
-      
-      if (items.length === 0) {
-        listContainer.innerHTML = this.helpers.emptyTemplate('Ninguna EE asignada');
+
+      if (!res?.success) throw new Error(res?.error || "Respuesta inválida");
+
+      const newItems = res.data || [];
+      const newIds = newItems.map((item) => item.id);
+      const currentIds = Array.from(this._currentItems.keys());
+
+      // Si los IDs son idénticos, NO tocar el DOM
+      if (arraysEqual(currentIds, newIds)) {
+        return; // Sin parpadeo
+      }
+
+      // Solo mostrar loader si realmente hay cambios
+      this._showLoading();
+
+      listContainer.innerHTML = "";
+      this._currentItems.clear();
+
+      if (newItems.length === 0) {
+        listContainer.innerHTML = this.helpers.emptyTemplate(
+          "Ninguna EE asignada",
+        );
+        this._hideLoading();
         return;
       }
 
       const fragment = document.createDocumentFragment();
-      items.forEach(ee => fragment.appendChild(this._createItem(ee)));
-      
-      listContainer.innerHTML = '';
+      newItems.forEach((ee) => {
+        const item = this._createItem(ee);
+        fragment.appendChild(item);
+      });
       listContainer.appendChild(fragment);
+
+      this._hideLoading();
     } catch (error) {
-      console.error('Error cargando EE asignadas:', error);
+      this._hideLoading();
+      console.error("Error cargando EE asignadas:", error);
       listContainer.innerHTML = this.helpers.errorTemplate(error.message);
     }
   }
 
   async refreshCounter() {
-    if (!this._cardRefs?.counter || !this._context || !this._periodId) return;
-
-    const { counter } = this._cardRefs;
-    const { entityId } = this._context;
-
-    try {
-      const res = await this.api.obtenerEEDelDocente({ 
-        docenteId: entityId, 
-        periodoId: this._periodId 
-      });
-      
-      const count = res?.data?.length || 0;
-      counter.textContent = count;
-    } catch (error) {
-      console.error('Error actualizando contador EE:', error);
-      counter.textContent = '0';
-    }
+    const count = this._currentItems.size;
+    this._updateCounterText(count);
   }
 
   async assign() {
     if (!this._cardRefs?.select || !this._cardRefs?.assignButton) return;
 
-    const { select, assignButton, listContainer, counter } = this._cardRefs;
+    const { select, assignButton } = this._cardRefs;
     const { entityId } = this._context;
     const eeId = select.value;
 
     if (!eeId) {
-      this.toast.warning('Seleccione una materia');
+      this.toast.warning("Seleccione una materia");
       return;
     }
 
-    const existingItem = listContainer.querySelector('.assigned-item');
+    const existingItemId = this._currentItems.keys().next().value;
+    const existingItem = existingItemId
+      ? this._currentItems.get(existingItemId)
+      : null;
+
     if (existingItem) {
-      const currentName = existingItem.querySelector('strong')?.textContent;
-      const newName = select.options[select.selectedIndex]?.text;
-      
       const confirmed = await this.confirm.ask(
-        '¿Reemplazar Experiencia Educativa?',
-        `Actualmente tienes <strong>"${this.helpers.escapeHtml(currentName)}"</strong>.<br>¿Reemplazar por <strong>"${this.helpers.escapeHtml(newName)}"</strong>?`
+        "¿Reemplazar Experiencia Educativa?",
+        `Actualmente tienes <strong>"${this.helpers.escapeHtml(existingItem.nombre)}"</strong>.<br>¿Reemplazar por <strong>"${this.helpers.escapeHtml(select.options[select.selectedIndex].text)}"</strong>?`,
       );
-      
+
       if (!confirmed) return;
-      
-      const removeBtn = existingItem.querySelector('button[data-id]');
-      const currentId = removeBtn?.dataset?.id;
-      
-      if (currentId) {
-        try {
-          await this.api.removerDocenteEE({ 
-            docenteId: entityId, 
-            eeId: currentId, 
-            periodoId: this._periodId 
-          });
-        } catch (error) {
-          this.toast.error('Error al desasignar EE actual');
-          return;
-        }
+
+      try {
+        await this.api.removerDocenteEE({
+          docenteId: entityId,
+          eeId: existingItemId,
+          periodoId: this._periodId,
+        });
+        this._removeItemFromList(existingItemId);
+      } catch (error) {
+        this.toast.error("Error al desasignar EE actual");
+        return;
       }
     }
 
     assignButton.disabled = true;
-    assignButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Asignando...';
+    assignButton.innerHTML =
+      '<i class="fa-solid fa-spinner fa-spin"></i> Asignando...';
 
     try {
-      const res = await this.api.asignarEEAdocente({ 
-        docenteId: entityId, 
-        eeId: eeId, 
-        periodoId: this._periodId, 
-        cargaHoraria: 0 
+      const res = await this.api.asignarEEAdocente({
+        docenteId: entityId,
+        eeId: eeId,
+        periodoId: this._periodId,
+        cargaHoraria: 0,
       });
-      
+
       if (res?.success) {
-        this.toast.success('EE asignada correctamente');
-        await this.refresh();
+        this.toast.success("EE asignada correctamente");
+
+        const selectedOption = select.options[select.selectedIndex];
+        const newItem = {
+          id: eeId,
+          nombre: selectedOption.text.split("(")[0].trim(),
+          clave_ee: selectedOption.text.match(/\(([^)]+)\)/)?.[1] || "",
+          carga_horaria: 0,
+        };
+
+        await this._addItemToList(newItem);
+        await this.refreshCounter();
+        await this.loadSelect();
+
+        this.stateManager.invalidateModules([
+          "ee_asignadas",
+          "counters",
+          "sidebar",
+        ]);
       } else {
-        this.toast.error(res?.error || 'Error al asignar');
+        this.toast.error(res?.error || "Error al asignar");
       }
     } catch (error) {
-      console.error('Error asignando EE:', error);
+      console.error("Error asignando EE:", error);
       this.toast.error(`Error: ${error.message}`);
     } finally {
       assignButton.disabled = false;
@@ -163,18 +205,19 @@ export class EEListRenderer extends BaseRelationRenderer {
   async remove(eeId, eeName) {
     if (!this._cardRefs) return;
 
-    const { listContainer } = this._cardRefs;
-    const { entityId } = this._context;
-
     const confirmed = await this.confirm.ask(
       `¿Desasignar "${eeName}"?`,
-      `¿Estás seguro de remover <strong>"${this.helpers.escapeHtml(eeName)}"</strong>?`
+      `¿Estás seguro de remover <strong>"${this.helpers.escapeHtml(eeName)}"</strong>?`,
     );
 
     if (!confirmed) return;
 
-    const btn = listContainer.querySelector(`button[data-id="${eeId}"]`);
-    const originalState = btn ? { html: btn.innerHTML, disabled: btn.disabled } : null;
+    const btn = this._cardRefs.listContainer.querySelector(
+      `button[data-id="${eeId}"]`,
+    );
+    const originalState = btn
+      ? { html: btn.innerHTML, disabled: btn.disabled }
+      : null;
 
     if (btn) {
       btn.disabled = true;
@@ -182,20 +225,29 @@ export class EEListRenderer extends BaseRelationRenderer {
     }
 
     try {
-      const res = await this.api.removerDocenteEE({ 
-        docenteId: entityId, 
-        eeId: eeId, 
-        periodoId: this._periodId 
+      const res = await this.api.removerDocenteEE({
+        docenteId: this._context.entityId,
+        eeId: eeId,
+        periodoId: this._periodId,
       });
-      
-      if (!res?.success) throw new Error(res?.error || 'Error al desasignar');
 
-      this.toast.success('EE desasignada correctamente');
-      await this.refresh();
+      if (!res?.success) throw new Error(res?.error || "Error al desasignar");
+
+      this.toast.success("EE desasignada correctamente");
+
+      this._removeItemFromList(eeId);
+      await this.refreshCounter();
+      await this.loadSelect();
+
+      this.stateManager.invalidateModules([
+        "ee_asignadas",
+        "counters",
+        "sidebar",
+      ]);
     } catch (error) {
-      console.error('Error desasignando EE:', error);
+      console.error("Error desasignando EE:", error);
       this.toast.error(`No se pudo desasignar: ${error.message}`);
-      
+
       if (btn && originalState) {
         btn.disabled = originalState.disabled;
         btn.innerHTML = originalState.html;
@@ -204,9 +256,10 @@ export class EEListRenderer extends BaseRelationRenderer {
   }
 
   _createItem(ee) {
-    const item = document.createElement('div');
-    item.className = 'assigned-item';
-    
+    const item = document.createElement("div");
+    item.className = "assigned-item";
+    item.dataset.id = ee.id;
+
     item.innerHTML = `
       <div class="item-content">
         <strong>${this.helpers.escapeHtml(ee.nombre)}</strong>
@@ -220,6 +273,12 @@ export class EEListRenderer extends BaseRelationRenderer {
       </button>
     `;
 
+    this._currentItems.set(ee.id, ee);
     return item;
   }
+}
+
+function arraysEqual(arr1, arr2) {
+  if (arr1.length !== arr2.length) return false;
+  return arr1.every((val, idx) => val === arr2[idx]);
 }

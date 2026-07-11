@@ -8,12 +8,15 @@ export class PeriodAdhesionCard {
     this.confirm = confirm;
     this._abortController = null;
     this._elements = {};
+    this._moduleName = 'adhesion';
   }
 
   async render(container) {
     this._cacheElements(container);
     
     if (!this._elements.listContainer || !this._elements.select) return;
+
+    if (this.stateManager.isCacheValid(this._moduleName)) return;
 
     this.cleanup();
     this._abortController = new AbortController();
@@ -32,6 +35,8 @@ export class PeriodAdhesionCard {
 
       this._renderAssignedPeriods(assignedPeriods, entityType, entityId, entityName, signal);
       this._renderAvailablePeriods(assignedPeriods, allPeriods, entityType, entityId, signal);
+      
+      this.stateManager.setCache(this._moduleName, true);
     } catch (error) {
       console.error('Error en PeriodAdhesionCard:', error);
       this._elements.listContainer.innerHTML = '<span class="adhesion-item empty">Error</span>';
@@ -126,9 +131,9 @@ export class PeriodAdhesionCard {
         }
         const selected = allPeriods.find((p) => p.id == periodId);
         await this._addEntityToPeriod(entityType, entityId, periodId);
+        this.stateManager.invalidateModules(['adhesion', 'sidebar']);
         await this.render(this._elements.listContainer.parentElement.parentElement);
         this.toast.success(`Vinculado a ${selected?.descripcion}`);
-        this.stateManager.invalidateCache();
       }, { signal });
     }
   }
@@ -145,6 +150,7 @@ export class PeriodAdhesionCard {
     
     if (confirmed) {
       await this._removeEntityFromPeriod(entityType, entityId, periodId);
+      this.stateManager.invalidateModules(['adhesion', 'sidebar']);
       await this.render(this._elements.listContainer.parentElement.parentElement);
       
       if (this.stateManager.activePeriod == periodId) {
@@ -154,7 +160,6 @@ export class PeriodAdhesionCard {
       }
       
       this.toast.success(`${entityName} desvinculado de ${periodClave}`);
-      this.stateManager.invalidateCache();
     }
   }
 

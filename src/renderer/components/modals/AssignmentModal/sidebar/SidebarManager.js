@@ -4,6 +4,22 @@ export class SidebarManager {
   constructor({ api, stateManager }) {
     this.api = api;
     this.stateManager = stateManager;
+    this._abortController = null;
+    this._container = null;
+
+    // Suscribirse a eventos de invalidación
+    this.stateManager.subscribe('cacheInvalidated', (module) => {
+      if (module === 'sidebar' || module === 'all' || module === 'counters') {
+        this._onInvalidated(module);
+      }
+    });
+  }
+
+  async _onInvalidated(module) {
+    if (!this._container) return;
+    
+    // Solo re-renderizar si el sidebar está visible
+    await this.renderRelationsPanel(this._container);
   }
 
   async loadPeriods(selectElement) {
@@ -80,6 +96,8 @@ export class SidebarManager {
 
   async renderRelationsPanel(container) {
     if (!container) return;
+    
+    this._container = container; // Guardar referencia
 
     const { entityType, entityId } = this.stateManager.context || {};
     const periodId = this.stateManager.activePeriod;
@@ -186,5 +204,13 @@ export class SidebarManager {
         }
       }
     });
+  }
+
+  cleanup() {
+    if (this._abortController) {
+      this._abortController.abort();
+      this._abortController = null;
+    }
+    this._container = null;
   }
 }
