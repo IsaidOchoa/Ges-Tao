@@ -15,106 +15,121 @@ export class TutoradoListRenderer extends BaseRelationRenderer {
   }
 
   async loadSelect() {
-    if (!this._cardRefs?.select || !this._context || !this._periodId) return;
-
-    const { select } = this._cardRefs;
-    const { entityId } = this._context;
-
-    try {
-      const res = await this.api.listarAlumnosDisponibles({
-        periodoId: this._periodId,
-        excludeDocenteId: entityId,
-      });
-
-      const items = res?.success ? res.data : [];
-
-      const currentOptions = Array.from(select.options)
-        .map((opt) => opt.value)
-        .filter((v) => v);
-      const newOptions = items.map((al) => al.id);
-
-      if (arraysEqual(currentOptions, newOptions)) {
-        return;
-      }
-
-      select.disabled = true;
-      select.innerHTML = '<option value="">Cargando...</option>';
-
-      if (items.length === 0) {
-        select.innerHTML =
-          '<option value="" disabled>Todos los alumnos asignados</option>';
-      } else {
-        select.innerHTML =
-          '<option value="">Seleccionar alumno...</option>' +
-          items
-            .map((al) => {
-              const nombre =
-                al.nombre_completo || `${al.nombres} ${al.apellido_paterno}`;
-              return `<option value="${al.id}">${this.helpers.escapeHtml(nombre)} (${this.helpers.escapeHtml(al.matricula)})</option>`;
-            })
-            .join("");
-      }
-
-      select.disabled = items.length === 0;
-    } catch (error) {
-      console.error("Error cargando alumnos disponibles:", error);
-      select.innerHTML = '<option value="" disabled>Error al cargar</option>';
-      select.disabled = true;
-    }
+  if (!this._cardRefs?.select || !this._context || !this._periodId) {
+    console.log('[Tutorado] loadSelect abortado - faltan refs:', {
+      hasSelect: !!this._cardRefs?.select,
+      hasContext: !!this._context,
+      hasPeriodId: !!this._periodId
+    });
+    return;
   }
+
+  const { select } = this._cardRefs;
+  const { entityId } = this._context;
+
+  console.log('[Tutorado] Cargando alumnos disponibles para docente:', entityId, 'periodo:', this._periodId);
+
+  select.disabled = true;
+  select.innerHTML = '<option value="">Cargando...</option>';
+
+  try {
+    console.log('[Tutorado] Llamando a listarAlumnosDisponibles...');
+    const res = await this.api.listarAlumnosDisponibles({
+      periodoId: this._periodId,
+      excludeDocenteId: entityId,
+    });
+
+    console.log('[Tutorado] Respuesta de listarAlumnosDisponibles:', res);
+
+    const items = res?.success ? res.data : [];
+    console.log('[Tutorado] Items recibidos:', items);
+    
+    if (items.length === 0) {
+      select.innerHTML = '<option value="" disabled>Todos los alumnos asignados</option>';
+    } else {
+      select.innerHTML = '<option value="">Seleccionar alumno...</option>' +
+        items.map((al) => {
+          const nombre = al.nombre_completo || `${al.nombres} ${al.apellido_paterno}`;
+          console.log('[Tutorado] Alumno procesado:', { id: al.id, nombre, matricula: al.matricula });
+          return `<option value="${al.id}">${this.helpers.escapeHtml(nombre)} (${this.helpers.escapeHtml(al.matricula)})</option>`;
+        }).join("");
+    }
+
+    select.disabled = items.length === 0;
+  } catch (error) {
+    console.error("[Tutorado] Error cargando alumnos disponibles:", error);
+    select.innerHTML = '<option value="" disabled>Error al cargar</option>';
+    select.disabled = true;
+  }
+}
 
   async renderList() {
-    if (!this._cardRefs?.listContainer || !this._context || !this._periodId)
-      return;
-
-    const { listContainer } = this._cardRefs;
-    const { entityId } = this._context;
-
-    try {
-      const res = await this.api.obtenerTutorados({
-        docenteId: entityId,
-        periodoId: this._periodId,
-      });
-
-      if (!res?.success) throw new Error(res?.error || "Respuesta inválida");
-
-      const newItems = res.data || [];
-      const newIds = newItems.map((item) => item.id);
-      const currentIds = Array.from(this._currentItems.keys());
-
-      // Si los IDs son idénticos, NO tocar el DOM
-      if (arraysEqual(currentIds, newIds)) {
-        return; // Sin parpadeo
-      }
-
-      // Solo mostrar loader si realmente hay cambios
-      this._showLoading();
-
-      listContainer.innerHTML = "";
-      this._currentItems.clear();
-
-      if (newItems.length === 0) {
-        listContainer.innerHTML = this.helpers.emptyTemplate(
-          "Ningún alumno tutorado",
-        );
-        this._hideLoading();
-        return;
-      }
-
-      const fragment = document.createDocumentFragment();
-      newItems.forEach((al) => {
-        const item = this._createItem(al);
-        fragment.appendChild(item);
-      });
-      listContainer.appendChild(fragment);
-
-      this._hideLoading();
-    } catch (error) {
-      this._hideLoading();
-      console.error("Error cargando tutorados:", error);
-      listContainer.innerHTML = this.helpers.errorTemplate(error.message);
-    }
+  if (!this._cardRefs?.listContainer || !this._context || !this._periodId) {
+    console.log('[Tutorado] renderList abortado - faltan refs:', {
+      hasListContainer: !!this._cardRefs?.listContainer,
+      hasContext: !!this._context,
+      hasPeriodId: !!this._periodId
+    });
+    return;
   }
+
+  const { listContainer } = this._cardRefs;
+  const { entityId } = this._context;
+
+  console.log('[Tutorado] Cargando tutorados para docente:', entityId, 'periodo:', this._periodId);
+
+  this._showLoading();
+
+  try {
+    console.log('[Tutorado] Llamando a obtenerTutorados...');
+    const res = await this.api.obtenerTutorados({
+      docenteId: entityId,
+      periodoId: this._periodId,
+    });
+
+    console.log('[Tutorado] Respuesta de obtenerTutorados:', res);
+
+    if (!res?.success) throw new Error(res?.error || "Respuesta inválida");
+
+    const newItems = res.data || [];
+    console.log('[Tutorado] Tutorados recibidos:', newItems);
+    
+    const newIds = newItems.map(item => item.id);
+    const currentIds = Array.from(this._currentItems.keys());
+    
+    console.log('[Tutorado] IDs nuevos:', newIds, 'IDs actuales:', currentIds);
+    
+    if (newIds.length === currentIds.length && newIds.every((id, idx) => id === currentIds[idx])) {
+      console.log('[Tutorado] Sin cambios, no se re-renderiza');
+      this._hideLoading();
+      return;
+    }
+
+    listContainer.innerHTML = '';
+    this._currentItems.clear();
+
+    if (newItems.length === 0) {
+      listContainer.innerHTML = this.helpers.emptyTemplate("Ningún alumno tutorado");
+      this._hideLoading();
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    newItems.forEach((al) => {
+      console.log('[Tutorado] Creando item para alumno:', al);
+      const item = this._createItem(al);
+      fragment.appendChild(item);
+    });
+    listContainer.appendChild(fragment);
+    
+    this._hideLoading();
+    
+  } catch (error) {
+    this._hideLoading();
+    console.error("[Tutorado] Error cargando tutorados:", error);
+    listContainer.innerHTML = this.helpers.errorTemplate(error.message);
+  }
+}
 
   async refreshCounter() {
     const count = this._currentItems.size;

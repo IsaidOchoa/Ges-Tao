@@ -2,9 +2,7 @@
 
 <div id="modal-asignaciones" class="modal-overlay hidden">
   <div class="modal-content">
-    <!-- ======================================
-         TOPBAR GLOBAL
-    ======================================= -->
+    <!-- TOPBAR -->
     <header class="modal-topbar">
       <div class="topbar-left">
         <h2>Gestión Académica</h2>
@@ -17,18 +15,12 @@
       </div>
     </header>
 
-    <!-- ======================================
-         LAYOUT PRINCIPAL (2 COLUMNAS)
-    ======================================= -->
+    <!-- LAYOUT PRINCIPAL -->
     <div class="modal-main-layout">
       <aside class="modal-sidebar">
         <div class="sidebar-body">
-          <!-- 1. Contexto de Entidad -->
-          <div id="ctx-context-info" class="context-info">
-            <!-- JS renderiza badge de entidad aquí -->
-          </div>
+          <div id="ctx-context-info" class="context-info"></div>
 
-          <!-- 2. Selector de Periodo Activo -->
           <div class="sidebar-controls">
             <label class="control-label">Periodo activo</label>
             <select id="ctx-period-selector" class="form-select">
@@ -36,13 +28,9 @@
             </select>
           </div>
 
-          <!-- 3. Panel de Estado Relacional -->
-          <div id="sidebar-relations-panel">
-            <!-- JS renderiza relaciones actuales aquí -->
-          </div>
+          <div id="sidebar-relations-panel"></div>
         </div>
 
-        <!-- Footer Sidebar -->
         <div class="sidebar-footer">
           <button class="btn btn-secondary btn-block" id="btn-cancelar-asig">
             Cerrar workspace
@@ -50,9 +38,6 @@
         </div>
       </aside>
 
-      <!-- ======================================
-           WORKSPACE: Acciones Operativas
-      ======================================= -->
       <main class="modal-workspace">
         <nav class="workspace-nav" id="workspace-tabs">
           <button class="tab-btn active" data-tab="gestionar">
@@ -63,41 +48,28 @@
           </button>
         </nav>
 
-        <!-- Overlay AQUÍ, al mismo nivel que workspace-body -->
+        <!-- Overlay -->
         <div class="relations-overlay hidden" id="relations-overlay">
           <div class="overlay-content">
             <i class="fa-solid fa-circle-info"></i>
-            <p>
-              Seleccione un periodo académico para habilitar las relaciones
-              operativas
-            </p>
+            <p>Seleccione un periodo académico para habilitar las relaciones operativas</p>
           </div>
         </div>
 
         <section id="workspace-content" class="workspace-body">
-          <!-- SECCIÓN 1: Adhesión a Periodos -->
-          <div
-            class="workspace-section section-period-adhesion"
-            id="section-period-adhesion"
-          >
+          <!-- SECCIÓN 1: Adhesión -->
+          <div class="workspace-section section-period-adhesion" id="section-period-adhesion">
             <div class="section-header">
               <h4>Disponibilidad en Periodos</h4>
-              <span class="section-desc"
-                >Gestiona en qué contextos históricos existe esta entidad</span
-              >
+              <span class="section-desc">Gestiona en qué contextos históricos existe esta entidad</span>
             </div>
             <div class="adhesion-card">
               <div class="card-body">
                 <div class="adhesion-list" id="adhesion-list">
-                  <span class="adhesion-item empty"
-                    >Sin periodos asignados</span
-                  >
+                  <span class="adhesion-item empty">Sin periodos asignados</span>
                 </div>
                 <div class="adhesion-controls">
-                  <select
-                    id="adhesion-period-select"
-                    class="form-select form-select-sm"
-                  >
+                  <select id="adhesion-period-select" class="form-select form-select-sm">
                     <option value="">Seleccionar periodo...</option>
                   </select>
                   <button class="btn btn-sm btn-primary" id="btn-add-adhesion">
@@ -109,10 +81,7 @@
           </div>
 
           <!-- SECCIÓN 2: Relaciones Operativas -->
-          <div
-            class="workspace-section section-operational-relations"
-            id="section-operational-relations"
-          >
+          <div class="workspace-section section-operational-relations" id="section-operational-relations">
             <div class="section-header">
               <h4>Relaciones Operativas</h4>
               <span class="section-desc" id="relations-section-desc">
@@ -129,12 +98,48 @@
               </button>
             </nav>
 
-            <div id="option-content" class="option-content">
-              <!-- JS renderiza aquí -->
-            </div>
+            <div id="option-content" class="option-content"></div>
           </div>
         </section>
       </main>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo de Administración de Periodos - FUERA del modal principal -->
+<div id="period-admin-dialog" class="period-admin-overlay hidden">
+  <div class="period-admin-modal">
+    <div class="period-admin-header">
+      <h3>Administrar periodos</h3>
+      <button class="btn-icon-close" id="btn-close-period-admin">&times;</button>
+    </div>
+
+    <div class="period-admin-body">
+      <div id="period-admin-list" class="period-admin-list"></div>
+
+      <div id="period-add-form" class="period-add-form" style="display: none">
+        <div class="form-group">
+          <label class="form-label">Seleccionar periodo</label>
+          <select id="period-add-select" class="form-select">
+            <option value="">Cargando...</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" id="btn-cancel-add">Cancelar</button>
+          <button class="btn btn-primary" id="btn-confirm-add">
+            <i class="fa-solid fa-plus"></i> Agregar
+          </button>
+        </div>
+      </div>
+
+      <button id="btn-show-add-form" class="btn btn-block btn-outline-primary" style="margin-top: 1rem">
+        <i class="fa-solid fa-plus"></i> Asociar periodo
+      </button>
+    </div>
+
+    <div class="period-admin-footer">
+      <button class="btn btn-secondary" id="btn-cancel-period-admin">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-period-admin">Guardar</button>
     </div>
   </div>
 </div>

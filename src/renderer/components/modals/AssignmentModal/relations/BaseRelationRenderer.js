@@ -24,26 +24,34 @@ export class BaseRelationRenderer {
   }
 
   async render(context, periodId, cardRefs) {
-    // Si el contexto y periodo son los mismos, y el cache es válido, NO renderizar
-    if (this._context?.entityId === context.entityId && 
-        this._periodId === periodId && 
-        this.stateManager.isCacheValid(this.moduleName)) {
-      return; // Sin parpadeo
-    }
-
-    this._context = context;
-    this._periodId = periodId;
-    this._cardRefs = cardRefs;
-
-    this.unbindEvents();
-
-    await this.loadSelect();
-    await this.renderList();
-    await this.refreshCounter();
-
-    this.bindEvents();
-    this.stateManager.setCache(this.moduleName, true);
+  console.log(`[${this.moduleName}] render() llamado`);
+  
+  // Verificar si el cache es válido para ESTE contexto específico
+  const cacheKey = `${this.moduleName}_${context.entityId}_${periodId}`;
+  const cachedData = this.stateManager.getCache(cacheKey);
+  
+  if (cachedData && this._context?.entityId === context.entityId && this._periodId === periodId) {
+    console.log(`[${this.moduleName}] Cache válido para contexto, omitiendo render`);
+    return;
   }
+
+  this._context = context;
+  this._periodId = periodId;
+  this._cardRefs = cardRefs;
+
+  this.unbindEvents();
+
+  await this.loadSelect();
+  await this.renderList();
+  await this.refreshCounter();
+
+  this.bindEvents();
+  
+  // Guardar en cache con clave específica
+  this.stateManager.setCache(cacheKey, true);
+  
+  console.log(`[${this.moduleName}] Render completado`);
+}
 
   async refresh() {
     if (!this._cardRefs || !this._context || !this._periodId) return;

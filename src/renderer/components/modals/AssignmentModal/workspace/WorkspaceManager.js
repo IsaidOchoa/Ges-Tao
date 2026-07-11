@@ -16,7 +16,7 @@ export class WorkspaceManager {
     this._workspaceContent = null;
     this._activeOption = "ee_asignadas";
     this._viewsInitialized = { gestionar: false, consultar: false };
-    this._listenersInitialized = false; // ← NUEVO
+    this._listenersInitialized = false;
 
     this._initComponents();
   }
@@ -48,8 +48,6 @@ export class WorkspaceManager {
   async switchView(tabId) {
     if (!this._workspaceContent) return;
     if (this.stateManager.activeTab === tabId) return;
-
-    console.log("switchView llamado con:", tabId); // Debug
 
     this.stateManager.setActiveTab(tabId);
 
@@ -101,6 +99,112 @@ export class WorkspaceManager {
     }
   }
 
+  async _renderActiveOptionContent() {
+    if (!this._workspaceContent) return;
+
+    const contentContainer =
+      this._workspaceContent.querySelector("#option-content");
+    if (!contentContainer) return;
+
+    const { entityType, entityId } = this.stateManager.context || {};
+    const periodId = this.stateManager.activePeriod;
+
+    if (!periodId) {
+      contentContainer.innerHTML =
+        '<p class="empty-text">Seleccione un periodo para gestionar relaciones</p>';
+      return;
+    }
+
+    const renderer = this._renderers.get(this._activeOption);
+    if (!renderer) {
+      contentContainer.innerHTML =
+        '<p class="error-text">Renderer no encontrado</p>';
+      return;
+    }
+
+    const cardConfig = this._getCardConfig(this._activeOption, entityId);
+    const cardRefs = this._createOrUpdateCard(contentContainer, cardConfig);
+
+    // Verificar cache con clave específica
+    const cacheKey = `${this._activeOption}_${entityId}_${periodId}`;
+
+    if (!this.stateManager.isCacheValid(cacheKey)) {
+      console.log(`[${this._activeOption}] Cache inválido, renderizando...`);
+      await renderer.render({ entityType, entityId }, periodId, cardRefs);
+    } else {
+      console.log(`[${this._activeOption}] Cache válido, no se re-renderiza`);
+    }
+  }
+
+  _createOrUpdateCard(container, config) {
+    let card = container.querySelector(
+      `.option-card[data-option="${config.selectId}"]`,
+    );
+
+    if (!card) {
+      const temp = document.createElement("div");
+      temp.innerHTML = `
+        <div class="option-card" data-option="${config.selectId}" style="display: none;">
+          <div class="controls-inline">
+            <div class="select-wrapper">
+              <label class="form-label">Asignar nuevo ${config.title.toLowerCase()}</label>
+              <select id="${config.selectId}" class="form-select">
+                <option value="">Cargando...</option>
+              </select>
+            </div>
+            <div class="btn-wrapper">
+              <button class="btn btn-primary" data-action="assign">
+                <i class="fa-solid fa-plus"></i> Asignar
+              </button>
+            </div>
+          </div>
+          <div class="assigned-list-header">
+            <h5><i class="fa-solid fa-${config.icon}"></i> ${config.title} asignados</h5>
+            <span class="badge badge-counter" id="${config.counterId}">0</span>
+          </div>
+          <div id="${config.listId}" class="assigned-list"></div>
+        </div>
+      `;
+      card = temp.firstElementChild;
+      container.appendChild(card);
+    }
+
+    container.querySelectorAll(".option-card").forEach((c) => {
+      c.style.display = c === card ? "block" : "none";
+    });
+
+    return {
+      card,
+      select: card.querySelector(`#${config.selectId}`),
+      assignButton: card.querySelector('[data-action="assign"]'),
+      counter: card.querySelector(`#${config.counterId}`),
+      listContainer: card.querySelector(`#${config.listId}`),
+      body: card,
+    };
+  }
+
+  _getCardConfig(optionType, entityId) {
+    const configs = {
+      ee_asignadas: {
+        title: "Experiencias Educativas",
+        icon: "book-open",
+        selectId: `select-ee-${entityId}`,
+        listId: `assigned-ee-list-${entityId}`,
+        counterId: `counter-ee-${entityId}`,
+        removeBtnText: "Desasignar Materia",
+      },
+      tutorados: {
+        title: "Tutorados",
+        icon: "user-graduate",
+        selectId: `select-tutorado-${entityId}`,
+        listId: `assigned-tutorados-list-${entityId}`,
+        counterId: `counter-tutorados-${entityId}`,
+        removeBtnText: "Remover Tutoría",
+      },
+    };
+    return configs[optionType] || configs.ee_asignadas;
+  }
+
   async _createConsultSection() {
     const consultSection = document.createElement("div");
     consultSection.className = "workspace-section section-consult-view";
@@ -142,31 +246,23 @@ export class WorkspaceManager {
     if (this._listenersInitialized || !this._workspaceContent) return;
 
     const tabsContainer = this._workspaceContent.querySelector("#option-tabs");
-    if (!tabsContainer) {
-      console.warn("No se encontró #option-tabs");
-      return;
-    }
+    if (!tabsContainer) return;
 
     this._listenersInitialized = true;
 
-    // Usar event delegation en el contenedor
     tabsContainer.addEventListener("click", (e) => {
       const btn = e.target.closest(".option-tab-btn");
       if (!btn) return;
 
-      // Actualizar estado visual
       tabsContainer
         .querySelectorAll(".option-tab-btn")
         .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
-      // Cambiar la opción activa y renderizar
       this._activeOption = btn.dataset.option;
-      console.log("Cambiando a:", this._activeOption); // Debug
+
       this._renderActiveOptionContent();
     });
-
-    console.log("Listeners de tabs registrados");
   }
 
   async _renderOptionTabs() {
@@ -177,10 +273,20 @@ export class WorkspaceManager {
       this._workspaceContent.querySelector("#option-content");
     const overlay = document.getElementById("relations-overlay");
 
-    if (!tabsContainer) return;
+    if (!tabsContainer || !overlay) return;
 
     const periodId = this.stateManager.activePeriod;
+    const { entityType, entityId } = this.stateManager.context || {};
 
+    console.log(
+      "[DEBUG] _renderOptionTabs - Periodo:",
+      periodId,
+      "Entidad:",
+      entityType,
+      entityId,
+    );
+
+    // Caso 1: No hay periodo seleccionado
     if (!periodId) {
       tabsContainer.style.display = "flex";
       tabsContainer.classList.add("blurred");
@@ -188,9 +294,53 @@ export class WorkspaceManager {
         contentContainer.style.display = "block";
         contentContainer.classList.add("blurred");
       }
-      if (overlay) overlay.classList.remove("hidden");
+
+      this._updateOverlayContent(overlay, {
+        icon: "fa-circle-info",
+        title: "Seleccione un periodo académico",
+        message:
+          "Seleccione un periodo para habilitar las relaciones operativas",
+        showButton: false,
+      });
+
+      overlay.classList.remove("hidden");
+      console.log("[DEBUG] Caso 1: Sin periodo seleccionado");
       return;
     }
+
+    // Caso 2: Verificar si la entidad pertenece al periodo
+    const belongsToPeriod = await this._checkEntityBelongsToPeriod(
+      entityType,
+      entityId,
+      periodId,
+    );
+
+    if (!belongsToPeriod) {
+      console.log("[DEBUG] Caso 2: Entidad NO pertenece al periodo");
+
+      this._updateOverlayContent(overlay, {
+        icon: "fa-circle-exclamation",
+        title: "Entidad no asociada al periodo",
+        message: `Este ${this._getEntityLabel()} no pertenece al periodo seleccionado.`,
+        showButton: true,
+        buttonText: "Asociar al periodo",
+        buttonAction: () => this._handleAddToPeriod(periodId),
+      });
+
+      overlay.classList.remove("hidden");
+
+      tabsContainer.style.display = "flex";
+      tabsContainer.classList.add("blurred");
+      if (contentContainer) {
+        contentContainer.style.display = "block";
+        contentContainer.classList.add("blurred");
+      }
+
+      return;
+    }
+
+    // Caso 3: Todo OK - habilitar
+    console.log("[DEBUG] Caso 3: Todo OK, habilitando workspace");
 
     tabsContainer.style.display = "flex";
     tabsContainer.classList.remove("blurred");
@@ -198,110 +348,102 @@ export class WorkspaceManager {
       contentContainer.style.display = "block";
       contentContainer.classList.remove("blurred");
     }
-    if (overlay) overlay.classList.add("hidden");
+
+    overlay.classList.add("hidden");
 
     await this._renderActiveOptionContent();
   }
 
-  async _renderActiveOptionContent() {
-    if (!this._workspaceContent) return;
+  _updateOverlayContent(overlay, config) {
+    const overlayContent = overlay.querySelector(".overlay-content");
+    if (!overlayContent) return;
 
-    const contentContainer =
-      this._workspaceContent.querySelector("#option-content");
-    if (!contentContainer) return;
-
-    const { entityType, entityId } = this.stateManager.context || {};
-    const periodId = this.stateManager.activePeriod;
-
-    if (!periodId) {
-      contentContainer.innerHTML =
-        '<p class="empty-text">Seleccione un periodo para gestionar relaciones</p>';
-      return;
-    }
-
-    const renderer = this._renderers.get(this._activeOption);
-    if (!renderer) {
-      contentContainer.innerHTML =
-        '<p class="error-text">Renderer no encontrado</p>';
-      return;
-    }
-
-    const cardConfig = this._getCardConfig(this._activeOption, entityId);
-    const cardRefs = this._createOrUpdateCard(contentContainer, cardConfig);
-
-    await renderer.render({ entityType, entityId }, periodId, cardRefs);
-    this.stateManager.setCache(this._activeOption, true);
-  }
-
-  _createOrUpdateCard(container, config) {
-    let card = container.querySelector(
-      `.option-card[data-option="${config.selectId}"]`,
-    );
-
-    if (!card) {
-      const temp = document.createElement("div");
-      temp.innerHTML = `
-      <div class="option-card" data-option="${config.selectId}" style="display: none;">
-        <div class="controls-inline">
-          <div class="select-wrapper">
-            <label class="form-label">Asignar nuevo ${config.title.toLowerCase()}</label>
-            <select id="${config.selectId}" class="form-select">
-              <option value="">Cargando...</option>
-            </select>
-          </div>
-          <div class="btn-wrapper">
-            <button class="btn btn-primary" data-action="assign">
-              <i class="fa-solid fa-plus"></i> Asignar
-            </button>
-          </div>
-        </div>
-        <div class="assigned-list-header">
-          <h5><i class="fa-solid fa-${config.icon}"></i> ${config.title} asignados</h5>
-          <span class="badge badge-counter" id="${config.counterId}">0</span>
-        </div>
-        <div id="${config.listId}" class="assigned-list">
-          <!-- SIN "Cargando..." hardcodeado -->
-        </div>
-      </div>
+    let html = `
+      <i class="fa-solid ${config.icon}"></i>
+      <p style="font-weight: 600; margin-bottom: 0.5rem;">${config.title}</p>
+      <p style="margin: 0 0 1rem 0; opacity: 0.9;">${config.message}</p>
     `;
-      card = temp.firstElementChild;
-      container.appendChild(card);
+
+    if (config.showButton) {
+      html += `
+        <button class="btn btn-primary" id="overlay-action-btn" style="margin-top: 0.5rem;">
+          <i class="fa-solid fa-plus"></i> ${config.buttonText}
+        </button>
+      `;
     }
 
-    container.querySelectorAll(".option-card").forEach((c) => {
-      c.style.display = c === card ? "block" : "none";
-    });
+    overlayContent.innerHTML = html;
 
-    return {
-      card,
-      select: card.querySelector(`#${config.selectId}`),
-      assignButton: card.querySelector('[data-action="assign"]'),
-      counter: card.querySelector(`#${config.counterId}`),
-      listContainer: card.querySelector(`#${config.listId}`),
-      body: card,
-    };
+    if (config.showButton && config.buttonAction) {
+      const btn = overlayContent.querySelector("#overlay-action-btn");
+      btn?.addEventListener("click", () => config.buttonAction());
+    }
   }
 
-  _getCardConfig(optionType, entityId) {
-    const configs = {
-      ee_asignadas: {
-        title: "Experiencias Educativas",
-        icon: "book-open",
-        selectId: `select-ee-${entityId}`,
-        listId: `assigned-ee-list-${entityId}`,
-        counterId: `counter-ee-${entityId}`,
-        removeBtnText: "Desasignar Materia",
-      },
-      tutorados: {
-        title: "Tutorados",
-        icon: "user-graduate",
-        selectId: `select-tutorado-${entityId}`,
-        listId: `assigned-tutorados-list-${entityId}`,
-        counterId: `counter-tutorados-${entityId}`,
-        removeBtnText: "Remover Tutoría",
-      },
+  async _checkEntityBelongsToPeriod(entityType, entityId, periodId) {
+    try {
+      const res = await this.api.obtenerPeriodosDeEntidad({
+        entityType,
+        entityId,
+      });
+      const periods = res?.success ? res.data : [];
+
+      // DEBUG: Ver qué devuelve la API
+      console.log("[DEBUG] Periodos de la entidad:", periods);
+      console.log("[DEBUG] Periodo seleccionado:", periodId, typeof periodId);
+
+      // Usar comparación laxa (==) porque los IDs pueden ser string o number
+      const belongs = periods.some((p) => p.id == periodId);
+
+      console.log("[DEBUG] ¿Pertenece al periodo?", belongs);
+
+      return belongs;
+    } catch (error) {
+      console.error("Error verificando pertenencia:", error);
+      return false;
+    }
+  }
+
+  _getEntityLabel() {
+    const { entityType } = this.stateManager.context || {};
+    const labels = {
+      docente: "docente",
+      alumno: "alumno",
+      ee: "experiencia educativa",
     };
-    return configs[optionType] || configs.ee_asignadas;
+    return labels[entityType] || "entidad";
+  }
+
+  async _handleAddToPeriod(periodId) {
+    const { entityType, entityId } = this.stateManager.context || {};
+
+    try {
+      const res = await this.api.agregarEntidadAPeriodo({
+        entityType,
+        entityId,
+        periodId,
+      });
+
+      if (!res?.success) throw new Error(res?.error || "Error al agregar");
+
+      this.toast.success("Entidad asociada al periodo correctamente");
+
+      // Invalidar TODO el caché para forzar re-verificación
+      this.stateManager.invalidateAll();
+
+      // Re-renderizar tabs para actualizar overlay
+      await this._renderOptionTabs();
+
+      // Actualizar sidebar
+      if (this.sidebarManager) {
+        await this.sidebarManager.renderRelationsPanel(
+          document.getElementById("sidebar-relations-panel"),
+        );
+      }
+    } catch (error) {
+      console.error("Error agregando al periodo:", error);
+      this.toast.error(`Error: ${error.message}`);
+    }
   }
 
   async refresh(relationType = null) {
@@ -350,7 +492,7 @@ export class WorkspaceManager {
     if (consultSection) consultSection.remove();
 
     this._viewsInitialized = { gestionar: false, consultar: false };
-    this._listenersInitialized = false; // ← RESET
+    this._listenersInitialized = false;
   }
 }
 
@@ -394,19 +536,19 @@ class ConsultRenderer {
           const carga = item.carga || item.carga_horaria || 0;
 
           return `
-          <div class="assigned-item">
-            <div class="item-content">
-              <strong>${nombre}</strong>
-              <div class="item-meta">
-                ${clave ? `<span>Clave: ${clave}</span>` : ""}
+            <div class="assigned-item">
+              <div class="item-content">
+                <strong>${nombre}</strong>
+                <div class="item-meta">
+                  ${clave ? `<span>Clave: ${clave}</span>` : ""}
+                </div>
+              </div>
+              <div style="text-align:right;">
+                ${periodo ? `<span style="display:block;font-weight:600;color:var(--accent-color);">${periodo}</span>` : ""}
+                ${carga ? `<span style="font-size:0.8rem;color:var(--text-muted);">${carga} hrs</span>` : ""}
               </div>
             </div>
-            <div style="text-align:right;">
-              ${periodo ? `<span style="display:block;font-weight:600;color:var(--accent-color);">${periodo}</span>` : ""}
-              ${carga ? `<span style="font-size:0.8rem;color:var(--text-muted);">${carga} hrs</span>` : ""}
-            </div>
-          </div>
-        `;
+          `;
         })
         .join("");
 

@@ -1,9 +1,10 @@
 // src/renderer/components/modals/AssignmentModal/sidebar/SidebarManager.js
 
 export class SidebarManager {
-  constructor({ api, stateManager }) {
+  constructor({ api, stateManager, periodAdminManager }) {
     this.api = api;
     this.stateManager = stateManager;
+    this.periodAdminManager = periodAdminManager;
     this._abortController = null;
     this._container = null;
 
@@ -39,12 +40,58 @@ export class SidebarManager {
         selectElement.appendChild(opt);
       });
 
+      // === AGREGAR BOTÓN DE ADMINISTRACIÓN ===
+      this._addAdminButton(selectElement);
+      // ========================================
+
       return periodos;
     } catch (error) {
       console.error('Error cargando periodos:', error);
       selectElement.innerHTML = '<option value="">Error al cargar periodos</option>';
       return [];
     }
+  }
+
+  _addAdminButton(selectElement) {
+    // Verificar si ya existe el botón (para evitar duplicados)
+    const existingBtn = selectElement.parentElement?.querySelector('.period-admin-btn');
+    if (existingBtn) return;
+
+    // Crear contenedor flex si no existe
+    const parent = selectElement.parentElement;
+    if (parent && !parent.classList.contains('period-selector-container')) {
+      parent.classList.add('period-selector-container');
+      parent.style.display = 'flex';
+      parent.style.alignItems = 'center';
+      parent.style.gap = '0.5rem';
+    }
+
+    // Crear botón de administración
+    const adminBtn = document.createElement('button');
+    adminBtn.className = 'period-admin-btn';
+    adminBtn.innerHTML = '<i class="fa-solid fa-gear"></i>';
+    adminBtn.title = 'Administrar periodos';
+    adminBtn.type = 'button';
+    
+    // Insertar después del select
+    selectElement.after(adminBtn);
+
+    // Event listener para abrir el diálogo
+    adminBtn.addEventListener('click', async () => {
+      if (this.periodAdminManager) {
+        await this.periodAdminManager.open(async (assignedPeriods) => {
+          // Callback después de guardar - recargar selector
+          await this.loadPeriods(selectElement);
+          
+          // Actualizar sidebar relations
+          if (this._container) {
+            await this.renderRelationsPanel(this._container);
+          }
+        });
+      } else {
+        console.error('PeriodAdminManager no está disponible');
+      }
+    });
   }
 
   renderContext(container, context) {

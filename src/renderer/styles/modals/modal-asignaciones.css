@@ -429,6 +429,10 @@ body[data-theme="dark"] .relations-overlay {
   font-weight: 500;
 }
 
+.overlay-content .btn {
+  margin-top: 0.5rem;
+}
+
 body[data-theme="dark"] .overlay-content {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -594,6 +598,7 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   margin: 1.25rem 0 0.75rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
+  flex-wrap: nowrap;
 }
 
 .option-card .assigned-list-header h5 {
@@ -601,6 +606,19 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   font-weight: 600;
   color: var(--text-dark);
   margin: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-counter {
+  background: var(--bg-light);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .option-card .assigned-list {
@@ -616,7 +634,7 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   flex-direction: row !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 1rem;
+  gap: 0.75rem;
   padding: 0.75rem;
   background: var(--bg-light);
   border-radius: 8px;
@@ -625,6 +643,8 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   border-right: 1px solid transparent;
   border-bottom: 1px solid transparent;
   transition: background 0.2s ease, box-shadow 0.2s ease;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .assigned-item:hover {
@@ -636,9 +656,10 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 1.5rem !important;
-  flex: 1 !important;
+  gap: 1rem !important;
+  flex: 1 1 auto !important;
   min-width: 0 !important;
+  overflow: hidden !important;
 }
 
 .assigned-item .item-content strong {
@@ -651,15 +672,18 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   text-overflow: ellipsis !important;
   margin: 0 !important;
   padding: 0 !important;
+  flex-shrink: 0;
+  min-width: 120px;
 }
 
 .assigned-item .item-meta {
   display: inline-flex !important;
-  gap: 1rem;
+  gap: 0.75rem;
   font-size: 0.8rem;
   color: var(--text-muted);
   white-space: nowrap !important;
-  flex-shrink: 0 !important;
+  flex-shrink: 1;
+  overflow: hidden !important;
 }
 
 .assigned-item .item-meta span {
@@ -689,6 +713,7 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   font-weight: 600 !important;
   transition: background 0.2s ease, color 0.2s ease !important;
   box-sizing: border-box !important;
+  margin-left: auto;
 }
 
 .assigned-item button[data-id]:hover,
@@ -723,25 +748,39 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   .option-card .controls-inline {
     max-width: 100%;
   }
-  .assigned-item {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 0.75rem !important;
+    .assigned-item {
+    gap: 0.5rem !important;
+    padding: 0.6rem !important;
+    flex-wrap: nowrap !important;
+    flex-direction: row !important;
+    align-items: center !important;
   }
   .assigned-item .item-content {
-    flex-direction: column !important;
-    align-items: flex-start !important;
+    flex-direction: row !important;
+    align-items: center !important;
     gap: 0.5rem !important;
   }
+  .assigned-item .item-content strong {
+    font-size: 0.9rem !important;
+    min-width: 80px;
+  }
   .assigned-item .item-meta {
-    flex-wrap: wrap !important;
-    gap: 0.75rem !important;
+    font-size: 0.75rem !important;
+    gap: 0.5rem !important;
   }
   .assigned-item button[data-id],
   .assigned-item .btn-remove,
   .assigned-item .btn-outline-danger {
-    align-self: flex-end !important;
-    width: 100% !important;
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0 !important;
+    height: 32px !important;
+    width: 32px !important;
+    justify-content: center !important;
+  }
+  .assigned-item button[data-id] i,
+  .assigned-item .btn-remove i,
+  .assigned-item .btn-outline-danger i {
+    font-size: 0.85rem !important;
   }
 }
 @media (min-width: 1920px) {
@@ -763,42 +802,41 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
 }
 
 @media (max-width: 768px) {
-  .assigned-item {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 0.75rem !important;
-    padding: 1rem !important;
+    .assigned-item {
+    gap: 0.5rem !important;
+    padding: 0.5rem !important;
+    flex-wrap: nowrap !important;
+    flex-direction: row !important;
+    align-items: center !important;
   }
   .assigned-item .item-content {
-    flex-direction: column !important;
-    align-items: flex-start !important;
+    flex-direction: row !important;
+    align-items: center !important;
     gap: 0.5rem !important;
-    width: 100% !important;
   }
   .assigned-item .item-content strong {
-    width: 100% !important;
-    word-break: break-word !important;
-    white-space: normal !important;
+    font-size: 0.85rem !important;
+    min-width: 70px;
   }
   .assigned-item .item-meta {
-    flex-direction: column !important;
-    gap: 0.5rem !important;
-    white-space: normal !important;
-  }
-  .assigned-item .item-meta span {
-    white-space: normal !important;
+    display: none !important;
   }
   .assigned-item button[data-id],
   .assigned-item .btn-remove,
   .assigned-item .btn-outline-danger {
-    align-self: stretch !important;
-    width: 100% !important;
+    padding: 0.25rem !important;
+    font-size: 0 !important;
+    height: 28px !important;
+    width: 28px !important;
     justify-content: center !important;
   }
+  .assigned-item button[data-id] i,
+  .assigned-item .btn-remove i,
+  .assigned-item .btn-outline-danger i {
+    font-size: 0.8rem !important;
+  }
   .option-card .assigned-list-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+    flex-wrap: nowrap;
   }
 }
 
@@ -807,4 +845,234 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
 .card-body .btn {
   width: 100%;
   max-width: 100%;
+}
+
+/* === PERIOD ADMIN DIALOG === */
+
+.period-admin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.period-admin-overlay:not(.hidden) {
+  opacity: 1;
+  visibility: visible;
+}
+
+.period-admin-modal {
+  background: var(--bg-body);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  transform: scale(0.95);
+  transition: transform 0.2s ease;
+}
+
+.period-admin-overlay:not(.hidden) .period-admin-modal {
+  transform: scale(1);
+}
+
+.period-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-light);
+}
+
+.period-admin-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.period-admin-header .btn-icon-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.period-admin-header .btn-icon-close:hover {
+  background: rgba(127, 140, 141, 0.15);
+  color: var(--text-dark);
+}
+
+.period-admin-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.period-admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.period-admin-list.empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.period-admin-list.empty p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.period-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  border-left: 3px solid var(--accent-color);
+}
+
+.period-item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.period-item-check {
+  color: var(--success-color);
+  font-size: 1.1rem;
+}
+
+.period-item-name {
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+}
+
+.period-item-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 6px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.period-item-remove:hover {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--danger-color);
+}
+
+.period-add-form {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.period-add-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.period-add-form .form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.period-add-form .form-select {
+  width: 100%;
+  height: 40px;
+  padding: 0 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.period-add-form .form-select:focus {
+  border-color: var(--accent-color);
+}
+
+.period-add-form .form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.period-admin-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-light);
+}
+
+.btn-outline-primary {
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+}
+
+.btn-outline-primary:hover {
+  background: rgba(52, 152, 219, 0.1);
+}
+
+/* Botón de administración en el sidebar */
+.period-admin-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s ease, color 0.2s ease;
+  margin-left: 0.5rem;
+}
+
+.period-admin-btn:hover {
+  background: rgba(52, 152, 219, 0.1);
+  color: var(--accent-color);
+}
+
+.period-admin-btn i {
+  font-size: 1rem;
 }
