@@ -137,73 +137,97 @@ export class WorkspaceManager {
   }
 
   _createOrUpdateCard(container, config) {
-    let card = container.querySelector(
-      `.option-card[data-option="${config.selectId}"]`,
-    );
+  let card = container.querySelector(`.option-card[data-option="${config.selectId}"]`);
 
-    if (!card) {
-      const temp = document.createElement("div");
-      temp.innerHTML = `
-        <div class="option-card" data-option="${config.selectId}" style="display: none;">
-          <div class="controls-inline">
-            <div class="select-wrapper">
-              <label class="form-label">Asignar nuevo ${config.title.toLowerCase()}</label>
-              <select id="${config.selectId}" class="form-select">
-                <option value="">Cargando...</option>
-              </select>
-            </div>
-            <div class="btn-wrapper">
-              <button class="btn btn-primary" data-action="assign">
-                <i class="fa-solid fa-plus"></i> Asignar
-              </button>
-            </div>
+  if (!card) {
+    const temp = document.createElement("div");
+    temp.innerHTML = `
+      <div class="option-card" data-option="${config.selectId}" style="display: none;">
+        <div class="controls-inline">
+          <div class="select-wrapper">
+            <label class="form-label">Asignar nuevo ${config.title.toLowerCase()}</label>
+            <select id="${config.selectId}" class="form-select">
+              <option value="">Cargando...</option>
+            </select>
           </div>
+          <div class="btn-wrapper">
+            <button class="btn btn-primary" data-action="assign">
+              <i class="fa-solid fa-plus"></i> Asignar
+            </button>
+          </div>
+        </div>
+        
+        <div class="table-container">
           <div class="assigned-list-header">
             <h5><i class="fa-solid fa-${config.icon}"></i> ${config.title} asignados</h5>
             <span class="badge badge-counter" id="${config.counterId}">0</span>
           </div>
-          <div id="${config.listId}" class="assigned-list"></div>
+          
+          <table class="relations-table" id="${config.listId}-table">
+            <thead>
+              <tr>
+                ${config.columns.map(col => `
+                  <th style="width: ${col.width}">${col.label}</th>
+                `).join('')}
+                <th style="width: 60px; text-align: center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="${config.listId}">
+              <!-- Items se insertan aquí -->
+            </tbody>
+          </table>
         </div>
-      `;
-      card = temp.firstElementChild;
-      container.appendChild(card);
-    }
-
-    container.querySelectorAll(".option-card").forEach((c) => {
-      c.style.display = c === card ? "block" : "none";
-    });
-
-    return {
-      card,
-      select: card.querySelector(`#${config.selectId}`),
-      assignButton: card.querySelector('[data-action="assign"]'),
-      counter: card.querySelector(`#${config.counterId}`),
-      listContainer: card.querySelector(`#${config.listId}`),
-      body: card,
-    };
+      </div>
+    `;
+    card = temp.firstElementChild;
+    container.appendChild(card);
   }
+
+  container.querySelectorAll(".option-card").forEach((c) => {
+    c.style.display = c === card ? "block" : "none";
+  });
+
+  return {
+    card,
+    select: card.querySelector(`#${config.selectId}`),
+    assignButton: card.querySelector('[data-action="assign"]'),
+    counter: card.querySelector(`#${config.counterId}`),
+    listContainer: card.querySelector(`#${config.listId}`),
+    body: card
+  };
+}
 
   _getCardConfig(optionType, entityId) {
-    const configs = {
-      ee_asignadas: {
-        title: "Experiencias Educativas",
-        icon: "book-open",
-        selectId: `select-ee-${entityId}`,
-        listId: `assigned-ee-list-${entityId}`,
-        counterId: `counter-ee-${entityId}`,
-        removeBtnText: "Desasignar Materia",
-      },
-      tutorados: {
-        title: "Tutorados",
-        icon: "user-graduate",
-        selectId: `select-tutorado-${entityId}`,
-        listId: `assigned-tutorados-list-${entityId}`,
-        counterId: `counter-tutorados-${entityId}`,
-        removeBtnText: "Remover Tutoría",
-      },
-    };
-    return configs[optionType] || configs.ee_asignadas;
-  }
+  const configs = {
+    ee_asignadas: {
+      title: "Experiencias Educativas",
+      icon: "book-open",
+      selectId: `select-ee-${entityId}`,
+      listId: `assigned-ee-list-${entityId}`,
+      counterId: `counter-ee-${entityId}`,
+      removeBtnText: "Desasignar Materia",
+      columns: [
+        { key: 'nombre', label: 'Nombre', width: '50%' },
+        { key: 'clave_ee', label: 'NRC', width: '20%' },
+        { key: 'carga_horaria', label: 'Carga', width: '20%' }
+      ]
+    },
+    tutorados: {
+      title: "Tutorados",
+      icon: "user-graduate",
+      selectId: `select-tutorado-${entityId}`,
+      listId: `assigned-tutorados-list-${entityId}`,
+      counterId: `counter-tutorados-${entityId}`,
+      removeBtnText: "Remover Tutoría",
+      columns: [
+        { key: 'nombre_completo', label: 'Nombre', width: '40%' },
+        { key: 'matricula', label: 'Matrícula', width: '30%' },
+        { key: 'programa_academico', label: 'Programa', width: '30%' }
+      ]
+    },
+  };
+  return configs[optionType] || configs.ee_asignadas;
+}
 
   async _createConsultSection() {
     const consultSection = document.createElement("div");

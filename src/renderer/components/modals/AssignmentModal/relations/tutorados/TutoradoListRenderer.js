@@ -15,124 +15,145 @@ export class TutoradoListRenderer extends BaseRelationRenderer {
   }
 
   async loadSelect() {
-  if (!this._cardRefs?.select || !this._context || !this._periodId) {
-    console.log('[Tutorado] loadSelect abortado - faltan refs:', {
-      hasSelect: !!this._cardRefs?.select,
-      hasContext: !!this._context,
-      hasPeriodId: !!this._periodId
-    });
-    return;
-  }
+    if (!this._cardRefs?.select || !this._context || !this._periodId) return;
 
-  const { select } = this._cardRefs;
-  const { entityId } = this._context;
+    const { select, assignButton } = this._cardRefs;
+    const { entityId } = this._context;
 
-  console.log('[Tutorado] Cargando alumnos disponibles para docente:', entityId, 'periodo:', this._periodId);
-
-  select.disabled = true;
-  select.innerHTML = '<option value="">Cargando...</option>';
-
-  try {
-    console.log('[Tutorado] Llamando a listarAlumnosDisponibles...');
-    const res = await this.api.listarAlumnosDisponibles({
-      periodoId: this._periodId,
-      excludeDocenteId: entityId,
-    });
-
-    console.log('[Tutorado] Respuesta de listarAlumnosDisponibles:', res);
-
-    const items = res?.success ? res.data : [];
-    console.log('[Tutorado] Items recibidos:', items);
-    
-    if (items.length === 0) {
-      select.innerHTML = '<option value="" disabled>Todos los alumnos asignados</option>';
-    } else {
-      select.innerHTML = '<option value="">Seleccionar alumno...</option>' +
-        items.map((al) => {
-          const nombre = al.nombre_completo || `${al.nombres} ${al.apellido_paterno}`;
-          console.log('[Tutorado] Alumno procesado:', { id: al.id, nombre, matricula: al.matricula });
-          return `<option value="${al.id}">${this.helpers.escapeHtml(nombre)} (${this.helpers.escapeHtml(al.matricula)})</option>`;
-        }).join("");
-    }
-
-    select.disabled = items.length === 0;
-  } catch (error) {
-    console.error("[Tutorado] Error cargando alumnos disponibles:", error);
-    select.innerHTML = '<option value="" disabled>Error al cargar</option>';
+    // Estado de carga
     select.disabled = true;
+    select.innerHTML = '<option value="">Cargando...</option>';
+    if (assignButton) assignButton.disabled = true;
+
+    try {
+      const res = await this.api.listarAlumnosDisponibles({
+        periodoId: this._periodId,
+        excludeDocenteId: entityId,
+      });
+
+      const items = res?.success ? res.data : [];
+
+      if (items.length === 0) {
+        // CASO: Todos los alumnos ya tienen tutor asignado
+        select.innerHTML =
+          '<option value="" disabled> Todos los alumnos ya tienen tutor asignado</option>';
+        select.disabled = true;
+        if (assignButton) assignButton.disabled = true;
+      } else {
+        // CASO: Hay alumnos disponibles
+        select.innerHTML =
+          '<option value="">Seleccionar alumno...</option>' +
+          items
+            .map((al) => {
+              const nombre =
+                al.nombre_completo || `${al.nombres} ${al.apellido_paterno}`;
+              return `<option value="${al.id}">${this.helpers.escapeHtml(nombre)} (${this.helpers.escapeHtml(al.matricula)})</option>`;
+            })
+            .join("");
+
+        select.disabled = false;
+        if (assignButton) assignButton.disabled = false;
+      }
+    } catch (error) {
+      console.error("Error cargando alumnos disponibles:", error);
+      select.innerHTML =
+        '<option value="" disabled>Error al cargar lista</option>';
+      select.disabled = true;
+    }
   }
-}
 
   async renderList() {
-  if (!this._cardRefs?.listContainer || !this._context || !this._periodId) {
-    console.log('[Tutorado] renderList abortado - faltan refs:', {
-      hasListContainer: !!this._cardRefs?.listContainer,
-      hasContext: !!this._context,
-      hasPeriodId: !!this._periodId
-    });
-    return;
-  }
-
-  const { listContainer } = this._cardRefs;
-  const { entityId } = this._context;
-
-  console.log('[Tutorado] Cargando tutorados para docente:', entityId, 'periodo:', this._periodId);
-
-  this._showLoading();
-
-  try {
-    console.log('[Tutorado] Llamando a obtenerTutorados...');
-    const res = await this.api.obtenerTutorados({
-      docenteId: entityId,
-      periodoId: this._periodId,
-    });
-
-    console.log('[Tutorado] Respuesta de obtenerTutorados:', res);
-
-    if (!res?.success) throw new Error(res?.error || "Respuesta inválida");
-
-    const newItems = res.data || [];
-    console.log('[Tutorado] Tutorados recibidos:', newItems);
-    
-    const newIds = newItems.map(item => item.id);
-    const currentIds = Array.from(this._currentItems.keys());
-    
-    console.log('[Tutorado] IDs nuevos:', newIds, 'IDs actuales:', currentIds);
-    
-    if (newIds.length === currentIds.length && newIds.every((id, idx) => id === currentIds[idx])) {
-      console.log('[Tutorado] Sin cambios, no se re-renderiza');
-      this._hideLoading();
+    if (!this._cardRefs?.listContainer || !this._context || !this._periodId) {
+      console.log("[Tutorado] renderList abortado - faltan refs:", {
+        hasListContainer: !!this._cardRefs?.listContainer,
+        hasContext: !!this._context,
+        hasPeriodId: !!this._periodId,
+      });
       return;
     }
 
-    listContainer.innerHTML = '';
-    this._currentItems.clear();
+    const { listContainer } = this._cardRefs;
+    const { entityId } = this._context;
 
-    if (newItems.length === 0) {
-      listContainer.innerHTML = this.helpers.emptyTemplate("Ningún alumno tutorado");
+    console.log(
+      "[Tutorado] Cargando tutorados para docente:",
+      entityId,
+      "periodo:",
+      this._periodId,
+    );
+
+    this._showLoading();
+
+    try {
+      console.log("[Tutorado] Llamando a obtenerTutorados...");
+      const res = await this.api.obtenerTutorados({
+        docenteId: entityId,
+        periodoId: this._periodId,
+      });
+
+      console.log("[Tutorado] Respuesta de obtenerTutorados:", res);
+
+      if (!res?.success) throw new Error(res?.error || "Respuesta inválida");
+
+      const newItems = res.data || [];
+      console.log("[Tutorado] Tutorados recibidos:", newItems);
+
+      const newIds = newItems.map((item) => item.id);
+      const currentIds = Array.from(this._currentItems.keys());
+
+      console.log(
+        "[Tutorado] IDs nuevos:",
+        newIds,
+        "IDs actuales:",
+        currentIds,
+      );
+
+      if (
+        newIds.length === currentIds.length &&
+        newIds.every((id, idx) => id === currentIds[idx])
+      ) {
+        console.log("[Tutorado] Sin cambios, no se re-renderiza");
+        this._hideLoading();
+        return;
+      }
+
+      listContainer.innerHTML = "";
+      this._currentItems.clear();
+
+      if (newItems.length === 0) {
+        listContainer.innerHTML = `
+          <tr class="empty-row">
+            <td colspan="${this._getColumnCount()}">Ningun tutorado asignado</td>
+          </tr>
+        `;
+        this._hideLoading();
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      newItems.forEach((al) => {
+        console.log("[Tutorado] Creando item para alumno:", al);
+        const item = this._createItem(al);
+        fragment.appendChild(item);
+      });
+      listContainer.appendChild(fragment);
+
       this._hideLoading();
-      return;
+    } catch (error) {
+      this._hideLoading();
+      console.error("[Tutorado] Error cargando tutorados:", error);
+      listContainer.innerHTML = this.helpers.errorTemplate(error.message);
     }
-
-    const fragment = document.createDocumentFragment();
-    newItems.forEach((al) => {
-      console.log('[Tutorado] Creando item para alumno:', al);
-      const item = this._createItem(al);
-      fragment.appendChild(item);
-    });
-    listContainer.appendChild(fragment);
-    
-    this._hideLoading();
-    
-  } catch (error) {
-    this._hideLoading();
-    console.error("[Tutorado] Error cargando tutorados:", error);
-    listContainer.innerHTML = this.helpers.errorTemplate(error.message);
   }
-}
 
   async refreshCounter() {
-    const count = this._currentItems.size;
+    if (!this._cardRefs?.counter) return;
+
+    // Contar filas reales en la tabla (excluyendo la fila vacía)
+    const rows =
+      this._cardRefs.listContainer?.querySelectorAll("tr[data-id]") || [];
+    const count = rows.length;
+
     this._updateCounterText(count);
   }
 
@@ -244,28 +265,36 @@ export class TutoradoListRenderer extends BaseRelationRenderer {
   }
 
   _createItem(alumno) {
-    const item = document.createElement("div");
-    item.className = "assigned-item";
-    item.dataset.id = alumno.id;
+    const row = document.createElement("tr");
+    row.className = "table-row";
+    row.dataset.id = alumno.id;
 
     const nombre =
-      alumno.nombre_completo || `${alumno.nombres} ${alumno.apellido_paterno}`;
+      alumno.nombre_completo ||
+      `${alumno.nombres || ""} ${alumno.apellido_paterno || ""}`.trim() ||
+      "Sin nombre";
+    const matricula = alumno.matricula || "-";
+    const programa = alumno.programa_academico || "-";
 
-    item.innerHTML = `
-      <div class="item-content">
-        <strong>${this.helpers.escapeHtml(nombre)}</strong>
-        <div class="item-meta">
-          <span><i class="fa-solid fa-id-card"></i> ${this.helpers.escapeHtml(alumno.matricula)}</span>
-          ${alumno.programa_academico ? `<span><i class="fa-solid fa-graduation-cap"></i> ${this.helpers.escapeHtml(alumno.programa_academico)}</span>` : ""}
-        </div>
-      </div>
-      <button class="btn-outline-danger" data-id="${alumno.id}" data-name="${this.helpers.escapeHtml(nombre)}">
-        <i class="fa-solid fa-user-slash"></i> Remover Tutoría
+    row.innerHTML = `
+    <td class="col-nombre">
+      <strong>${this.helpers.escapeHtml(nombre)}</strong>
+    </td>
+    <td class="col-matricula">
+      <span class="badge-matricula">${this.helpers.escapeHtml(matricula)}</span>
+    </td>
+    <td class="col-programa">
+      <span>${this.helpers.escapeHtml(programa)}</span>
+    </td>
+    <td class="col-actions">
+      <button class="btn-remove-row" data-id="${alumno.id}" data-name="${this.helpers.escapeHtml(nombre)}" title="Remover Tutoría">
+        <i class="fa-solid fa-user-slash"></i>
       </button>
-    `;
+    </td>
+  `;
 
     this._currentItems.set(alumno.id, alumno);
-    return item;
+    return row;
   }
 }
 

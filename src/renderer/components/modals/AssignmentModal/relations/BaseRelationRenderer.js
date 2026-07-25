@@ -104,24 +104,46 @@ export class BaseRelationRenderer {
   }
 
   async _addItemToList(itemData) {
-    if (!this._cardRefs?.listContainer) return;
-    const item = this._createItem(itemData);
-    this._cardRefs.listContainer.appendChild(item);
-    const emptyState = this._cardRefs.listContainer.querySelector('.empty-text');
-    if (emptyState) emptyState.remove();
-  }
+  if (!this._cardRefs?.listContainer) return;
+  
+  // Remover fila vacía si existe (buscar cualquier tr sin data-id)
+  const emptyRow = this._cardRefs.listContainer.querySelector('tr:not([data-id])');
+  if (emptyRow) emptyRow.remove();
+  
+  const item = this._createItem(itemData);
+  this._cardRefs.listContainer.appendChild(item);
+}
 
   _removeItemFromList(itemId) {
-    if (!this._cardRefs?.listContainer) return;
-    const item = this._cardRefs.listContainer.querySelector(`[data-id="${itemId}"]`)?.closest('.assigned-item');
-    if (item) {
-      item.remove();
+  if (!this._cardRefs?.listContainer) return;
+  
+  // Buscar la fila (tr) en lugar del div
+  const row = this._cardRefs.listContainer.querySelector(`tr[data-id="${itemId}"]`);
+  if (row) {
+    row.classList.add('removing');
+    setTimeout(() => {
+      row.remove();
       this._currentItems.delete(itemId);
-    }
-    if (this._cardRefs.listContainer.children.length === 0) {
-      this._cardRefs.listContainer.innerHTML = '<span class="empty-text">Ninguno asignado</span>';
-    }
+      
+      // Si no quedan filas, mostrar mensaje vacío
+      if (this._cardRefs.listContainer.children.length === 0) {
+        this._cardRefs.listContainer.innerHTML = `
+          <tr class="empty-row">
+            <td colspan="${this._getColumnCount()}">Ninguno asignado</td>
+          </tr>
+        `;
+      }
+    }, 200);
   }
+}
+
+_getColumnCount() {
+  // Obtener número de columnas desde el config
+  const card = this._cardRefs?.card;
+  if (!card) return 4;
+  const ths = card.querySelectorAll('thead th');
+  return ths.length;
+}
 
   _updateCounterText(count) {
     if (this._cardRefs?.counter) {

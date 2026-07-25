@@ -9,8 +9,8 @@ export class SidebarManager {
     this._container = null;
 
     // Suscribirse a eventos de invalidación
-    this.stateManager.subscribe('cacheInvalidated', (module) => {
-      if (module === 'sidebar' || module === 'all' || module === 'counters') {
+    this.stateManager.subscribe("cacheInvalidated", (module) => {
+      if (module === "sidebar" || module === "all" || module === "counters") {
         this._onInvalidated(module);
       }
     });
@@ -18,7 +18,7 @@ export class SidebarManager {
 
   async _onInvalidated(module) {
     if (!this._container) return;
-    
+
     // Solo re-renderizar si el sidebar está visible
     await this.renderRelationsPanel(this._container);
   }
@@ -28,68 +28,66 @@ export class SidebarManager {
 
     try {
       const res = await this.api.listarPeriodos();
-      if (!res?.success) throw new Error(res?.error || 'Error cargando periodos');
-      
+      if (!res?.success)
+        throw new Error(res?.error || "Error cargando periodos");
+
       const periodos = res.data || [];
-      selectElement.innerHTML = '<option value="">Todos los periodos (Histórico)</option>';
-      
+      selectElement.innerHTML =
+        '<option value="">Todos los periodos (Histórico)</option>';
+
       periodos.forEach((p) => {
-        const opt = document.createElement('option');
+        const opt = document.createElement("option");
         opt.value = p.id;
         opt.textContent = p.descripcion;
         selectElement.appendChild(opt);
       });
 
-      // === AGREGAR BOTÓN DE ADMINISTRACIÓN ===
       this._addAdminButton(selectElement);
-      // ========================================
 
       return periodos;
     } catch (error) {
-      console.error('Error cargando periodos:', error);
-      selectElement.innerHTML = '<option value="">Error al cargar periodos</option>';
+      console.error("Error cargando periodos:", error);
+      selectElement.innerHTML =
+        '<option value="">Error al cargar periodos</option>';
       return [];
     }
   }
 
   _addAdminButton(selectElement) {
-    // Verificar si ya existe el botón (para evitar duplicados)
-    const existingBtn = selectElement.parentElement?.querySelector('.period-admin-btn');
+    // Verificar si ya existe el botón
+    const existingBtn =
+      selectElement.parentElement?.querySelector(".period-admin-btn");
     if (existingBtn) return;
 
-    // Crear contenedor flex si no existe
     const parent = selectElement.parentElement;
-    if (parent && !parent.classList.contains('period-selector-container')) {
-      parent.classList.add('period-selector-container');
-      parent.style.display = 'flex';
-      parent.style.alignItems = 'center';
-      parent.style.gap = '0.5rem';
-    }
+    if (!parent) return;
+
+    // Crear contenedor flex
+    const row = document.createElement("div");
+    row.className = "period-selector-row";
+
+    // Insertar el row antes del select y mover el select dentro
+    parent.insertBefore(row, selectElement);
+    row.appendChild(selectElement);
 
     // Crear botón de administración
-    const adminBtn = document.createElement('button');
-    adminBtn.className = 'period-admin-btn';
+    const adminBtn = document.createElement("button");
+    adminBtn.className = "period-admin-btn";
     adminBtn.innerHTML = '<i class="fa-solid fa-gear"></i>';
-    adminBtn.title = 'Administrar periodos';
-    adminBtn.type = 'button';
-    
-    // Insertar después del select
-    selectElement.after(adminBtn);
+    adminBtn.title = "Administrar periodos";
+    adminBtn.type = "button";
 
-    // Event listener para abrir el diálogo
-    adminBtn.addEventListener('click', async () => {
+    row.appendChild(adminBtn);
+
+    // Event listener
+    adminBtn.addEventListener("click", async () => {
       if (this.periodAdminManager) {
         await this.periodAdminManager.open(async (assignedPeriods) => {
-          // Callback después de guardar - recargar selector
           await this.loadPeriods(selectElement);
-          
-          // Actualizar sidebar relations
           if (this._container) {
             await this.renderRelationsPanel(this._container);
           }
         });
-      } else {
-        console.error('PeriodAdminManager no está disponible');
       }
     });
   }
@@ -97,31 +95,32 @@ export class SidebarManager {
   renderContext(container, context) {
     if (!container || !context) return;
 
-    const { entityName, entityType, entityId, codigo, matricula, clave_ee } = context;
+    const { entityName, entityType, entityId, codigo, matricula, clave_ee } =
+      context;
 
     const entityConfig = {
       docente: {
-        label: 'Código',
+        label: "Código",
         value: codigo,
         icon: '<i class="fa-solid fa-chalkboard-user"></i>',
-        meta: 'DOCENTE',
+        meta: "DOCENTE",
       },
       alumno: {
-        label: 'Matrícula',
+        label: "Matrícula",
         value: matricula,
         icon: '<i class="fa-solid fa-user-graduate"></i>',
-        meta: 'ALUMNO',
+        meta: "ALUMNO",
       },
       ee: {
-        label: 'NRC',
+        label: "NRC",
         value: clave_ee,
         icon: '<i class="fa-solid fa-book-open"></i>',
-        meta: 'EXPERIENCIA EDUCATIVA',
+        meta: "EXPERIENCIA EDUCATIVA",
       },
     };
 
     const config = entityConfig[entityType] || {
-      label: 'ID',
+      label: "ID",
       value: entityId,
       icon: '<i class="fa-solid fa-user"></i>',
       meta: entityType.toUpperCase(),
@@ -143,7 +142,7 @@ export class SidebarManager {
 
   async renderRelationsPanel(container) {
     if (!container) return;
-    
+
     this._container = container; // Guardar referencia
 
     const { entityType, entityId } = this.stateManager.context || {};
@@ -152,84 +151,142 @@ export class SidebarManager {
     const relationDefs = {
       docente: [
         {
-          key: 'ee_asignada',
-          label: 'Experiencia Educativa',
+          key: "ee_asignada",
+          label: "Experiencia Educativa",
           fetch: async () => {
-            if (!periodId) return { value: 'Sin periodo seleccionado', empty: true };
-            const res = await this.api.obtenerEEDelDocente?.({ docenteId: entityId, periodoId: periodId });
+            if (!periodId)
+              return { value: "Sin periodo seleccionado", empty: true };
+            const res = await this.api.obtenerEEDelDocente?.({
+              docenteId: entityId,
+              periodoId: periodId,
+            });
             const ee = res?.data?.[0];
-            return ee ? { value: ee.nombre || ee.clave_ee, empty: false } : { value: 'Sin asignar', empty: true };
+            return ee
+              ? { value: ee.nombre || ee.clave_ee, empty: false }
+              : { value: "Sin asignar", empty: true };
           },
         },
         {
-          key: 'tutorados',
-          label: 'Tutorados',
+          key: "tutorados",
+          label: "Tutorados",
           fetch: async () => {
-            if (!periodId) return { value: 'Sin periodo seleccionado', empty: true };
-            const res = await this.api.obtenerTutorados?.({ docenteId: entityId, periodoId: periodId });
+            if (!periodId)
+              return { value: "Sin periodo seleccionado", empty: true };
+            const res = await this.api.obtenerTutorados?.({
+              docenteId: entityId,
+              periodoId: periodId,
+            });
             const count = res?.data?.length || 0;
-            return { value: count > 0 ? `${count} alumno${count !== 1 ? 's' : ''}` : 'Sin asignar', empty: count === 0 };
+            return {
+              value:
+                count > 0
+                  ? `${count} alumno${count !== 1 ? "s" : ""}`
+                  : "Sin asignar",
+              empty: count === 0,
+            };
           },
         },
       ],
       ee: [
         {
-          key: 'docente_asignado',
-          label: 'Docente Asignado',
+          key: "docente_asignado",
+          label: "Docente Asignado",
           fetch: async () => {
-            if (!periodId) return { value: 'Sin periodo seleccionado', empty: true };
-            const res = await this.api.obtenerDocenteDeEE?.({ eeId: entityId, periodoId: periodId });
+            if (!periodId)
+              return { value: "Sin periodo seleccionado", empty: true };
+            const res = await this.api.obtenerDocenteDeEE?.({
+              eeId: entityId,
+              periodoId: periodId,
+            });
             const doc = res?.data?.[0];
-            return doc ? { value: `${doc.tratamiento} ${doc.apellido_paterno}`, empty: false } : { value: 'Sin asignar', empty: true };
+            return doc
+              ? {
+                  value: `${doc.tratamiento} ${doc.apellido_paterno}`,
+                  empty: false,
+                }
+              : { value: "Sin asignar", empty: true };
           },
         },
         {
-          key: 'alumnos_inscritos',
-          label: 'Alumnos Inscritos',
+          key: "alumnos_inscritos",
+          label: "Alumnos Inscritos",
           fetch: async () => {
-            if (!periodId) return { value: 'Sin periodo seleccionado', empty: true };
-            const res = await this.api.obtenerAlumnosDeEE?.({ eeId: entityId, periodoId: periodId });
+            if (!periodId)
+              return { value: "Sin periodo seleccionado", empty: true };
+            const res = await this.api.obtenerAlumnosDeEE?.({
+              eeId: entityId,
+              periodoId: periodId,
+            });
             const count = res?.data?.length || 0;
-            return { value: count > 0 ? `${count} alumno${count !== 1 ? 's' : ''}` : 'Sin inscritos', empty: count === 0 };
+            return {
+              value:
+                count > 0
+                  ? `${count} alumno${count !== 1 ? "s" : ""}`
+                  : "Sin inscritos",
+              empty: count === 0,
+            };
           },
         },
       ],
       alumno: [
         {
-          key: 'tutor_asignado',
-          label: 'Tutor Académico',
+          key: "tutor_asignado",
+          label: "Tutor Académico",
           fetch: async () => {
-            if (!periodId) return { value: 'Sin periodo seleccionado', empty: true };
-            const res = await this.api.obtenerTutorDeAlumno?.({ alumnoId: entityId, periodoId: periodId });
+            if (!periodId)
+              return { value: "Sin periodo seleccionado", empty: true };
+            const res = await this.api.obtenerTutorDeAlumno?.({
+              alumnoId: entityId,
+              periodoId: periodId,
+            });
             const tutor = res?.data?.[0];
-            return tutor ? { value: `${tutor.tratamiento} ${tutor.apellido_paterno}`, empty: false } : { value: 'Sin asignar', empty: true };
+            return tutor
+              ? {
+                  value: `${tutor.tratamiento} ${tutor.apellido_paterno}`,
+                  empty: false,
+                }
+              : { value: "Sin asignar", empty: true };
           },
         },
         {
-          key: 'ee_inscritas',
-          label: 'EE Inscritas',
+          key: "ee_inscritas",
+          label: "EE Inscritas",
           fetch: async () => {
-            if (!periodId) return { value: 'Sin periodo seleccionado', empty: true };
-            const res = await this.api.obtenerEEDeAlumno?.({ alumnoId: entityId, periodoId: periodId });
+            if (!periodId)
+              return { value: "Sin periodo seleccionado", empty: true };
+            const res = await this.api.obtenerEEDeAlumno?.({
+              alumnoId: entityId,
+              periodoId: periodId,
+            });
             const count = res?.data?.length || 0;
-            return { value: count > 0 ? `${count} materia${count !== 1 ? 's' : ''}` : 'Sin inscritas', empty: count === 0 };
+            return {
+              value:
+                count > 0
+                  ? `${count} materia${count !== 1 ? "s" : ""}`
+                  : "Sin inscritas",
+              empty: count === 0,
+            };
           },
         },
       ],
     };
 
     const relations = relationDefs[entityType] || [];
-    
+
     container.innerHTML = `
       <div class="sidebar-relations-panel">
         <div class="relations-panel-title">Relaciones Actuales</div>
         <div id="relations-list">
-          ${relations.map((rel) => `
+          ${relations
+            .map(
+              (rel) => `
             <div class="relation-block" data-relation="${rel.key}">
               <div class="relation-label">${rel.label}</div>
               <div class="relation-value loading">Cargando...</div>
             </div>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </div>
       </div>
     `;
@@ -237,17 +294,21 @@ export class SidebarManager {
     relations.forEach(async (rel) => {
       try {
         const data = await rel.fetch();
-        const valueEl = container.querySelector(`[data-relation="${rel.key}"] .relation-value`);
+        const valueEl = container.querySelector(
+          `[data-relation="${rel.key}"] .relation-value`,
+        );
         if (valueEl) {
           valueEl.textContent = data.value;
-          valueEl.classList.toggle('empty', data.empty);
+          valueEl.classList.toggle("empty", data.empty);
         }
       } catch (error) {
         console.warn(`Error cargando ${rel.key}:`, error);
-        const valueEl = container.querySelector(`[data-relation="${rel.key}"] .relation-value`);
+        const valueEl = container.querySelector(
+          `[data-relation="${rel.key}"] .relation-value`,
+        );
         if (valueEl) {
-          valueEl.textContent = 'Error';
-          valueEl.classList.add('empty');
+          valueEl.textContent = "Error";
+          valueEl.classList.add("empty");
         }
       }
     });

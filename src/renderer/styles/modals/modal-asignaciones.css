@@ -481,7 +481,6 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
 .option-tabs {
   display: flex;
   gap: 8px;
-  margin: 1rem 0 0 0;
   padding: 0;
   border-bottom: 1px solid var(--border-color);
 }
@@ -595,7 +594,6 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 1.25rem 0 0.75rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
   flex-wrap: nowrap;
@@ -1074,5 +1072,296 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
 }
 
 .period-admin-btn i {
+  font-size: 1rem;
+}
+
+/* === TABLE CONTAINER === */
+
+.table-container {
+  margin-top: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-white);
+}
+
+/* === TABLE HEADER (título + contador) === */
+
+.assigned-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: nowrap;
+}
+
+.assigned-list-header h5 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge-counter {
+  background: var(--bg-white);
+  padding: 0.2rem 0.7rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* === TABLE === */
+
+.relations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.relations-table thead {
+  background: var(--bg-light);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.relations-table thead th {
+  padding: 0.7rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.relations-table thead th:last-child {
+  text-align: right;
+}
+
+.relations-table tbody {
+  background: var(--bg-white);
+}
+
+.relations-table tbody tr {
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.15s ease;
+}
+
+.relations-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.relations-table tbody tr:hover {
+  background: rgba(52, 152, 219, 0.05);
+}
+
+.relations-table tbody tr.removing {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.relations-table tbody td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  color: var(--text-dark);
+}
+
+/* === COLUMNAS ESPECÍFICAS === */
+
+.col-nombre strong {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.col-clave .badge-clave,
+.col-matricula .badge-matricula {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  font-family: monospace;
+}
+
+.col-carga,
+.col-programa {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.col-carga i {
+  margin-right: 0.3rem;
+  opacity: 0.7;
+}
+
+/* === BOTÓN ELIMINAR === */
+
+.col-actions {
+  text-align: center !important;
+  white-space: nowrap;
+  width: 60px;
+}
+
+.btn-remove-row {
+  all: unset;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  margin: 0 auto;
+}
+
+.btn-remove-row:hover {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--danger-color);
+}
+
+.btn-remove-row i {
+  font-size: 0.9rem;
+}
+
+/* === FILA VACÍA === */
+
+.empty-row td {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* === RESPONSIVE === */
+
+@media (max-width: 768px) {
+  .relations-table {
+    font-size: 0.82rem;
+  }
+  
+  .relations-table thead th,
+  .relations-table tbody td {
+    padding: 0.6rem 0.7rem;
+  }
+  
+  .col-programa {
+    display: none;
+  }
+  
+  .relations-table thead th:last-child,
+  .relations-table tbody td:last-child {
+    width: 50px !important;
+  }
+}
+
+/* Icono dentro del botón del overlay */
+#overlay-action-btn i.fa-solid {
+  color: inherit !important; /* Heredar color del botón */
+  margin-right: 0.5rem; /* Espacio entre icono y texto */
+  font-size: 1rem; /* Tamaño consistente */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* Asegurar que el botón tenga buen contraste */
+#overlay-action-btn {
+  background: var(--accent-color, #3498db);
+  color: #ffffff !important;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+#overlay-action-btn:hover {
+  background: rgba(52, 152, 219, 0.9) !important;
+  transform: translateY(-1px);
+}
+
+#overlay-action-btn:active {
+  transform: translateY(0);
+}
+
+/* === PERIOD SELECTOR CONTAINER === */
+
+.sidebar-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-controls .control-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+/* Contenedor flex para selector + tuerca */
+.sidebar-controls .period-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* El selector ocupa todo el espacio disponible */
+.sidebar-controls .period-selector-row .form-select {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+}
+
+/* La tuerca se ajusta a la altura del selector */
+.sidebar-controls .period-admin-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-controls .period-admin-btn:hover {
+  background: rgba(52, 152, 219, 0.1);
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.sidebar-controls .period-admin-btn i {
   font-size: 1rem;
 }

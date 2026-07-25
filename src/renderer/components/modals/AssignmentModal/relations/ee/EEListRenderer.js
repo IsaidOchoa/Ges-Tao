@@ -93,9 +93,11 @@ export class EEListRenderer extends BaseRelationRenderer {
       this._currentItems.clear();
 
       if (newItems.length === 0) {
-        listContainer.innerHTML = this.helpers.emptyTemplate(
-          "Ninguna EE asignada",
-        );
+        listContainer.innerHTML = `
+          <tr class="empty-row">
+            <td colspan="${this._getColumnCount()}">Ninguna Experiencia Educativa asignada</td>
+          </tr>
+        `;
         this._hideLoading();
         return;
       }
@@ -116,7 +118,13 @@ export class EEListRenderer extends BaseRelationRenderer {
   }
 
   async refreshCounter() {
-    const count = this._currentItems.size;
+    if (!this._cardRefs?.counter) return;
+
+    // Contar filas reales en la tabla (excluyendo la fila vacía)
+    const rows =
+      this._cardRefs.listContainer?.querySelectorAll("tr[data-id]") || [];
+    const count = rows.length;
+
     this._updateCounterText(count);
   }
 
@@ -256,25 +264,33 @@ export class EEListRenderer extends BaseRelationRenderer {
   }
 
   _createItem(ee) {
-    const item = document.createElement("div");
-    item.className = "assigned-item";
-    item.dataset.id = ee.id;
+    const row = document.createElement("tr");
+    row.className = "table-row";
+    row.dataset.id = ee.id;
 
-    item.innerHTML = `
-      <div class="item-content">
-        <strong>${this.helpers.escapeHtml(ee.nombre)}</strong>
-        <div class="item-meta">
-          <span><i class="fa-solid fa-key"></i> ${this.helpers.escapeHtml(ee.clave_ee)}</span>
-          <span><i class="fa-regular fa-clock"></i> ${ee.carga_horaria || 0} hrs/sem</span>
-        </div>
-      </div>
-      <button class="btn-outline-danger" data-id="${ee.id}" data-name="${this.helpers.escapeHtml(ee.nombre)}">
-        <i class="fa-solid fa-trash"></i> Desasignar Materia
+    const nombre = ee.nombre || "Sin nombre";
+    const clave = ee.clave_ee || "-";
+    const carga = ee.carga_horaria || 0;
+
+    row.innerHTML = `
+    <td class="col-nombre">
+      <strong>${this.helpers.escapeHtml(nombre)}</strong>
+    </td>
+    <td class="col-clave">
+      <span class="badge-clave">${this.helpers.escapeHtml(clave)}</span>
+    </td>
+    <td class="col-carga">
+      <span><i class="fa-regular fa-clock"></i> ${carga} hrs/sem</span>
+    </td>
+    <td class="col-actions">
+      <button class="btn-remove-row" data-id="${ee.id}" data-name="${this.helpers.escapeHtml(nombre)}" title="Desasignar Materia">
+        <i class="fa-solid fa-trash"></i>
       </button>
-    `;
+    </td>
+  `;
 
     this._currentItems.set(ee.id, ee);
-    return item;
+    return row;
   }
 }
 
