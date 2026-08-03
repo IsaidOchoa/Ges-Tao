@@ -1,4 +1,4 @@
-// =======================================================
+// src/renderer/modules/CatalogoModule.js
 // CATALOGO MODULE - ORQUESTADOR RE-ENTRANTE
 // =======================================================
 

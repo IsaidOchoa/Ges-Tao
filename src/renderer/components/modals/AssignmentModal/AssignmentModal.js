@@ -7,10 +7,12 @@ import modalAsignacionesHtml from "../../../config/relationships/templates/modal
 
 import { StateManager } from "./core/StateManager.js";
 import { SidebarManager } from "./sidebar/SidebarManager.js";
+import { PeriodAdminManager } from "./core/PeriodAdminManager.js";
 import { WorkspaceManager } from "./workspace/WorkspaceManager.js";
 import { EEListRenderer } from "./relations/ee/EEListRenderer.js";
 import { TutoradoListRenderer } from "./relations/tutorados/TutoradoListRenderer.js";
-import { PeriodAdminManager } from "./core/PeriodAdminManager.js";
+import { TutorRenderer } from "./relations/tutor/TutorRenderer.js";
+import { DocenteRenderer } from "./relations/docente/DocenteRenderer.js";
 
 export class AssignmentModal {
   constructor() {
@@ -30,7 +32,7 @@ export class AssignmentModal {
     this.sidebarManager = new SidebarManager({
       api: window.electronAPI,
       stateManager: this.stateManager,
-      periodAdminManager: this.periodAdminManager, // Pasar el PeriodAdminManager al SidebarManager
+      periodAdminManager: this.periodAdminManager,
     });
 
     this.workspaceManager = new WorkspaceManager({
@@ -41,79 +43,103 @@ export class AssignmentModal {
       uiLoader: uiLoader,
     });
 
-    this.workspaceManager.registerRenderer(
-      "ee_asignadas",
-      new EEListRenderer({
-        api: window.electronAPI,
-        toast: Toast,
-        confirm: globalConfirm,
-        stateManager: this.stateManager,
-        uiLoader: uiLoader,
-      }),
-    );
-
-    this.workspaceManager.registerRenderer(
-      "tutorados",
-      new TutoradoListRenderer({
-        api: window.electronAPI,
-        toast: Toast,
-        confirm: globalConfirm,
-        stateManager: this.stateManager,
-        uiLoader: uiLoader,
-      }),
-    );
-
     this._initialized = false;
   }
 
   open(context) {
-  // Resetear estado completamente
-  this.stateManager = new StateManager();
-  this.stateManager.setContext(context);
-  this.stateManager.setActivePeriod(null);
-  this.stateManager.setActiveTab("gestionar");
+    // Resetear estado completamente
+    this.stateManager = new StateManager();
+    this.stateManager.setContext(context);
+    this.stateManager.setActivePeriod(null);
+    this.stateManager.setActiveTab("gestionar");
 
-  // Re-inicializar managers con nuevo stateManager
-  this.sidebarManager = new SidebarManager({ 
-    api: window.electronAPI, 
-    stateManager: this.stateManager,
-    periodAdminManager: this.periodAdminManager
-  });
+    // Actualizar referencia del PeriodAdminManager
+    if (this.periodAdminManager) {
+      this.periodAdminManager.stateManager = this.stateManager;
+    }
 
-  // ← AGREGAR: Actualizar el stateManager del PeriodAdminManager
-  if (this.periodAdminManager) {
-    this.periodAdminManager.stateManager = this.stateManager;
+    // Re-inicializar managers con nuevo stateManager
+    this.sidebarManager = new SidebarManager({
+      api: window.electronAPI,
+      stateManager: this.stateManager,
+      periodAdminManager: this.periodAdminManager,
+    });
+
+    this.workspaceManager = new WorkspaceManager({
+      api: window.electronAPI,
+      stateManager: this.stateManager,
+      toast: Toast,
+      confirm: globalConfirm,
+      uiLoader: uiLoader,
+    });
+
+    // Registro DINÁMICO de renderers según el contexto
+    const { entityType } = context;
+    console.log("[AssignmentModal] Contexto recibido:", context);
+    console.log("[AssignmentModal] entityType detectado:", entityType);
+
+    this.workspaceManager._renderers.clear();
+
+    if (entityType === "docente") {
+      console.log("[AssignmentModal] Registrando renderers para DOCENTE");
+      this.workspaceManager.registerRenderer(
+        "ee_asignadas",
+        new EEListRenderer({
+          api: window.electronAPI,
+          toast: Toast,
+          confirm: globalConfirm,
+          stateManager: this.stateManager,
+          uiLoader: uiLoader,
+        }),
+      );
+      this.workspaceManager.registerRenderer(
+        "tutorados",
+        new TutoradoListRenderer({
+          api: window.electronAPI,
+          toast: Toast,
+          confirm: globalConfirm,
+          stateManager: this.stateManager,
+          uiLoader: uiLoader,
+        }),
+      );
+    } else if (entityType === "alumno") {
+      console.log("[AssignmentModal] Registrando renderers para ALUMNO");
+      this.workspaceManager.registerRenderer(
+        "tutor_asignado",
+        new TutorRenderer({
+          api: window.electronAPI,
+          toast: Toast,
+          confirm: globalConfirm,
+          stateManager: this.stateManager,
+          uiLoader: uiLoader,
+        }),
+      );
+    } else if (entityType === "ee") {
+      console.log("[AssignmentModal] Registrando renderers para EE");
+      this.workspaceManager.registerRenderer(
+        "docente_asignado",
+        new DocenteRenderer({
+          api: window.electronAPI,
+          toast: Toast,
+          confirm: globalConfirm,
+          stateManager: this.stateManager,
+          uiLoader: uiLoader,
+        }),
+      );
+    } else {
+      console.warn("[AssignmentModal] entityType no reconocido:", entityType);
+    }
+
+    console.log(
+      "[AssignmentModal] Renderers registrados en WorkspaceManager:",
+      Array.from(this.workspaceManager._renderers.keys()),
+    );
+
+    this._ensureInitialized();
+
+    this.elements.overlay.classList.remove("hidden");
+    this._loadInitialData();
   }
-
-  this.workspaceManager = new WorkspaceManager({ 
-    api: window.electronAPI, 
-    stateManager: this.stateManager,
-    toast: Toast,
-    confirm: globalConfirm,
-    uiLoader: uiLoader
-  });
-
-  this.workspaceManager.registerRenderer('ee_asignadas', new EEListRenderer({ 
-    api: window.electronAPI, 
-    toast: Toast, 
-    confirm: globalConfirm,
-    stateManager: this.stateManager,
-    uiLoader: uiLoader
-  }));
-  
-  this.workspaceManager.registerRenderer('tutorados', new TutoradoListRenderer({ 
-    api: window.electronAPI, 
-    toast: Toast, 
-    confirm: globalConfirm,
-    stateManager: this.stateManager,
-    uiLoader: uiLoader
-  }));
-
-  this._ensureInitialized();
-  
-  this.elements.overlay.classList.remove("hidden");
-  this._loadInitialData();
-}
 
   close() {
     if (!this.elements.overlay) return;

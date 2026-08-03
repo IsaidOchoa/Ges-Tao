@@ -1,6 +1,8 @@
 // src/renderer/components/modals/AssignmentModal/workspace/WorkspaceManager.js
 
 import { PeriodAdhesionCard } from "./PeriodAdhesionCard.js";
+import { TAB_CONFIGS } from "../config/TabConfig.js";
+import { ConsultRenderer } from "../relations/consult/ConsultRenderer.js";
 
 export class WorkspaceManager {
   constructor({ api, stateManager, toast, confirm, uiLoader }) {
@@ -14,7 +16,7 @@ export class WorkspaceManager {
     this._components = new Map();
     this._abortController = null;
     this._workspaceContent = null;
-    this._activeOption = "ee_asignadas";
+    this._activeOption = null;
     this._viewsInitialized = { gestionar: false, consultar: false };
     this._listenersInitialized = false;
 
@@ -36,12 +38,17 @@ export class WorkspaceManager {
     this._components.set(relationType, rendererInstance);
   }
 
-  async render(container) {
+    async render(container) {
     if (!container) return;
     this._workspaceContent = container;
 
+    // 1. Generar los tabs correctos según el contexto (ALUMNO, EE o DOCENTE)
+    await this._generateTabs(); 
+    // 2. Renderizar la vista de gestionar
     await this._ensureGestionarView();
+    // 3. Renderizar el estado de los tabs (overlay, etc.)
     await this._renderOptionTabs();
+    // 4. Configurar los listeners de clic en los tabs
     await this._setupOptionTabs();
   }
 
@@ -99,6 +106,26 @@ export class WorkspaceManager {
     }
   }
 
+    async _generateTabs() {
+    const { entityType } = this.stateManager.context || {};
+    
+    // Obtener la configuración correcta según el contexto (docente, alumno o ee)
+    this._tabsConfig = TAB_CONFIGS[entityType] || TAB_CONFIGS.docente;
+
+    const tabsContainer = this._workspaceContent.querySelector("#option-tabs");
+    if (!tabsContainer) return;
+
+    // Generar los botones de los tabs dinámicamente
+    tabsContainer.innerHTML = this._tabsConfig.map((tab, index) => `
+      <button class="option-tab-btn ${index === 0 ? 'active' : ''}" data-option="${tab.key}">
+        <i class="fa-solid ${tab.icon}"></i> ${tab.label}
+      </button>
+    `).join('');
+
+    // Establecer la primera opción como la activa por defecto
+    this._activeOption = this._tabsConfig[0]?.key || 'ee_asignadas';
+  }
+
   async _renderActiveOptionContent() {
     if (!this._workspaceContent) return;
 
@@ -137,11 +164,13 @@ export class WorkspaceManager {
   }
 
   _createOrUpdateCard(container, config) {
-  let card = container.querySelector(`.option-card[data-option="${config.selectId}"]`);
+    let card = container.querySelector(
+      `.option-card[data-option="${config.selectId}"]`,
+    );
 
-  if (!card) {
-    const temp = document.createElement("div");
-    temp.innerHTML = `
+    if (!card) {
+      const temp = document.createElement("div");
+      temp.innerHTML = `
       <div class="option-card" data-option="${config.selectId}" style="display: none;">
         <div class="controls-inline">
           <div class="select-wrapper">
@@ -166,9 +195,13 @@ export class WorkspaceManager {
           <table class="relations-table" id="${config.listId}-table">
             <thead>
               <tr>
-                ${config.columns.map(col => `
+                ${config.columns
+                  .map(
+                    (col) => `
                   <th style="width: ${col.width}">${col.label}</th>
-                `).join('')}
+                `,
+                  )
+                  .join("")}
                 <th style="width: 60px; text-align: center;">Acciones</th>
               </tr>
             </thead>
@@ -179,55 +212,56 @@ export class WorkspaceManager {
         </div>
       </div>
     `;
-    card = temp.firstElementChild;
-    container.appendChild(card);
+      card = temp.firstElementChild;
+      container.appendChild(card);
+    }
+
+    container.querySelectorAll(".option-card").forEach((c) => {
+      c.style.display = c === card ? "block" : "none";
+    });
+
+    return {
+      card,
+      select: card.querySelector(`#${config.selectId}`),
+      assignButton: card.querySelector('[data-action="assign"]'),
+      counter: card.querySelector(`#${config.counterId}`),
+      listContainer: card.querySelector(`#${config.listId}`),
+      body: card,
+    };
   }
 
-  container.querySelectorAll(".option-card").forEach((c) => {
-    c.style.display = c === card ? "block" : "none";
-  });
-
-  return {
-    card,
-    select: card.querySelector(`#${config.selectId}`),
-    assignButton: card.querySelector('[data-action="assign"]'),
-    counter: card.querySelector(`#${config.counterId}`),
-    listContainer: card.querySelector(`#${config.listId}`),
-    body: card
-  };
-}
-
   _getCardConfig(optionType, entityId) {
-  const configs = {
-    ee_asignadas: {
-      title: "Experiencias Educativas",
-      icon: "book-open",
-      selectId: `select-ee-${entityId}`,
-      listId: `assigned-ee-list-${entityId}`,
-      counterId: `counter-ee-${entityId}`,
-      removeBtnText: "Desasignar Materia",
-      columns: [
-        { key: 'nombre', label: 'Nombre', width: '50%' },
-        { key: 'clave_ee', label: 'NRC', width: '20%' },
-        { key: 'carga_horaria', label: 'Carga', width: '20%' }
-      ]
-    },
-    tutorados: {
-      title: "Tutorados",
-      icon: "user-graduate",
-      selectId: `select-tutorado-${entityId}`,
-      listId: `assigned-tutorados-list-${entityId}`,
-      counterId: `counter-tutorados-${entityId}`,
-      removeBtnText: "Remover Tutoría",
-      columns: [
-        { key: 'nombre_completo', label: 'Nombre', width: '40%' },
-        { key: 'matricula', label: 'Matrícula', width: '30%' },
-        { key: 'programa_academico', label: 'Programa', width: '30%' }
-      ]
-    },
-  };
-  return configs[optionType] || configs.ee_asignadas;
-}
+    const { entityType } = this.stateManager.context || {};
+    const tabConfig = TAB_CONFIGS[entityType]?.find(
+      (t) => t.key === optionType,
+    );
+
+    if (!tabConfig) {
+      return {
+        title: "Elementos",
+        icon: "list",
+        selectId: `select-${optionType}-${entityId}`,
+        listId: `assigned-${optionType}-list-${entityId}`,
+        counterId: `counter-${optionType}-${entityId}`,
+        columns: [],
+        removeBtnText: "Eliminar",
+        singleItem: false,
+        allowEditRelation: false,
+      };
+    }
+
+    return {
+      title: tabConfig.title,
+      icon: tabConfig.icon,
+      selectId: `select-${optionType}-${entityId}`,
+      listId: `assigned-${optionType}-list-${entityId}`,
+      counterId: `counter-${optionType}-${entityId}`,
+      columns: tabConfig.columns,
+      removeBtnText: tabConfig.removeBtnText,
+      singleItem: tabConfig.singleItem || false,
+      allowEditRelation: tabConfig.allowEditRelation || false,
+    };
+  }
 
   async _createConsultSection() {
     const consultSection = document.createElement("div");
@@ -255,6 +289,26 @@ export class WorkspaceManager {
       stateManager: this.stateManager,
       container: consultSection,
     });
+    this._components.set("consult", consultRenderer);
+    await consultRenderer.render();
+  }
+
+  async _createConsultSection() {
+    const consultSection = document.createElement("div");
+    consultSection.className = "workspace-section section-consult-view";
+    consultSection.style.display = "block";
+
+    // El contenedor donde ConsultRenderer inyectará la tabla
+    consultSection.innerHTML = `<div id="historial-container"></div>`;
+
+    this._workspaceContent.appendChild(consultSection);
+
+    const consultRenderer = new ConsultRenderer({
+      api: this.api,
+      stateManager: this.stateManager,
+      container: consultSection.querySelector('#historial-container'),
+    });
+    
     this._components.set("consult", consultRenderer);
     await consultRenderer.render();
   }
@@ -517,70 +571,5 @@ export class WorkspaceManager {
 
     this._viewsInitialized = { gestionar: false, consultar: false };
     this._listenersInitialized = false;
-  }
-}
-
-class ConsultRenderer {
-  constructor({ api, stateManager, container }) {
-    this.api = api;
-    this.stateManager = stateManager;
-    this.container = container;
-  }
-
-  async render() {
-    const historialList = this.container.querySelector("#historial-ee-list");
-    if (!historialList) return;
-
-    const { entityType, entityId } = this.stateManager.context || {};
-
-    historialList.innerHTML = '<span class="loading-text">Cargando...</span>';
-
-    try {
-      let historial = [];
-
-      if (entityType === "docente") {
-        const res = await this.api.obtenerEEDelDocente({ docenteId: entityId });
-        if (res?.success) historial = res.data || [];
-      } else if (entityType === "alumno") {
-        const res = await this.api.obtenerEEDeAlumno({ alumnoId: entityId });
-        if (res?.success) historial = res.data || [];
-      }
-
-      if (historial.length === 0) {
-        historialList.innerHTML =
-          '<span class="empty-text">Sin registros históricos</span>';
-        return;
-      }
-
-      historialList.innerHTML = historial
-        .map((item) => {
-          const nombre = item.ee || item.nombre || "Sin nombre";
-          const clave = item.clave || item.clave_ee || "";
-          const periodo = item.periodo || item.descripcion || "";
-          const carga = item.carga || item.carga_horaria || 0;
-
-          return `
-            <div class="assigned-item">
-              <div class="item-content">
-                <strong>${nombre}</strong>
-                <div class="item-meta">
-                  ${clave ? `<span>Clave: ${clave}</span>` : ""}
-                </div>
-              </div>
-              <div style="text-align:right;">
-                ${periodo ? `<span style="display:block;font-weight:600;color:var(--accent-color);">${periodo}</span>` : ""}
-                ${carga ? `<span style="font-size:0.8rem;color:var(--text-muted);">${carga} hrs</span>` : ""}
-              </div>
-            </div>
-          `;
-        })
-        .join("");
-
-      this.stateManager.setCache("consult", true);
-    } catch (error) {
-      console.error("Error cargando historial:", error);
-      historialList.innerHTML =
-        '<span class="error-text">Error al cargar historial</span>';
-    }
   }
 }

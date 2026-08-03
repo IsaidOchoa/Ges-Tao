@@ -226,6 +226,17 @@ try {
     removerEntidadDePeriodo: (params) =>
       ipcRenderer.invoke("remover-entidad-de-periodo", params),
 
+    // Contexto Alumno: Obtener su tutor
+    obtenerTutorDeAlumno: (params) => ipcRenderer.invoke("obtenerTutorDeAlumno", params),
+    obtenerEEDeAlumno: (params) => ipcRenderer.invoke("obtenerEEDeAlumno", params),
+
+    // Contexto EE: Obtener su docente y actualizar carga
+    obtenerDocenteDeEE: (params) => ipcRenderer.invoke("obtenerDocenteDeEE", params),
+    actualizarRelacionDocenteEE: (data) => ipcRenderer.invoke("actualizarRelacionDocenteEE", data),
+    
+    // Alias para consistencia en el frontend
+    listarDocentesDisponibles: (params) => ipcRenderer.invoke("listarDocentesSelect", params),
+
     // CONFIGURACIÓN
     obtenerConfig: () => ipcRenderer.invoke("obtener-config"),
     guardarConfig: (data) => ipcRenderer.invoke("guardar-config", data),

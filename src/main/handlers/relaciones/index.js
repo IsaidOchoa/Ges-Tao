@@ -1,10 +1,11 @@
-// src/main/handlers/relacion/index.js
+// src/main/handlers/relaciones/index.js
 
 module.exports = () => {
   // Registrar cada módulo de relación
   require('./docenteEEHandlers.js')();
   require('./periodos.js')();
   require('./docenteTutoradosHandlers.js')();
+  require('./alumnoTutorHandlers.js')();
   
-  console.log('✅ [relacion] Todos los módulos de relación registrados');
+  console.log('[relaciones] Todos los módulos de relaciónes registrados');
 };

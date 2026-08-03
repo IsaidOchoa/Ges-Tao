@@ -1,50 +1,42 @@
-// src/renderer/components/modals/AssignmentModal/relations/ee/EEListRenderer.js
+// src/renderer/components/modals/AssignmentModal/relations/docente/DocenteRenderer.js
 
 import { BaseRelationRenderer } from '../BaseRelationRenderer.js';
 
-export class EEListRenderer extends BaseRelationRenderer {
+export class DocenteRenderer extends BaseRelationRenderer {
   constructor({ api, toast, confirm, stateManager, uiLoader }) {
-    super({ api, toast, confirm, stateManager, moduleName: 'ee_asignadas', uiLoader });
+    super({ api, toast, confirm, stateManager, moduleName: 'docente_asignado', uiLoader });
   }
 
   async loadSelect() {
     if (!this._cardRefs?.select || !this._context || !this._periodId) return;
 
     const { select, assignButton } = this._cardRefs;
-    const { entityId } = this._context;
 
     select.disabled = true;
     select.innerHTML = '<option value="">Cargando...</option>';
     if (assignButton) assignButton.disabled = true;
 
     try {
-      const res = await this.api.listarEEDisponibles({ 
-        periodoId: this._periodId, 
-        excludeAsignadasA: entityId 
+      const res = await this.api.listarDocentesDisponibles({ 
+        periodoId: this._periodId 
       });
       
       const items = res?.success ? res.data : [];
       
-      const currentOptions = Array.from(select.options).map(opt => opt.value).filter(v => v);
-      const newOptions = items.map(ee => ee.id);
-      
-      if (currentOptions.length === newOptions.length && currentOptions.every((val, idx) => val === newOptions[idx])) {
-        select.disabled = items.length === 0;
-        if (assignButton) assignButton.disabled = items.length === 0;
-        return;
-      }
-      
       if (items.length === 0) {
-        select.innerHTML = '<option value="" disabled>Todas las EE asignadas</option>';
+        select.innerHTML = '<option value="" disabled>No hay docentes disponibles</option>';
       } else {
-        select.innerHTML = '<option value="">Seleccionar materia...</option>' +
-          items.map(ee => `<option value="${ee.id}">${this.helpers.escapeHtml(ee.nombre)} (${this.helpers.escapeHtml(ee.clave_ee)})</option>`).join('');
+        select.innerHTML = '<option value="">Seleccionar docente...</option>' +
+          items.map(doc => {
+            const nombre = `${doc.tratamiento || ''} ${doc.apellido_paterno || ''} ${doc.apellido_materno || ''} ${doc.nombres || ''}`.trim();
+            return `<option value="${doc.id}">${this.helpers.escapeHtml(nombre)} (${this.helpers.escapeHtml(doc.codigo)})</option>`;
+          }).join('');
       }
       
       select.disabled = items.length === 0;
       if (assignButton) assignButton.disabled = items.length === 0;
     } catch (error) {
-      console.error('Error cargando EE disponibles:', error);
+      console.error('Error cargando docentes disponibles:', error);
       select.innerHTML = '<option value="" disabled>Error al cargar</option>';
       select.disabled = true;
     }
@@ -54,13 +46,13 @@ export class EEListRenderer extends BaseRelationRenderer {
     if (!this._cardRefs?.listContainer || !this._context || !this._periodId) return;
 
     const { listContainer } = this._cardRefs;
-    const { entityId } = this._context;
+    const { entityId } = this._context; // entityId aquí es el eeId
 
     this._showLoading();
 
     try {
-      const res = await this.api.obtenerEEDelDocente({ 
-        docenteId: entityId, 
+      const res = await this.api.obtenerDocenteDeEE({ 
+        eeId: entityId, 
         periodoId: this._periodId 
       });
       
@@ -75,29 +67,29 @@ export class EEListRenderer extends BaseRelationRenderer {
       if (newIds.length === currentIds.length && newIds.every((id, idx) => id === currentIds[idx])) {
         return;
       }
-      
+
       listContainer.innerHTML = '';
       this._currentItems.clear();
-      
+
       if (newItems.length === 0) {
         listContainer.innerHTML = `
           <tr class="empty-row">
-            <td colspan="${this._getColumnCount()}">Ninguna Experiencia Educativa asignada</td>
+            <td colspan="${this._getColumnCount()}">Sin docente asignado</td>
           </tr>
         `;
         return;
       }
 
       const fragment = document.createDocumentFragment();
-      newItems.forEach(ee => {
-        const item = this._createItem(ee);
+      newItems.forEach(doc => {
+        const item = this._createItem(doc);
         fragment.appendChild(item);
       });
       listContainer.appendChild(fragment);
       
     } catch (error) {
       this._hideLoading();
-      console.error('Error cargando EE asignadas:', error);
+      console.error('Error cargando docente asignado:', error);
       listContainer.innerHTML = this.helpers.errorTemplate(error.message);
     }
   }
@@ -111,33 +103,37 @@ export class EEListRenderer extends BaseRelationRenderer {
     if (!this._cardRefs?.select || !this._cardRefs?.assignButton) return;
 
     const { select, assignButton } = this._cardRefs;
-    const { entityId } = this._context;
-    const eeId = select.value;
+    const docenteId = select.value;
 
-    if (!eeId) {
-      this.toast.warning('Seleccione una Experiencia Educativa');
+    if (!docenteId) {
+      this.toast.warning('Seleccione un docente');
       return;
     }
+
+    const { entityId } = this._context; // eeId
 
     assignButton.disabled = true;
     assignButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Asignando...';
 
     try {
       const res = await this.api.asignarEEAdocente({ 
-        docenteId: entityId, 
-        eeId: eeId, 
-        periodoId: this._periodId, 
-        cargaHoraria: 0 
+        docenteId: docenteId, 
+        eeId: entityId, 
+        periodoId: this._periodId 
       });
       
       if (res?.success) {
-        this.toast.success('EE asignada correctamente');
+        this.toast.success('Docente asignado correctamente');
         
         const selectedOption = select.options[select.selectedIndex];
-        const newItem = { 
-          id: eeId, 
-          nombre: selectedOption.text.split('(')[0].trim(),
-          clave_ee: selectedOption.text.match(/\(([^)]+)\)/)?.[1] || '',
+        const nombreCompleto = selectedOption.text.split('(')[0].trim();
+        const codigo = selectedOption.text.match(/\(([^)]+)\)/)?.[1] || '';
+
+        const newItem = {
+          id: docenteId,
+          nombre_completo: nombreCompleto,
+          codigo: codigo,
+          correo: '',
           carga_horaria: 0
         };
         
@@ -145,12 +141,12 @@ export class EEListRenderer extends BaseRelationRenderer {
         await this.refreshCounter();
         await this.loadSelect();
         
-        this.stateManager.invalidateModules(['ee_asignadas', 'counters', 'sidebar']);
+        this.stateManager.invalidateModules(['docente_asignado', 'counters', 'sidebar']);
       } else {
         this.toast.error(res?.error || 'Error al asignar');
       }
     } catch (error) {
-      console.error('Error asignando EE:', error);
+      console.error('Error asignando docente:', error);
       this.toast.error(`Error: ${error.message}`);
     } finally {
       assignButton.disabled = false;
@@ -158,17 +154,17 @@ export class EEListRenderer extends BaseRelationRenderer {
     }
   }
 
-  async remove(eeId, eeName) {
+  async remove(docenteId, docenteName) {
     if (!this._cardRefs) return;
 
     const confirmed = await this.confirm.ask(
-      `¿Desasignar Experiencia Educativa?`,
-      `¿Quitar <strong>"${this.helpers.escapeHtml(eeName)}"</strong>?`
+      `¿Desasignar docente?`,
+      `¿Quitar al docente <strong>"${this.helpers.escapeHtml(docenteName)}"</strong> de esta Experiencia Educativa?`
     );
 
     if (!confirmed) return;
 
-    const btn = this._cardRefs.listContainer.querySelector(`button[data-id="${eeId}"]`);
+    const btn = this._cardRefs.listContainer.querySelector(`button[data-id="${docenteId}"]`);
     const originalState = btn ? { html: btn.innerHTML, disabled: btn.disabled } : null;
 
     if (btn) {
@@ -177,26 +173,26 @@ export class EEListRenderer extends BaseRelationRenderer {
     }
 
     try {
-      const { entityId } = this._context;
+      const { entityId } = this._context; // eeId
       
       const res = await this.api.removerDocenteEE({ 
-        docenteId: entityId, 
-        eeId: eeId, 
+        docenteId: docenteId, 
+        eeId: entityId, 
         periodoId: this._periodId 
       });
-      
+
       if (!res?.success) throw new Error(res?.error || 'Error al desasignar');
 
-      this.toast.success('EE desasignada correctamente');
+      this.toast.success('Docente desasignado correctamente');
       
-      this._removeItemFromList(eeId);
+      this._removeItemFromList(docenteId);
       await this.refreshCounter();
       await this.loadSelect();
       
-      this.stateManager.invalidateModules(['ee_asignadas', 'counters', 'sidebar']);
+      this.stateManager.invalidateModules(['docente_asignado', 'counters', 'sidebar']);
       
     } catch (error) {
-      console.error('Error desasignando EE:', error);
+      console.error('Error desasignando docente:', error);
       this.toast.error(`No se pudo desasignar: ${error.message}`);
       
       if (btn && originalState) {
@@ -206,36 +202,40 @@ export class EEListRenderer extends BaseRelationRenderer {
     }
   }
 
-  _createItem(ee) {
+  _createItem(doc) {
     const row = document.createElement('tr');
     row.className = 'table-row';
-    row.dataset.id = ee.id;
+    row.dataset.id = doc.id;
     
-    const nombre = ee.nombre || 'Sin nombre';
-    const clave = ee.clave_ee || '-';
-    const carga = ee.carga_horaria ?? ee.num_alumnos ?? 0;
-    
+    const nombre = doc.nombre_completo || `${doc.tratamiento || ''} ${doc.apellido_paterno || ''} ${doc.nombres || ''}`.trim() || 'Sin nombre';
+    const codigo = doc.codigo || '-';
+    const correo = doc.correo || '-';
+    const carga = doc.carga_horaria ?? doc.num_alumnos ?? 0;
+
     row.innerHTML = `
       <td class="col-nombre">
         <strong>${this.helpers.escapeHtml(nombre)}</strong>
       </td>
-      <td class="col-clave">
-        <span class="badge-clave">${this.helpers.escapeHtml(clave)}</span>
+      <td class="col-codigo">
+        <span class="badge-clave">${this.helpers.escapeHtml(codigo)}</span>
+      </td>
+      <td class="col-correo">
+        <span>${this.helpers.escapeHtml(correo)}</span>
       </td>
       <td class="col-carga">
-        <span class="editable-relation-value" data-id="${ee.id}" data-field="carga" title="Editar carga horaria / alumnos" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+        <span class="editable-relation-value" data-id="${doc.id}" data-field="carga" title="Editar carga horaria / alumnos inscritos" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
           <i class="fa-solid fa-pen-to-square" style="font-size: 0.75rem; opacity: 0.6;"></i>
           ${carga}
         </span>
       </td>
       <td class="col-actions">
-        <button class="btn-remove-row" data-id="${ee.id}" data-name="${this.helpers.escapeHtml(nombre)}" title="Desasignar Experiencia Educativa">
-          <i class="fa-solid fa-trash"></i>
+        <button class="btn-remove-row" data-id="${doc.id}" data-name="${this.helpers.escapeHtml(nombre)}" title="Desasignar Docente">
+          <i class="fa-solid fa-user-slash"></i>
         </button>
       </td>
     `;
 
-    this._currentItems.set(ee.id, ee);
+    this._currentItems.set(doc.id, doc);
     return row;
   }
 
@@ -247,19 +247,22 @@ export class EEListRenderer extends BaseRelationRenderer {
     this._cardRefs.listContainer.addEventListener('click', (e) => {
       const editableSpan = e.target.closest('.editable-relation-value');
       if (editableSpan) {
-        const eeId = editableSpan.dataset.id;
-        const eeData = this._currentItems.get(eeId);
-        if (eeData) {
-          this._editRelationValue(eeId, eeData);
+        const docenteId = editableSpan.dataset.id;
+        const docData = this._currentItems.get(docenteId);
+        if (docData) {
+          this._editRelationValue(docenteId, docData);
         }
       }
     });
   }
 
-  async _editRelationValue(eeId, eeData) {
-    const currentVal = eeData.carga_horaria ?? eeData.num_alumnos ?? 0;
+  async _editRelationValue(docenteId, docData) {
+    const currentVal = docData.carga_horaria ?? docData.num_alumnos ?? 0;
     
-    const newValStr = prompt(`Editar carga horaria / número de alumnos para:\n"${eeData.nombre}"`, currentVal);
+    const newValStr = prompt(
+      `Editar carga horaria o número de alumnos inscritos en esta Experiencia Educativa:`, 
+      currentVal
+    );
     
     if (newValStr === null) return;
     
@@ -270,22 +273,22 @@ export class EEListRenderer extends BaseRelationRenderer {
     }
 
     try {
-      const { entityId } = this._context;
+      const { entityId } = this._context; // eeId
       
       const res = await this.api.actualizarRelacionDocenteEE({
-        docenteId: entityId,
-        eeId: eeId,
+        docenteId: docenteId,
+        eeId: entityId,
         periodoId: this._periodId,
         carga_horaria: newVal
       });
 
       if (res?.success) {
-        this.toast.success('Atributo de relación actualizado correctamente');
+        this.toast.success('Detalles del grupo actualizados correctamente');
         
-        eeData.carga_horaria = newVal;
-        this._currentItems.set(eeId, eeData);
+        docData.carga_horaria = newVal;
+        this._currentItems.set(docenteId, docData);
         
-        const row = this._cardRefs.listContainer.querySelector(`tr[data-id="${eeId}"]`);
+        const row = this._cardRefs.listContainer.querySelector(`tr[data-id="${docenteId}"]`);
         if (row) {
           const cargaCell = row.querySelector('.col-carga .editable-relation-value');
           if (cargaCell) {
