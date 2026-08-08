@@ -20,7 +20,12 @@ export class WorkspaceManager {
     this._viewsInitialized = { gestionar: false, consultar: false };
     this._listenersInitialized = false;
 
+    this._lastKnownPeriodId = null;
     this._initComponents();
+  }
+
+  get _currentPeriodId() {
+    return this.stateManager.activePeriod || this._lastKnownPeriodId || null;
   }
 
   _initComponents() {
@@ -109,7 +114,7 @@ export class WorkspaceManager {
     async _generateTabs() {
     const { entityType } = this.stateManager.context || {};
     
-    // Obtener la configuración correcta según el contexto (docente, alumno o ee)
+    // Obtener la configuración según el contexto (docente, alumno o ee)
     this._tabsConfig = TAB_CONFIGS[entityType] || TAB_CONFIGS.docente;
 
     const tabsContainer = this._workspaceContent.querySelector("#option-tabs");
@@ -129,30 +134,35 @@ export class WorkspaceManager {
   async _renderActiveOptionContent() {
     if (!this._workspaceContent) return;
 
-    const contentContainer =
-      this._workspaceContent.querySelector("#option-content");
+    const contentContainer = this._workspaceContent.querySelector("#option-content");
     if (!contentContainer) return;
 
     const { entityType, entityId } = this.stateManager.context || {};
-    const periodId = this.stateManager.activePeriod;
+    const periodId = this._currentPeriodId;
 
+    console.log("[DEBUG] _renderActiveOptionContent - periodId:", periodId);
+
+    // 1. Si no hay periodo, mostrar el mensaje
     if (!periodId) {
-      contentContainer.innerHTML =
-        '<p class="empty-text">Seleccione un periodo para gestionar relaciones</p>';
+      contentContainer.innerHTML = '<p class="empty-text" style="text-align: center; padding: 2rem; color: var(--text-muted);">Seleccione un periodo para gestionar relaciones</p>';
       return;
+    }
+
+    // 2. Si YA hay periodo, eliminar el mensaje de vacío si existe
+    const emptyMsg = contentContainer.querySelector('.empty-text');
+    if (emptyMsg) {
+      emptyMsg.remove();
     }
 
     const renderer = this._renderers.get(this._activeOption);
     if (!renderer) {
-      contentContainer.innerHTML =
-        '<p class="error-text">Renderer no encontrado</p>';
+      contentContainer.innerHTML = '<p class="error-text">Renderer no encontrado</p>';
       return;
     }
 
     const cardConfig = this._getCardConfig(this._activeOption, entityId);
     const cardRefs = this._createOrUpdateCard(contentContainer, cardConfig);
 
-    // Verificar cache con clave específica
     const cacheKey = `${this._activeOption}_${entityId}_${periodId}`;
 
     if (!this.stateManager.isCacheValid(cacheKey)) {
@@ -198,7 +208,7 @@ export class WorkspaceManager {
                 ${config.columns
                   .map(
                     (col) => `
-                  <th style="width: ${col.width}">${col.label}</th>
+                  <th style="width: ${col.width}">${col.label.replace(/\n/g, '<br>')}</th>
                 `,
                   )
                   .join("")}
@@ -343,28 +353,20 @@ export class WorkspaceManager {
     });
   }
 
-  async _renderOptionTabs() {
+    async _renderOptionTabs() {
     if (!this._workspaceContent) return;
 
     const tabsContainer = this._workspaceContent.querySelector("#option-tabs");
-    const contentContainer =
-      this._workspaceContent.querySelector("#option-content");
+    const contentContainer = this._workspaceContent.querySelector("#option-content");
     const overlay = document.getElementById("relations-overlay");
 
     if (!tabsContainer || !overlay) return;
 
-    const periodId = this.stateManager.activePeriod;
+    const periodId = this._currentPeriodId;
     const { entityType, entityId } = this.stateManager.context || {};
 
-    console.log(
-      "[DEBUG] _renderOptionTabs - Periodo:",
-      periodId,
-      "Entidad:",
-      entityType,
-      entityId,
-    );
+    console.log("[DEBUG] _renderOptionTabs - Periodo:", periodId, "Entidad:", entityType, entityId);
 
-    // Caso 1: No hay periodo seleccionado
     if (!periodId) {
       tabsContainer.style.display = "flex";
       tabsContainer.classList.add("blurred");
@@ -376,8 +378,7 @@ export class WorkspaceManager {
       this._updateOverlayContent(overlay, {
         icon: "fa-circle-info",
         title: "Seleccione un periodo académico",
-        message:
-          "Seleccione un periodo para habilitar las relaciones operativas",
+        message: "Seleccione un periodo para habilitar las relaciones operativas",
         showButton: false,
       });
 

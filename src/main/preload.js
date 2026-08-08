@@ -233,6 +233,8 @@ try {
     // Contexto EE: Obtener su docente y actualizar carga
     obtenerDocenteDeEE: (params) => ipcRenderer.invoke("obtenerDocenteDeEE", params),
     actualizarRelacionDocenteEE: (data) => ipcRenderer.invoke("actualizarRelacionDocenteEE", data),
+    obtenerEstadisticasEE: (params) => ipcRenderer.invoke("obtenerEstadisticasEE", params),
+    actualizarEstadisticasEE: (data) => ipcRenderer.invoke("actualizarEstadisticasEE", data),
     
     // Alias para consistencia en el frontend
     listarDocentesDisponibles: (params) => ipcRenderer.invoke("listarDocentesSelect", params),

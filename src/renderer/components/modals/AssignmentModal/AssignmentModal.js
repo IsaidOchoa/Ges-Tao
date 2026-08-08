@@ -274,9 +274,20 @@ export class AssignmentModal {
   }
 
   async _handlePeriodChange(periodId) {
+    console.log("[AssignmentModal] Cambiando a periodo:", periodId);
+    
+    // 1. Establecer en StateManager
     this.stateManager.setActivePeriod(periodId);
+    
+    // 2.PARCHES DE SEGURIDAD: Guardar también en WorkspaceManager por si StateManager lo pierde
+    if (this.workspaceManager) {
+      this.workspaceManager._lastKnownPeriod = periodId;
+    }
+    
+    // 3. Invalidar caché
     this.stateManager.invalidateAll();
 
+    // 4. Refrescar todo
     await this._refreshAll();
   }
 

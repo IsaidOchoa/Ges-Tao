@@ -109,16 +109,28 @@ export class DataTableRow {
     </td>`;
 }
 
+  // src/renderer/components/DataTable/DataTableRow.js
+
   renderExpandableRow() {
     const action = this.config.onExpandAction;
+    const showActionPanel = action !== undefined && action !== null;
 
-    const buttonContent = action
+    const buttonContent = showActionPanel
       ? `<button class="btn-manage" onclick="${action}" type="button">
          <i class="fa-solid fa-diagram-project"></i> Gestionar Asignaciones
        </button>`
-      : `<button class="btn-manage" disabled title="Acción no configurada" type="button">
-         <i class="fa-solid fa-diagram-project"></i> Gestionar
-       </button>`;
+      : '';
+
+    const hintContent = showActionPanel
+      ? `<p class="hint">Abre el panel completo para editar relaciones.</p>`
+      : '';
+
+    const actionPanelHTML = showActionPanel
+      ? `<div class="action-panel">
+           ${buttonContent}
+           ${hintContent}
+         </div>`
+      : '';
 
     return `<tr class="sub-row-details hidden" id="details-${this.rowId}">
             <td colspan="100%" class="expansion-cell">
@@ -129,10 +141,7 @@ export class DataTableRow {
                     <span class="chip">⏳ Cargando...</span>
                   </div>
                 </div>
-                <div class="action-panel">
-                  ${buttonContent}
-                  <p class="hint">Abre el panel completo para editar relaciones.</p>
-                </div>
+                ${actionPanelHTML}
               </div>
             </td>
           </tr>`;

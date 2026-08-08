@@ -8,9 +8,11 @@ export const TAB_CONFIGS = {
       icon: 'fa-book-open',
       title: 'Experiencias Educativas Asignadas',
       columns: [
-        { key: 'nombre', label: 'Nombre de la EE', width: '45%' },
-        { key: 'clave_ee', label: 'NRC', width: '20%' },
-        { key: 'carga_horaria', label: 'Carga / Alumnos', width: '25%' }, // Contexto Docente: Se entiende como la carga que tiene el docente en esta EE
+        { key: 'nombre', label: 'Nombre', width: '45%' },
+        { key: 'clave_ee', label: 'NRC', width: '10%' },
+        { key: 'creditos_ee', label: 'Créditos\n(T/P/O)', width: '15%' },
+        { key: 'horas_ee', label: 'Horas Semanales\n(T/P)', width: '15%' },
+        { key: 'num_alumnos', label: 'Alumnos\n(Inscritos)', width: '15%' }
       ],
       removeBtnText: 'Desasignar Experiencia Educativa',
       allowEditRelation: true 
@@ -23,7 +25,7 @@ export const TAB_CONFIGS = {
       columns: [
         { key: 'nombre_completo', label: 'Nombre del Alumno', width: '40%' },
         { key: 'matricula', label: 'Matrícula', width: '30%' },
-        { key: 'programa_academico', label: 'Programa', width: '30%' }
+        { key: 'programa_academico', label: 'Programa Académico', width: '30%' }
       ],
       removeBtnText: 'Desasignar Tutorado'
     }
@@ -54,8 +56,7 @@ export const TAB_CONFIGS = {
       columns: [
         { key: 'nombre_completo', label: 'Docente', width: '40%' },
         { key: 'codigo', label: 'Código', width: '20%' },
-        { key: 'carga_horaria', label: 'Alumnos Inscritos', width: '25%' },
-        { key: 'acciones', label: 'Acciones', width: '15%' }
+        { key: 'correo', label: 'Correo', width: '30%' },
       ],
       removeBtnText: 'Desasignar Docente',
       singleItem: true,

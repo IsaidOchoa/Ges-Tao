@@ -205,12 +205,13 @@ export class DocenteRenderer extends BaseRelationRenderer {
   _createItem(doc) {
     const row = document.createElement('tr');
     row.className = 'table-row';
-    row.dataset.id = doc.id;
+    row.dataset.id = String(doc.id);
     
-    const nombre = doc.nombre_completo || `${doc.tratamiento || ''} ${doc.apellido_paterno || ''} ${doc.nombres || ''}`.trim() || 'Sin nombre';
+    const nombre = doc.nombre_completo || 
+                   `${doc.tratamiento || ''} ${doc.apellido_paterno || ''} ${doc.nombres || ''}`.trim() || 
+                   'Sin nombre';
     const codigo = doc.codigo || '-';
     const correo = doc.correo || '-';
-    const carga = doc.carga_horaria ?? doc.num_alumnos ?? 0;
 
     row.innerHTML = `
       <td class="col-nombre">
@@ -220,22 +221,16 @@ export class DocenteRenderer extends BaseRelationRenderer {
         <span class="badge-clave">${this.helpers.escapeHtml(codigo)}</span>
       </td>
       <td class="col-correo">
-        <span>${this.helpers.escapeHtml(correo)}</span>
+        <span style="color: var(--text-muted);">${this.helpers.escapeHtml(correo)}</span>
       </td>
-      <td class="col-carga">
-        <span class="editable-relation-value" data-id="${doc.id}" data-field="carga" title="Editar carga horaria / alumnos inscritos" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-pen-to-square" style="font-size: 0.75rem; opacity: 0.6;"></i>
-          ${carga}
-        </span>
-      </td>
-      <td class="col-actions">
+      <td class="col-actions" style="text-align: center;">
         <button class="btn-remove-row" data-id="${doc.id}" data-name="${this.helpers.escapeHtml(nombre)}" title="Desasignar Docente">
           <i class="fa-solid fa-user-slash"></i>
         </button>
       </td>
     `;
 
-    this._currentItems.set(doc.id, doc);
+    this._currentItems.set(String(doc.id), doc);
     return row;
   }
 

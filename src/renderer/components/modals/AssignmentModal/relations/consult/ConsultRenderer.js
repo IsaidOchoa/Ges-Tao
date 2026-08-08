@@ -1,6 +1,6 @@
 // src/renderer/components/modals/AssignmentModal/relations/consult/ConsultRenderer.js
 
-import { DataTable } from '../../../../DataTable/DataTable.js'; // Ajusta la ruta según tu estructura
+import { DataTable } from '../../../../DataTable/DataTable.js';
 
 export class ConsultRenderer {
   constructor({ api, stateManager, container }) {
@@ -8,12 +8,16 @@ export class ConsultRenderer {
     this.stateManager = stateManager;
     this.container = container;
     this.dataTable = null;
+    
+    // Bind del método para poder remover el listener si es necesario
+    this.handleExpandEvent = this.handleExpandEvent.bind(this);
   }
 
   async render() {
     const { entityType, entityId } = this.stateManager.context || {};
     
-    // 1. Estructura base que espera tu DataTable
+    console.log('🚀 [ConsultRenderer] Renderizando para:', { entityType, entityId });
+    
     this.container.innerHTML = `
       <div class="section-header">
         <h4>Histórico de Asignaciones</h4>
@@ -26,31 +30,44 @@ export class ConsultRenderer {
       </div>
     `;
 
-    // 2. Configuración de columnas para el historial (solo mostramos el periodo)
-    const columns = [
-      { key: 'descripcion', label: 'Periodo Académico' }
-    ];
+    const columns = [{ key: 'descripcion', label: 'Periodo Académico' }];
 
-    // 3. Instanciar tu DataTable existente
+    // ️ CLAVE: No pasar onExpandAction para que no aparezca el botón "Gestionar"
     this.dataTable = new DataTable({
       tbodyId: 'historial-tbody',
       columns: columns,
       expandable: true,
-      actions: false, // No necesitamos menú contextual de 3 puntos en el historial
-      onExpand: (rowId, isExpanded) => this.handleExpand(rowId, isExpanded, entityType, entityId)
+      actions: false,
+      // ❌ NO pasar onExpandAction aquí
     });
 
-    // 4. Cargar datos
     await this.loadData();
+
+    // 🔥 ESCUCHAR EL EVENTO GLOBAL
+    console.log(' [ConsultRenderer] Agregando listener para table:rowExpanded');
+    this.container.addEventListener('table:rowExpanded', this.handleExpandEvent);
+  }
+
+  handleExpandEvent(e) {
+    const { rowId, isExpanded } = e.detail;
+    console.log('📡 [ConsultRenderer] Evento recibido:', { rowId, isExpanded });
+    
+    if (isExpanded) {
+      const { entityType, entityId } = this.stateManager.context || {};
+      console.log('🔍 [ConsultRenderer] Cargando detalles para periodo:', rowId);
+      this.loadPeriodDetails(rowId, entityType, entityId);
+    }
   }
 
   async loadData() {
     const { entityType, entityId } = this.stateManager.context || {};
     
     try {
-      // Obtener SOLO los periodos asignados a esta entidad
+      console.log('📡 [ConsultRenderer] Llamando a obtenerPeriodosDeEntidad:', { entityType, entityId });
       const res = await this.api.obtenerPeriodosDeEntidad({ entityType, entityId });
       const periodos = res?.success ? res.data : [];
+      
+      console.log('📊 [ConsultRenderer] Periodos recibidos:', periodos.length);
       
       if (periodos.length === 0) {
         this.container.innerHTML = `
@@ -61,60 +78,77 @@ export class ConsultRenderer {
         return;
       }
 
-      // Ordenar por fecha de inicio (descendente)
       periodos.sort((a, b) => (b.fecha_inicio || '').localeCompare(a.fecha_inicio || ''));
       
-      // Alimentar la tabla
       this.dataTable.setData(periodos);
       
     } catch (error) {
-      console.error('Error cargando historial:', error);
+      console.error('❌ [ConsultRenderer] Error cargando historial:', error);
       this.container.innerHTML = '<div class="error-text" style="padding: 2rem; text-align: center;">Error al cargar el historial.</div>';
     }
   }
 
-  async handleExpand(rowId, isExpanded, entityType, entityId) {
-    // Solo cargamos datos cuando se expande (isExpanded === true)
-    if (!isExpanded) return;
+  async loadPeriodDetails(rowId, entityType, entityId) {
+    console.log('🔎 [ConsultRenderer] loadPeriodDetails llamado con:', { rowId, entityType, entityId });
+    
+    //Buscar por id, clave o descripción
+    const period = this.dataTable.data.find(p => 
+      String(p.id) === String(rowId) || 
+      String(p.clave) === String(rowId) || 
+      String(p.descripcion) === String(rowId)
+    );
+    
+    if (!period) {
+      console.error('❌ [ConsultRenderer] Periodo no encontrado para rowId:', rowId);
+      console.log('🔍 [ConsultRenderer] Datos disponibles:', this.dataTable.data);
+      return;
+    }
 
-    const period = this.dataTable.data.find(p => String(p.id) === String(rowId));
-    if (!period) return;
+    console.log('✅ [ConsultRenderer] Periodo encontrado:', period);
 
     const summaryContainer = document.getElementById(`summary-${rowId}`);
-    if (!summaryContainer) return;
+    if (!summaryContainer) {
+      console.error('❌ [ConsultRenderer] Contenedor de chips no encontrado:', `summary-${rowId}`);
+      return;
+    }
 
-    // Mostrar estado de carga en los chips
     summaryContainer.innerHTML = '<span class="chip">⏳ Cargando detalles...</span>';
 
     try {
       let eeInfo = null;
       let tutorInfo = null;
 
-      // Consultas específicas según el contexto
+      console.log('📡 [ConsultRenderer] Consultando APIs para periodo ID:', period.id);
+
       if (entityType === 'docente') {
         const eeRes = await this.api.obtenerEEDelDocente({ docenteId: entityId, periodoId: period.id });
         eeInfo = eeRes?.success ? eeRes.data : [];
+        console.log('📚 [ConsultRenderer] EE del docente:', eeInfo);
         
         const tutRes = await this.api.obtenerTutorados({ docenteId: entityId, periodoId: period.id });
         tutorInfo = tutRes?.success ? tutRes.data : [];
+        console.log('👥 [ConsultRenderer] Tutorados:', tutorInfo);
       } 
       else if (entityType === 'alumno') {
         const tutRes = await this.api.obtenerTutorDeAlumno({ alumnoId: entityId, periodoId: period.id });
         tutorInfo = tutRes?.success ? tutRes.data : [];
+        console.log('👨‍🏫 [ConsultRenderer] Tutor del alumno:', tutorInfo);
         
         const eeRes = await this.api.obtenerEEDeAlumno({ alumnoId: entityId });
-        // Filtramos el historial de EE por este periodo específico
         eeInfo = eeRes?.success ? eeRes.data.filter(e => String(e.periodo_id) === String(period.id) || e.periodo === period.descripcion) : [];
+        console.log('📚 [ConsultRenderer] EE del alumno (filtradas):', eeInfo);
       }
       else if (entityType === 'ee') {
         const docRes = await this.api.obtenerDocenteDeEE({ eeId: entityId, periodoId: period.id });
-        eeInfo = docRes?.success ? docRes.data : []; // Aquí 'eeInfo' representa al docente asignado
+        eeInfo = docRes?.success ? docRes.data : [];
+        console.log('👨‍🏫 [ConsultRenderer] Docente de la EE:', eeInfo);
       }
 
+      console.log('🎨 [ConsultRenderer] Renderizando chips...');
       this.renderChips(summaryContainer, entityType, eeInfo, tutorInfo);
 
     } catch (error) {
-      console.error('Error cargando detalles del periodo:', error);
+      console.error('❌ [ConsultRenderer] Error cargando detalles del periodo:', error);
       summaryContainer.innerHTML = '<span class="chip" style="color: var(--danger-color); border-color: var(--danger-color);">Error al cargar</span>';
     }
   }
@@ -132,7 +166,6 @@ export class ConsultRenderer {
         html += `<span class="chip"><i class="fa-solid fa-chalkboard-user"></i> Sin docente asignado</span>`;
       }
     } else {
-      // Contexto Docente o Alumno
       if (eeInfo && eeInfo.length > 0) {
         const nombres = eeInfo.map(e => this.escapeHtml(e.nombre)).join(', ');
         html += `<span class="chip accent" title="${nombres}"><i class="fa-solid fa-book-open"></i> ${nombres}</span>`;
@@ -151,12 +184,12 @@ export class ConsultRenderer {
         html += `<span class="chip"><i class="fa-solid fa-user-graduate"></i> Sin tutor asignado</span>`;
       }
     } else {
-      // Contexto Docente o EE
       const count = tutorInfo ? tutorInfo.length : 0;
       html += `<span class="chip"><i class="fa-solid fa-users"></i> ${count} tutorado${count !== 1 ? 's' : ''}</span>`;
     }
 
     container.innerHTML = html;
+    console.log('✅ [ConsultRenderer] Chips renderizados:', html);
   }
 
   escapeHtml(text) {
@@ -164,5 +197,11 @@ export class ConsultRenderer {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  destroy() {
+    // Limpiar listener al destruir
+    this.container.removeEventListener('table:rowExpanded', this.handleExpandEvent);
+    console.log('[ConsultRenderer] Listener removido');
   }
 }

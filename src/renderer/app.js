@@ -23,9 +23,10 @@ import { globalConfirm } from './utils/confirmationModal.js';
 import { AssignmentModal } from './components/modals/AssignmentModal/AssignmentModal.js';
 import { allRelationships } from './config/relationships/index.js';
 import { Toast } from './components/common/Toast.js';
+import { initTableExpandManager } from './utils/tableExpandManager.js';
 
 // Debug de imports (eliminar en producción)
-if (process.env.NODE_ENV === 'development') { console.log('🔍 [app.js] allRelationships:', allRelationships?.length, 'relaciones'); }
+if (process.env.NODE_ENV === 'development') { console.log('[app.js] allRelationships:', allRelationships?.length, 'relaciones'); }
 
 // Mapa de vistas
 const views = { 'home': homeHtml, 'catalogos': catalogosHtml, 'configuracion': configuracionHtml, 'perfil': perfilHtml, 'emision': emisionHtml, 'historial': historialHtml, 'biblioteca': bibliotecaHtml };
@@ -50,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   globalConfirm.init(); // Inicializar confirmaciones globales
   
+  initTableExpandManager();
   // Registrar pestañas modulares del mega modal (única fuente de verdad)
   allRelationships.forEach(rel => { if (rel?.tabId && rel?.compatibleWith?.length) { rel.compatibleWith.forEach(entityType => assignmentModal.registerTab(entityType, rel)); } });
   if (process.env.NODE_ENV === 'development') { console.log(`✅ [app.js] ${allRelationships?.length || 0} relaciones registradas`); }
