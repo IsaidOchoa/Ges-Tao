@@ -1,19 +1,19 @@
-// src/main/handlers/relaciones/docenteEEHandlers.js
 const { ipcMain } = require("electron");
-const { getDB } = require("../../database");
+const { getDB, generarIdGlobal } = require("../../database");
 
 module.exports = () => {
   // ==========================================
-// 1. Obtener EE asignadas a un docente (Contexto Docente)
-// ==========================================
-// src/main/handlers/relacion/docenteEEHandlers.js
+  // 1. Obtener EE asignadas a un docente (Contexto Docente)
+  // ==========================================
 
-ipcMain.handle('obtenerEEDelDocente', async (event, { docenteId, periodoId }) => {
-  try {
-    console.log('[BACKEND] obtenerEEDelDocente llamado:', { docenteId, periodoId });
-    
-    const db = getDB();
-    const rows = db.prepare(`
+  ipcMain.handle("obtenerEEDelDocente", async (event, { docenteId, periodoId }) => {
+    try {
+      console.log("[BACKEND] obtenerEEDelDocente llamado:", { docenteId, periodoId });
+
+      const db = getDB();
+      const rows = db
+        .prepare(
+          `
       SELECT 
         e.id,
         e.clave_ee,
@@ -33,17 +33,19 @@ ipcMain.handle('obtenerEEDelDocente', async (event, { docenteId, periodoId }) =>
         AND a.estado = 'activo'
         AND e.estado = 'activa'
       ORDER BY e.clave_ee
-    `).all(docenteId, periodoId);
-    
-    console.log('[BACKEND] EE encontradas:', rows.length);
-    console.log('[BACKEND] Primera EE:', rows[0]);
-    
-    return { success: true, data: rows };
-  } catch (error) {
-    console.error('❌ Error obteniendo EE del docente:', error);
-    return { success: false, error: error.message };
-  }
-});
+    `,
+        )
+        .all(docenteId, periodoId);
+
+      console.log("[BACKEND] EE encontradas:", rows.length);
+      console.log("[BACKEND] Primera EE:", rows[0]);
+
+      return { success: true, data: rows };
+    } catch (error) {
+      console.error("❌ Error obteniendo EE del docente:", error);
+      return { success: false, error: error.message };
+    }
+  });
 
   // ==========================================
   // 2. Listar EE disponibles para asignar (EXCLUIR asignadas activas)
@@ -114,7 +116,7 @@ ipcMain.handle('obtenerEEDelDocente', async (event, { docenteId, periodoId }) =>
           db.prepare(
             `
           UPDATE docente_ee_asignacion 
-          SET estado = 'activo', carga_horaria = ?, fecha_asignacion = datetime('now')
+          SET estado = 'activo', carga_horaria = ?, fecha_asignacion = date('now')
           WHERE id = ?
         `,
           ).run(cargaHoraria, inactiveRecord.id);
@@ -126,12 +128,18 @@ ipcMain.handle('obtenerEEDelDocente', async (event, { docenteId, periodoId }) =>
           };
         }
 
+        // Obtener installation_id para generar id_global
+        const installation = db
+          .prepare("SELECT installation_id FROM installation WHERE id = 1")
+          .get();
+        const idGlobal = generarIdGlobal(installation.installation_id);
+
         db.prepare(
           `
-        INSERT INTO docente_ee_asignacion (docente_id, ee_id, periodo_id, carga_horaria, estado, fecha_asignacion)
-        VALUES (?, ?, ?, ?, 'activo', datetime('now'))
+        INSERT INTO docente_ee_asignacion (id_global, docente_id, ee_id, periodo_id, carga_horaria, estado, fecha_asignacion)
+        VALUES (?, ?, ?, ?, ?, 'activo', date('now'))
       `,
-        ).run(docenteId, eeId, periodoId, cargaHoraria);
+        ).run(idGlobal, docenteId, eeId, periodoId, cargaHoraria);
 
         return {
           success: true,
@@ -155,48 +163,57 @@ ipcMain.handle('obtenerEEDelDocente', async (event, { docenteId, periodoId }) =>
   // ==========================================
   // 4. Remover EE de docente (Soft Delete + Limpieza de Estadísticas)
   // ==========================================
-  ipcMain.handle('removerDocenteEE', async (event, { docenteId, eeId, periodoId }) => {
+  ipcMain.handle("removerDocenteEE", async (event, { docenteId, eeId, periodoId }) => {
     try {
       const db = getDB();
-      
+
       // 1. Marcar la asignación como inactiva
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         UPDATE docente_ee_asignacion 
-        SET estado = 'inactivo', fecha_desasignacion = datetime('now')
+        SET estado = 'inactivo', fecha_desasignacion = date('now')
         WHERE docente_id = ? AND ee_id = ? AND periodo_id = ? AND estado = 'activo'
-      `).run(docenteId, eeId, periodoId);
-      
+      `,
+        )
+        .run(docenteId, eeId, periodoId);
+
       if (result.changes === 0) {
-        return { success: false, error: 'Asignación activa no encontrada' };
+        return { success: false, error: "Asignación activa no encontrada" };
       }
-      
+
       // 2. ELIMINAR las estadísticas de alumnos asociadas a esta relación
-      db.prepare(`
+      db.prepare(
+        `
         DELETE FROM estadisticas_ee_periodo 
         WHERE ee_id = ? AND periodo_id = ?
-      `).run(eeId, periodoId);
-      
-      console.log(`✅ [BACKEND] Asignación removida y estadísticas limpiadas para EE: ${eeId}, Periodo: ${periodoId}`);
-      
-      return { 
-        success: true, 
-        message: 'Asignación removida correctamente',
-        changes: result.changes
+      `,
+      ).run(eeId, periodoId);
+
+      console.log(
+        `✅ [BACKEND] Asignación removida y estadísticas limpiadas para EE: ${eeId}, Periodo: ${periodoId}`,
+      );
+
+      return {
+        success: true,
+        message: "Asignación removida correctamente",
+        changes: result.changes,
       };
-      
     } catch (error) {
-      console.error('❌ Error en removerDocenteEE:', error);
+      console.error("❌ Error en removerDocenteEE:", error);
       return { success: false, error: error.message };
     }
   });
 
   // ==========================================
-// 5. Obtener el docente asignado a una EE (Contexto EE)
-// ==========================================
-ipcMain.handle('obtenerDocenteDeEE', async (event, { eeId, periodoId }) => {
-  try {
-    const db = getDB();
-    const rows = db.prepare(`
+  // 5. Obtener el docente asignado a una EE (Contexto EE)
+  // ==========================================
+  ipcMain.handle("obtenerDocenteDeEE", async (event, { eeId, periodoId }) => {
+    try {
+      const db = getDB();
+      const rows = db
+        .prepare(
+          `
       SELECT 
         d.id,
         d.codigo,
@@ -212,17 +229,19 @@ ipcMain.handle('obtenerDocenteDeEE', async (event, { eeId, periodoId }) => {
         AND a.periodo_id = ? 
         AND a.estado = 'activo'
         AND d.estado = 'activo'
-    `).all(eeId, periodoId);
-    
-    return { success: true, data: rows };
-  } catch (error) {
-    console.error(' Error obteniendo docente de EE:', error);
-    return { success: false, error: error.message };
-  }
-});
+    `,
+        )
+        .all(eeId, periodoId);
+
+      return { success: true, data: rows };
+    } catch (error) {
+      console.error(" Error obteniendo docente de EE:", error);
+      return { success: false, error: error.message };
+    }
+  });
 
   // ==========================================
-  // 6. Actualizar carga horaria de la asignación (Edición inline) [NUEVO]
+  // 6. Actualizar carga horaria de la asignación (Edición inline)
   // ==========================================
   ipcMain.handle(
     "actualizarRelacionDocenteEE",
@@ -248,7 +267,7 @@ ipcMain.handle('obtenerDocenteDeEE', async (event, { eeId, periodoId }) => {
   );
 
   // ==========================================
-  // 7. Listar docentes para selects (Reutilizable) [NUEVO]
+  // 7. Listar docentes para selects (Reutilizable)
   // ==========================================
   ipcMain.handle(
     "listarDocentesSelect",
@@ -277,55 +296,75 @@ ipcMain.handle('obtenerDocenteDeEE', async (event, { eeId, periodoId }) => {
   // ==========================================
   // 8. Obtener estadísticas de alumnos por EE
   // ==========================================
-  ipcMain.handle('obtenerEstadisticasEE', async (event, { eeId, periodoId }) => {
+  ipcMain.handle("obtenerEstadisticasEE", async (event, { eeId, periodoId }) => {
     try {
       const db = getDB();
-      const stats = db.prepare(`
+      const stats = db
+        .prepare(
+          `
         SELECT total_alumnos 
         FROM estadisticas_ee_periodo 
         WHERE ee_id = ? AND periodo_id = ?
-      `).get(eeId, periodoId);
-      
+      `,
+        )
+        .get(eeId, periodoId);
+
       return { success: true, data: stats || { total_alumnos: 0 } };
     } catch (error) {
-      console.error('❌ Error obteniendo estadísticas:', error);
+      console.error("❌ Error obteniendo estadísticas:", error);
       return { success: false, error: error.message };
     }
   });
 
   // ==========================================
-  // 9. Actualizar estadísticas de alumnos (Upsert)
+  // 9. Actualizar estadísticas de alumnos (Upsert) - CORREGIDO
   // ==========================================
-  ipcMain.handle('actualizarEstadisticasEE', async (event, { eeId, periodoId, total_alumnos }) => {
-    try {
-      const db = getDB();
-      
-      const existing = db.prepare(`
+  ipcMain.handle(
+    "actualizarEstadisticasEE",
+    async (event, { eeId, periodoId, total_alumnos }) => {
+      try {
+        const db = getDB();
+
+        const existing = db
+          .prepare(
+            `
         SELECT id FROM estadisticas_ee_periodo 
         WHERE ee_id = ? AND periodo_id = ?
-      `).get(eeId, periodoId);
-      
-      if (existing) {
-        db.prepare(`
-          UPDATE estadisticas_ee_periodo 
-          SET total_alumnos = ?, ultima_actualizacion = CURRENT_TIMESTAMP
-          WHERE ee_id = ? AND periodo_id = ?
-        `).run(total_alumnos, eeId, periodoId);
-      } else {
-        db.prepare(`
-          INSERT INTO estadisticas_ee_periodo (ee_id, periodo_id, total_alumnos, ultima_actualizacion)
-          VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-        `).run(eeId, periodoId, total_alumnos);
-      }
-      
-      return { success: true };
-    } catch (error) {
-      console.error('❌ Error actualizando estadísticas:', error);
-      return { success: false, error: error.message };
-    }
-  });
+      `,
+          )
+          .get(eeId, periodoId);
 
-  console.log(
-    "[docenteEEHandlers] Handlers registrados con consistencia de estado",
+        if (existing) {
+          // UPDATE: usar updated_at en lugar de ultima_actualizacion
+          db.prepare(
+            `
+          UPDATE estadisticas_ee_periodo 
+          SET total_alumnos = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE ee_id = ? AND periodo_id = ?
+        `,
+          ).run(total_alumnos, eeId, periodoId);
+        } else {
+          // INSERT: generar id_global y usar updated_at
+          const installation = db
+            .prepare("SELECT installation_id FROM installation WHERE id = 1")
+            .get();
+          const idGlobal = generarIdGlobal(installation.installation_id);
+
+          db.prepare(
+            `
+          INSERT INTO estadisticas_ee_periodo (id_global, ee_id, periodo_id, total_alumnos, updated_at)
+          VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `,
+          ).run(idGlobal, eeId, periodoId, total_alumnos);
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error("❌ Error actualizando estadísticas:", error);
+        return { success: false, error: error.message };
+      }
+    },
   );
+
+  console.log("[docenteEEHandlers] Handlers registrados con consistencia de estado");
 };

@@ -1,65 +1,102 @@
+/** src/renderer/modules/EmisionModule.js */
 /**
  * Módulo de Emisión de Constancias
  * @module EmisionModule
  * @description Gestiona la interfaz y lógica para la generación de constancias docentes
- * @version 1.1.0
- * @author [Tu Nombre]
- * @license MIT
+ * @version 2.0.0
  */
 
 import { Toast } from "../components/common/Toast.js";
 
 export class EmisionModule {
-  /**
-   * Crea una instancia del módulo de emisión
-   */
   constructor() {
+    // ============================================================
+    // 1. CATÁLOGOS MAESTROS (cargados desde BD al iniciar)
+    // ============================================================
     this.datosMaestros = {
       tipos: [],
       programas: [],
       periodos: [],
       docentes: [],
-      directivos: [],
-      ee: [], // 🔹 Asegurar que existe desde la inicialización
+      firmantes: [],
+      ee: [],
     };
+
+    // ============================================================
+    // 2. CONTEXTO DE EMISIÓN (selección del panel izquierdo)
+    // ============================================================
     this.contexto = {
       tipo: null,
       programa: null,
       periodo: null,
       docente: null,
     };
-    this.datosAutoCargados = { 
-      ee: [], 
-      fecha: new Date(), 
-      firmas: {} 
+
+    // ============================================================
+    // 3. DATOS AUTO-CARGADOS (derivados del contexto)
+    // ============================================================
+    this.datosAutoCargados = {
+      ee: [],
+      fecha: new Date(),
+      firmas: [], // Array de { firmante_id, texto }
     };
-    // 🔹 Referencia para gestión de listeners (patrón idempotente)
+
+    // ============================================================
+    // 4. CONFIGURACIÓN DEL PANEL DERECHO (opciones de salida)
+    // ============================================================
+    this.configuracionPanelDerecho = {
+      rutaGuardado: null,
+      recordarRuta: true,
+      logotipoUrl: null,
+      logotipoRecursoId: null,
+      textosEditables: {
+        saludo: "A quien corresponda,",
+        mencion_final:
+          "Para los fines que al interesado convenga se extiende la presente",
+      },
+      textosOriginales: {
+        saludo: "A quien corresponda,",
+        mencion_final:
+          "Para los fines que al interesado convenga se extiende la presente",
+      },
+      panelColapsado: false,
+      rutaResumen: "",
+    };
+
+    // ============================================================
+    // 5. ESTADO INTERNO Y CONTROL
+    // ============================================================
     this._listenersCleanup = [];
+    this._previewDebounceTimer = null;
+    this._firmaSlotIdCounter = 0;
+    this._isGenerando = false;
   }
 
   /**
    * Inicializa el módulo: carga datos, configura UI y establece estado inicial
-   * @async
-   * @returns {Promise<void>}
    */
   async init() {
-    // 🔹 CORRECCIÓN 1: Limpiar toasts residuales al montar la vista
     this._limpiarToastsResiduales();
-    
-    // 🔹 CORRECCIÓN 2: Validar que el DOM esté listo antes de manipularlo
+
     if (!this._verificarElementosCriticos()) {
-      Toast.error("Error de inicialización: elementos del formulario no encontrados", 8000);
-      console.error("[EmisionModule] DOM incompleto. Verificar HTML de la vista.");
+      Toast.error(
+        "Error de inicialización: elementos del formulario no encontrados",
+        8000,
+      );
+      console.error(
+        "[EmisionModule] DOM incompleto. Verificar HTML de la vista.",
+      );
       return;
     }
 
     try {
       await this.cargarDatosIniciales();
       this.configurarFormulario();
+      await this.configurarPanelDerecho();
       this.establecerFechaDefault();
       this.actualizarPreview();
-      
-      // Logging para auditoría (desarrollo)
+      this._restaurarEstadoPanel();
+
       if (process?.env?.NODE_ENV === "development") {
         console.log("✅ EmisionModule inicializado correctamente");
       }
@@ -69,33 +106,30 @@ export class EmisionModule {
     }
   }
 
-  /**
-   * Limpia elementos toast que puedan haber quedado del ciclo de vida anterior
-   * @private
-   */
+  // ============================================================
+  // UTILIDADES DE UI
+  // ============================================================
+
   _limpiarToastsResiduales() {
-    // Método 1: Usar API del componente Toast si existe
     if (typeof Toast?.clear === "function") {
       Toast.clear();
       return;
     }
-    
-    // Método 2: Limpieza manual defensiva (fallback)
+
     const selectoresToast = [
-      ".toast-container", 
-      ".toast-wrapper", 
+      ".toast-container",
+      ".toast-wrapper",
       "[data-component='toast']",
-      ".notification-area"
+      ".notification-area",
     ];
-    
-    selectoresToast.forEach(selector => {
-      document.querySelectorAll(selector).forEach(el => {
-        // Animación de salida antes de remover (mejor UX)
+
+    selectoresToast.forEach((selector) => {
+      document.querySelectorAll(selector).forEach((el) => {
         if (el.animate) {
-          el.animate(
-            [{ opacity: 1 }, { opacity: 0 }], 
-            { duration: 200, easing: "ease-out" }
-          ).onfinish = () => el.remove();
+          el.animate([{ opacity: 1 }, { opacity: 0 }], {
+            duration: 200,
+            easing: "ease-out",
+          }).onfinish = () => el.remove();
         } else {
           el.remove();
         }
@@ -103,25 +137,20 @@ export class EmisionModule {
     });
   }
 
-  /**
-   * Verifica que los elementos DOM críticos existan antes de proceder
-   * @private
-   * @returns {boolean} True si todos los elementos están presentes
-   */
   _verificarElementosCriticos() {
     const elementosRequeridos = [
       "form-constancia",
       "sel-tipo",
-      "sel-programa", 
+      "sel-programa",
       "sel-periodo",
       "sel-docente",
       "input-fecha-emision",
       "preview-tabla-body",
       "btn-generar",
-      "btn-limpiar"
+      "btn-limpiar",
     ];
-    
-    return elementosRequeridos.every(id => {
+
+    return elementosRequeridos.every((id) => {
       const existe = document.getElementById(id) !== null;
       if (!existe && process?.env?.NODE_ENV === "development") {
         console.warn(`[EmisionModule] Elemento #${id} no encontrado en el DOM`);
@@ -130,199 +159,137 @@ export class EmisionModule {
     });
   }
 
-  /**
-   * Carga los catálogos maestros desde el backend vía Electron API
-   * @async
-   * @private
-   */
+  // ============================================================
+  // CARGA DE DATOS INICIALES
+  // ============================================================
+
   async cargarDatosIniciales() {
     try {
-      // Validación de seguridad: verificar API disponible
       if (!window.electronAPI?.obtenerDatosConstancia) {
-        throw new Error("API 'obtenerDatosConstancia' no disponible. Verificar preload.js");
+        throw new Error(
+          "API 'obtenerDatosConstancia' no disponible. Verificar preload.js",
+        );
       }
 
       const resp = await window.electronAPI.obtenerDatosConstancia();
-      
+
       if (!resp?.success) {
         throw new Error(resp?.error || "Respuesta inválida del servidor");
       }
 
-      // 🔹 Defensive programming: validar estructura de respuesta
       const data = resp.data || {};
-      
+
       this.datosMaestros = {
         tipos: Array.isArray(data.tipos) ? data.tipos : [],
         programas: Array.isArray(data.programas) ? data.programas : [],
         periodos: Array.isArray(data.periodos) ? data.periodos : [],
         docentes: Array.isArray(data.docentes) ? data.docentes : [],
-        directivos: Array.isArray(data.directivos) ? data.directivos : [],
-        ee: Array.isArray(data.ee) ? data.ee : [], // 🔹 Incluir EE si viene en la respuesta
+        firmantes: Array.isArray(data.firmantes) ? data.firmantes : [],
+        ee: Array.isArray(data.ee) ? data.ee : [],
       };
 
       this.llenarSelectores();
-      
     } catch (err) {
-      // 🔹 Logging estructurado para diagnóstico
       console.error("[EmisionModule] Error en cargarDatosIniciales:", {
         message: err.message,
         stack: err.stack,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
-      // 🔹 Toast con mensaje amigable al usuario
-      Toast.error("Error al cargar catálogos. Verifique su conexión o contacte a soporte.", 8000);
-      
-      // 🔹 Estado degradado: deshabilitar formulario
+
+      Toast.error(
+        "Error al cargar catálogos. Verifique su conexión o contacte a soporte.",
+        8000,
+      );
+
       this._deshabilitarFormulario(true);
     }
   }
 
-  /**
-   * Habilita/deshabilita los controles del formulario
-   * @private
-   * @param {boolean} deshabilitar - Estado deseado
-   */
   _deshabilitarFormulario(deshabilitar) {
-    ["sel-tipo", "sel-programa", "sel-periodo", "sel-docente", "sel-ee"]
-      .forEach(id => {
+    ["sel-tipo", "sel-programa", "sel-periodo", "sel-docente", "sel-ee"].forEach(
+      (id) => {
         const el = document.getElementById(id);
         if (el) el.disabled = deshabilitar;
-      });
-    
+      },
+    );
+
     const btn = document.getElementById("btn-generar");
     if (btn) btn.disabled = deshabilitar;
   }
 
-  /**
-   * Llena los elementos <select> con los datos maestros cargados
-   * @private
-   */
   llenarSelectores() {
-    /**
-     * Función helper para poblar selects de forma segura
-     * @param {string} id - ID del elemento select
-     * @param {Array} items - Array de objetos a renderizar
-     * @param {string} defaultTxt - Texto para la opción por defecto
-     * @param {string} valKey - Clave del objeto para usar como value
-     * @param {Function|null} txtFn - Función para generar el texto visible
-     */
     const fill = (id, items, defaultTxt, valKey = "id", txtFn = null) => {
       const sel = document.getElementById(id);
       if (!sel) {
-        // Logging silencioso en producción
         if (process?.env?.NODE_ENV === "development") {
           console.warn(`[EmisionModule] Select #${id} no encontrado`);
         }
         return;
       }
 
-      // Limpiar opciones previas manteniendo estructura
       sel.innerHTML = `<option value="">${defaultTxt}</option>`;
 
-      // Validación defensiva de datos
       if (!Array.isArray(items) || items.length === 0) {
         sel.disabled = true;
         return;
       }
 
-      // Función por defecto para extraer texto legible
-      const defaultTextFn = (item) => 
-        item.nombre || item.clave || item.codigo || item.descripcion || String(item[valKey] ?? "");
+      const defaultTextFn = (item) =>
+        item.nombre ||
+        item.clave ||
+        item.codigo ||
+        item.descripcion ||
+        String(item[valKey] ?? "");
 
-      // Renderizar opciones con DocumentFragment (mejor rendimiento)
       const fragment = document.createDocumentFragment();
-      
+
       items.forEach((item) => {
         const opt = document.createElement("option");
         opt.value = item[valKey] ?? "";
-        opt.textContent = typeof txtFn === "function" 
-          ? txtFn(item) 
-          : defaultTextFn(item);
+        opt.textContent =
+          typeof txtFn === "function" ? txtFn(item) : defaultTextFn(item);
         fragment.appendChild(opt);
       });
-      
+
       sel.appendChild(fragment);
-      sel.disabled = false; // 🔹 Habilitar solo si hay datos válidos
+      sel.disabled = false;
     };
 
-    // 1. Tipos de constancia
-    fill(
-      "sel-tipo",
-      this.datosMaestros.tipos,
-      "Seleccione un tipo...",
-      "id",
-      (i) => i.nombre,
-    );
-
-    // 2. Programas institucionales
-    fill(
-      "sel-programa",
-      this.datosMaestros.programas,
-      "Seleccione un programa...",
-      "id",
-      (i) => i.nombre,
-    );
-
-    // 3. Periodos escolares 🔹 CORRECCIÓN: usar clave+descripcion
-    fill(
-      "sel-periodo",
-      this.datosMaestros.periodos,
-      "Seleccione un periodo...",
-      "id",
-      (p) => `${p.clave || ""} - ${p.descripcion || ""}`.trim(),
-    );
-
-    // 4. Docentes (formato: Apellido, Nombre (Código))
-    fill(
-      "sel-docente",
-      this.datosMaestros.docentes,
-      "Seleccione un docente...",
-      "id",
-      (d) => {
-        const apellido = d.apellido_paterno || "";
-        const nombre = d.nombres || "";
-        const codigo = d.codigo ? `(${d.codigo})` : "";
-        return `${apellido}, ${nombre} ${codigo}`.trim();
-      },
-    );
-
-    // 🔹 CORRECCIÓN CRÍTICA: fillSelect → fill (función definida en este ámbito)
-    fill(
-      "sel-ee",
-      this.datosMaestros.ee,
-      "Ninguna",
-      "id",
-      (i) => `${i.nrc || i.clave_ee || ""} - ${i.nombre || ""}`.trim(),
+    fill("sel-tipo", this.datosMaestros.tipos, "Seleccione un tipo...", "id", (i) => i.nombre);
+    fill("sel-programa", this.datosMaestros.programas, "Seleccione un programa...", "id", (i) => i.nombre);
+    fill("sel-periodo", this.datosMaestros.periodos, "Seleccione un periodo...", "id", (p) => `${p.clave || ""} - ${p.descripcion || ""}`.trim());
+    fill("sel-docente", this.datosMaestros.docentes, "Seleccione un docente...", "id", (d) => {
+      const apellido = d.apellido_paterno || "";
+      const nombre = d.nombres || "";
+      const codigo = d.codigo ? `(${d.codigo})` : "";
+      return `${apellido}, ${nombre} ${codigo}`.trim();
+    });
+    fill("sel-ee", this.datosMaestros.ee, "Ninguna", "id", (i) =>
+      `${i.nrc || i.clave_ee || ""} - ${i.nombre || ""}`.trim(),
     );
   }
 
-  /**
-   * Configura los event listeners del formulario con gestión de limpieza
-   * @private
-   */
+  // ============================================================
+  // CONFIGURACIÓN DEL FORMULARIO (Panel Izquierdo)
+  // ============================================================
+
   configurarFormulario() {
-    // 🔹 Patrón: limpiar listeners previos para evitar duplicación
     this._limpiarListenersPrevios();
 
-    // Helper para registrar listeners con cleanup
     const bindWithCleanup = (id, event, handler) => {
       const el = document.getElementById(id);
       if (!el) return;
-      
+
       el.addEventListener(event, handler);
-      // Registrar función de limpieza para este listener
       this._listenersCleanup.push(() => {
         el.removeEventListener(event, handler);
       });
     };
 
-    // 1. Selectores de contexto -> Habilitan selector de docente
     ["sel-tipo", "sel-programa", "sel-periodo"].forEach((id) => {
       bindWithCleanup(id, "change", () => this.actualizarContexto());
     });
 
-    // 2. Selector de docente -> Dispara carga automática de datos
     bindWithCleanup("sel-docente", "change", (e) => {
       if (e.target.value) {
         this.cargarDatosDocente(e.target.value);
@@ -331,7 +298,6 @@ export class EmisionModule {
       }
     });
 
-    // 3. Fecha de emisión -> Actualiza preview en tiempo real
     bindWithCleanup("input-fecha-emision", "change", (e) => {
       this.datosAutoCargados.fecha = e.target.value
         ? new Date(e.target.value)
@@ -339,31 +305,321 @@ export class EmisionModule {
       this.actualizarPreview();
     });
 
-    // 4. Selector de Experiencia Educativa -> Actualiza preview
     bindWithCleanup("sel-ee", "change", () => {
       this.actualizarPreview();
     });
 
-    // 5. Submit del formulario
     bindWithCleanup("form-constancia", "submit", (e) => {
       e.preventDefault();
       this.generarConstancia(e);
     });
 
-    // 6. Botón limpiar
     bindWithCleanup("btn-limpiar", "click", () => this.limpiarTodo());
   }
 
-  /**
-   * Limpia todos los listeners registrados para prevenir memory leaks
-   * @private
-   */
+  // ============================================================
+  // CONFIGURACIÓN DEL PANEL DERECHO
+  // ============================================================
+
+  async configurarPanelDerecho() {
+    // Cargar configuración inicial
+    try {
+      const config = await window.electronAPI?.obtenerConfig?.() || {};
+      this.configuracionPanelDerecho.rutaGuardado = config.rutaConstancias || "";
+      this.actualizarDisplayRuta();
+      this._actualizarResumenRuta();
+    } catch (err) {
+      console.warn("[EmisionModule] No se pudo cargar configuración:", err);
+    }
+
+    // Listener: Cambiar ruta de guardado
+    const btnCambiarRuta = document.getElementById("btn-cambiar-ruta");
+    if (btnCambiarRuta) {
+      btnCambiarRuta.addEventListener("click", async () => {
+        try {
+          const ruta = await window.electronAPI.seleccionarDirectorio();
+          if (ruta) {
+            this.configuracionPanelDerecho.rutaGuardado = ruta;
+            this.actualizarDisplayRuta();
+            this._actualizarResumenRuta();
+
+            const chkRecordar = document.getElementById("chk-recordar-ruta");
+            if (chkRecordar?.checked) {
+              await window.electronAPI.guardarConfig({
+                key: "rutaConstancias",
+                value: ruta,
+              });
+              Toast.success("Ruta predeterminada actualizada", 3000);
+            }
+          }
+        } catch (err) {
+          Toast.error("Error al seleccionar carpeta", 5000);
+        }
+      });
+    }
+
+    // Listener: Agregar firma
+    const btnAgregarFirma = document.getElementById("btn-agregar-firma");
+    if (btnAgregarFirma) {
+      btnAgregarFirma.addEventListener("click", () => this.agregarSlotFirma());
+    }
+
+    // Listener: Cambiar logotipo
+    const btnCambiarLogo = document.getElementById("btn-cambiar-logo");
+    if (btnCambiarLogo) {
+      btnCambiarLogo.addEventListener("click", async () => {
+        try {
+          const ruta = await window.electronAPI.seleccionarArchivoImagen();
+          if (ruta) {
+            this.configuracionPanelDerecho.logotipoUrl = `file://${ruta}`;
+            this.actualizarPreviewLogotipo();
+          }
+        } catch (err) {
+          Toast.error("Error al seleccionar imagen", 5000);
+        }
+      });
+    }
+
+    // Listener: Quitar logotipo
+    const btnQuitarLogo = document.getElementById("btn-quitar-logo");
+    if (btnQuitarLogo) {
+      btnQuitarLogo.addEventListener("click", () => {
+        this.configuracionPanelDerecho.logotipoUrl = null;
+        this.configuracionPanelDerecho.logotipoRecursoId = null;
+        this.actualizarPreviewLogotipo();
+      });
+    }
+
+    // Listener: Toggle panel derecho
+    const btnToggle = document.getElementById("btn-toggle-panel-derecho");
+    if (btnToggle) {
+      btnToggle.addEventListener("click", () => this.togglePanelDerecho());
+    }
+
+    // Cargar firmas por defecto del formato
+    await this.cargarFirmasPorDefecto();
+
+    // Configurar textos editables inline
+    this.configurarTextosEditables();
+  }
+
+  actualizarDisplayRuta() {
+    const display = document.getElementById("ruta-constancias-display");
+    if (display) {
+      display.textContent =
+        this.configuracionPanelDerecho.rutaGuardado || "No configurada";
+      display.title = this.configuracionPanelDerecho.rutaGuardado || "";
+    }
+  }
+
+  _actualizarResumenRuta() {
+    const ruta = this.configuracionPanelDerecho.rutaGuardado || "";
+    const partes = ruta.split(/[/\\]/).filter(Boolean);
+    const resumen =
+      partes.length >= 2
+        ? `.../${partes.slice(-2).join("/")}`
+        : ruta || "Sin configurar";
+    this.configuracionPanelDerecho.rutaResumen = resumen;
+  }
+
+  async cargarFirmasPorDefecto() {
+    if (!this.contexto.tipo) {
+      this.datosAutoCargados.firmas = [];
+      this.renderizarSlotsFirmas();
+      return;
+    }
+
+    // Por defecto, cargar 2 firmas si hay firmantes disponibles
+    const firmantes = this.datosMaestros.firmantes;
+    if (firmantes.length >= 2) {
+      this.datosAutoCargados.firmas = [
+        { firmante_id: firmantes[0].id, texto: firmantes[0].texto },
+        { firmante_id: firmantes[1].id, texto: firmantes[1].texto },
+      ];
+    } else if (firmantes.length === 1) {
+      this.datosAutoCargados.firmas = [
+        { firmante_id: firmantes[0].id, texto: firmantes[0].texto },
+      ];
+    } else {
+      this.datosAutoCargados.firmas = [];
+    }
+
+    this.renderizarSlotsFirmas();
+  }
+
+  agregarSlotFirma() {
+    this.datosAutoCargados.firmas.push({ firmante_id: null, texto: "" });
+    this.renderizarSlotsFirmas();
+  }
+
+  eliminarSlotFirma(index) {
+    this.datosAutoCargados.firmas.splice(index, 1);
+    this.renderizarSlotsFirmas();
+  }
+
+  renderizarSlotsFirmas() {
+    const container = document.getElementById("firma-slots-container");
+    const countEl = document.getElementById("firma-count");
+    if (!container) return;
+
+    container.innerHTML = "";
+    if (countEl) countEl.textContent = this.datosAutoCargados.firmas.length;
+
+    this.datosAutoCargados.firmas.forEach((firma, index) => {
+      const slot = document.createElement("div");
+      slot.className = "firma-slot";
+
+      const select = document.createElement("select");
+      select.className = "form-control";
+      select.innerHTML = '<option value="">Seleccione firmante...</option>';
+
+      this.datosMaestros.firmantes.forEach((f) => {
+        const opt = document.createElement("option");
+        opt.value = f.id;
+        opt.textContent = f.texto;
+        if (String(firma.firmante_id) === String(f.id)) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      select.addEventListener("change", (e) => {
+        const firmante = this.datosMaestros.firmantes.find(
+          (f) => String(f.id) === String(e.target.value),
+        );
+        this.datosAutoCargados.firmas[index] = {
+          firmante_id: e.target.value ? parseInt(e.target.value, 10) : null,
+          texto: firmante?.texto || "",
+        };
+        this.actualizarPreviewFirmas();
+      });
+
+      const btnEliminar = document.createElement("button");
+      btnEliminar.className = "btn btn-danger btn-sm";
+      btnEliminar.innerHTML = '<i class="fa-solid fa-times"></i>';
+      btnEliminar.type = "button";
+      btnEliminar.addEventListener("click", () =>
+        this.eliminarSlotFirma(index),
+      );
+
+      slot.appendChild(select);
+      slot.appendChild(btnEliminar);
+      container.appendChild(slot);
+    });
+
+    this.actualizarPreviewFirmas();
+  }
+
+  actualizarPreviewFirmas() {
+    const container = document.getElementById("preview-firmas-container");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    this.datosAutoCargados.firmas.forEach((firma) => {
+      const block = document.createElement("div");
+      block.className = "signature-block";
+      block.innerHTML = `
+        <div class="signature-line"></div>
+        <p>${this._escapeHtml(firma.texto) || "[Firma pendiente]"}</p>
+      `;
+      container.appendChild(block);
+    });
+  }
+
+  actualizarPreviewLogotipo() {
+    const previewBox = document.getElementById("logotipo-preview");
+    const btnQuitar = document.getElementById("btn-quitar-logo");
+    if (!previewBox) return;
+
+    if (this.configuracionPanelDerecho.logotipoUrl) {
+      previewBox.innerHTML = `<img src="${this.configuracionPanelDerecho.logotipoUrl}" alt="Logotipo">`;
+      if (btnQuitar) btnQuitar.style.display = "block";
+    } else {
+      previewBox.innerHTML = `
+        <i class="fa-solid fa-image placeholder-icon"></i>
+        <p>Sin logotipo</p>
+      `;
+      if (btnQuitar) btnQuitar.style.display = "none";
+    }
+  }
+
+  togglePanelDerecho() {
+    const container = document.querySelector(".emission-container");
+    const btn = document.getElementById("btn-toggle-panel-derecho");
+    if (!container || !btn) return;
+
+    container.classList.toggle("panel-colapsado");
+    this.configuracionPanelDerecho.panelColapsado =
+      container.classList.contains("panel-colapsado");
+
+    const icon = btn.querySelector("i");
+    if (icon) {
+      if (this.configuracionPanelDerecho.panelColapsado) {
+        icon.classList.replace("fa-chevron-right", "fa-chevron-left");
+      } else {
+        icon.classList.replace("fa-chevron-left", "fa-chevron-right");
+      }
+    }
+
+    // Persistir preferencia
+    window.electronAPI
+      ?.guardarConfig?.({
+        key: "panelDerechoColapsado",
+        value: this.configuracionPanelDerecho.panelColapsado,
+      })
+      .catch((err) =>
+        console.warn("[EmisionModule] No se pudo guardar preferencia:", err),
+      );
+  }
+
+  configurarTextosEditables() {
+    const elementos = document.querySelectorAll('[contenteditable="true"]');
+    elementos.forEach((el) => {
+      el.addEventListener("blur", () => {
+        const key = el.getAttribute("data-editable-key");
+        if (!key) return;
+
+        const nuevoValor = el.textContent.trim();
+        const valorOriginal =
+          this.configuracionPanelDerecho.textosOriginales[key];
+
+        if (nuevoValor !== valorOriginal) {
+          this.configuracionPanelDerecho.textosEditables[key] = nuevoValor;
+          // TODO: Implementar modal de confirmación para aplicar a todas las plantillas
+          console.log(`[EmisionModule] Texto editado: ${key} = "${nuevoValor}"`);
+        }
+      });
+    });
+  }
+
+  _restaurarEstadoPanel() {
+    window.electronAPI
+      ?.obtenerConfig?.()
+      .then((config) => {
+        if (config?.panelDerechoColapsado === true) {
+          this.configuracionPanelDerecho.panelColapsado = true;
+          const container = document.querySelector(".emission-container");
+          if (container) {
+            container.classList.add("panel-colapsado");
+            const btn = document.getElementById("btn-toggle-panel-derecho");
+            const icon = btn?.querySelector("i");
+            if (icon) icon.classList.replace("fa-chevron-right", "fa-chevron-left");
+          }
+        }
+      })
+      .catch((err) =>
+        console.warn("[EmisionModule] No se pudo restaurar estado:", err),
+      );
+  }
+
+  // ============================================================
+  // GESTIÓN DE LISTENERS
+  // ============================================================
+
   _limpiarListenersPrevios() {
-    this._listenersCleanup.forEach(cleanup => {
+    this._listenersCleanup.forEach((cleanup) => {
       try {
         cleanup();
       } catch (err) {
-        // Ignorar errores en limpieza (elementos ya removidos del DOM)
         if (process?.env?.NODE_ENV === "development") {
           console.warn("[EmisionModule] Error limpiando listener:", err);
         }
@@ -372,22 +628,21 @@ export class EmisionModule {
     this._listenersCleanup = [];
   }
 
-  /**
-   * Actualiza el estado del contexto según los valores seleccionados
-   * @private
-   */
-  actualizarContexto() {
-    // Lectura segura con optional chaining
-    this.contexto.tipo = document.getElementById("sel-tipo")?.value || null;
-    this.contexto.programa = document.getElementById("sel-programa")?.value || null;
-    this.contexto.periodo = document.getElementById("sel-periodo")?.value || null;
+  // ============================================================
+  // ACTUALIZACIÓN DE CONTEXTO
+  // ============================================================
 
-    // Lógica de habilitación: docente solo disponible con periodo seleccionado
+  actualizarContexto() {
+    this.contexto.tipo = document.getElementById("sel-tipo")?.value || null;
+    this.contexto.programa =
+      document.getElementById("sel-programa")?.value || null;
+    this.contexto.periodo =
+      document.getElementById("sel-periodo")?.value || null;
+
     const selDoc = document.getElementById("sel-docente");
     if (selDoc) {
       if (this.contexto.periodo) {
         selDoc.disabled = false;
-        // Restaurar texto por defecto si estaba modificado
         if (!selDoc.value) {
           selDoc.options[0].textContent = "Seleccione un docente...";
         }
@@ -398,18 +653,16 @@ export class EmisionModule {
         this.limpiarAutoCarga();
       }
     }
-    
+
+    // Recargar firmas por defecto cuando cambia el tipo
+    if (this.contexto.tipo) {
+      this.cargarFirmasPorDefecto();
+    }
+
     this.actualizarPreview();
   }
 
-  /**
-   * Carga los datos específicos del docente seleccionado
-   * @async
-   * @private
-   * @param {string} docenteId - ID del docente seleccionado
-   */
   async cargarDatosDocente(docenteId) {
-    // Validación de entrada
     if (!docenteId) {
       this.limpiarAutoCarga();
       return;
@@ -417,34 +670,37 @@ export class EmisionModule {
 
     this.contexto.docente = docenteId;
     const tbody = document.getElementById("preview-tabla-body");
-    
-    // Estado de carga visual
+
     if (tbody) {
-      tbody.innerHTML = 
+      tbody.innerHTML =
         '<tr><td colspan="7" class="loading-state">' +
         '<i class="fa-solid fa-spinner fa-spin"></i> Cargando datos...</td></tr>';
     }
 
     try {
-      // 🔹 Verificación de seguridad de la API
       if (!window.electronAPI?.obtenerDatosDocenteContexto) {
         throw new Error("API 'obtenerDatosDocenteContexto' no disponible");
       }
 
       const resp = await window.electronAPI.obtenerDatosDocenteContexto({
         docente_id: parseInt(docenteId, 10),
-        periodo_id: this.contexto.periodo 
-          ? parseInt(this.contexto.periodo, 10) 
+        periodo_id: this.contexto.periodo
+          ? parseInt(this.contexto.periodo, 10)
           : null,
       });
 
       if (!resp?.success) {
-        throw new Error(resp?.error || "Sin datos disponibles para este docente");
+        throw new Error(
+          resp?.error || "Sin datos disponibles para este docente",
+        );
       }
 
-      // 🔹 Mapeo seguro de datos con validación de tipos
       const asignaciones = resp.data.asignaciones || [];
-      
+
+      // Preservar firmas y fecha actuales
+      const firmasActuales = this.datosAutoCargados.firmas;
+      const fechaActual = this.datosAutoCargados.fecha;
+
       this.datosAutoCargados = {
         ee: asignaciones.map((a) => ({
           id: Number(a.ee_id) || null,
@@ -456,14 +712,13 @@ export class EmisionModule {
           periodo: String(a.periodo_desc || ""),
           alumnos: Number(a.num_alumnos) || 0,
         })),
-        firmas: resp.data.firmas || {},
+        firmas: firmasActuales,
+        fecha: fechaActual,
       };
 
-      // Actualizar UI: selector de EE
       const selEE = document.getElementById("sel-ee");
       if (selEE) {
         if (this.datosAutoCargados.ee.length > 0) {
-          // Seleccionar primera EE por defecto
           selEE.value = this.datosAutoCargados.ee[0].id;
           selEE.disabled = false;
         } else {
@@ -473,11 +728,9 @@ export class EmisionModule {
         }
       }
 
-      // Renderizar tabla y actualizar preview
       this.renderTabla();
       this.actualizarPreview();
-      
-      // Logging para auditoría (solo desarrollo)
+
       if (process?.env?.NODE_ENV === "development") {
         console.log("✅ Docente cargado:", {
           id: docenteId,
@@ -485,46 +738,36 @@ export class EmisionModule {
           eeId: this.datosAutoCargados.ee[0]?.id,
         });
       }
-      
     } catch (err) {
-      // 🔹 Logging estructurado del error
       console.error("[EmisionModule] Error en cargarDatosDocente:", {
         docenteId,
         periodoId: this.contexto.periodo,
         message: err.message,
         stack: err.stack,
       });
-      
-      // 🔹 Toast con mensaje claro y duración extendida
+
       Toast.error(
-        `No se pudieron cargar los datos del docente: ${err.message}`, 
-        8000
+        `No se pudieron cargar los datos del docente: ${err.message}`,
+        8000,
       );
-      
-      // 🔹 Estado de recuperación: limpiar datos parciales
+
       this.limpiarAutoCarga();
     }
   }
 
-  /**
-   * Renderiza la tabla de experiencias educativas en el preview
-   * @private
-   */
   renderTabla() {
     const tbody = document.getElementById("preview-tabla-body");
     if (!tbody) return;
 
-    // Estado vacío
     if (!this.datosAutoCargados.ee?.length) {
-      tbody.innerHTML = 
+      tbody.innerHTML =
         '<tr><td colspan="7" class="empty-state">' +
-        'Sin asignaciones registradas para este periodo</td></tr>';
+        "Sin asignaciones registradas para este periodo</td></tr>";
       return;
     }
 
-    // Renderizar filas con DocumentFragment (optimización)
     const fragment = document.createDocumentFragment();
-    
+
     this.datosAutoCargados.ee.forEach((row) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
@@ -538,15 +781,11 @@ export class EmisionModule {
       `;
       fragment.appendChild(tr);
     });
-    
+
     tbody.innerHTML = "";
     tbody.appendChild(fragment);
   }
 
-  /**
-   * Establece la fecha actual como valor por defecto en el input
-   * @private
-   */
   establecerFechaDefault() {
     const input = document.getElementById("input-fecha-emision");
     if (input) {
@@ -556,92 +795,79 @@ export class EmisionModule {
     }
   }
 
-  /**
-   * Actualiza los campos dinámicos del preview de la constancia
-   * @private
-   */
   actualizarPreview() {
-    // 🔹 Formateo de fecha con Intl API (mejor práctica i18n)
     const fecha = this.datosAutoCargados.fecha || new Date();
     const opts = { day: "numeric", month: "long", year: "numeric" };
-    
+
     try {
       const partes = new Intl.DateTimeFormat("es-MX", opts).formatToParts(fecha);
-      
-      const getElement = (id) => document.getElementById(id);
-      
+
       const setValue = (id, value) => {
-        const el = getElement(id);
+        const el = document.getElementById(id);
         if (el) el.textContent = value;
       };
 
-      setValue("preview-dia", partes.find(p => p.type === "day")?.value || "__");
-      setValue("preview-mes", partes.find(p => p.type === "month")?.value || "________");
-      setValue("preview-anio", partes.find(p => p.type === "year")?.value || "____");
-      
+      setValue("preview-dia", partes.find((p) => p.type === "day")?.value || "__");
+      setValue("preview-mes", partes.find((p) => p.type === "month")?.value || "________");
+      setValue("preview-anio", partes.find((p) => p.type === "year")?.value || "____");
     } catch (err) {
       console.warn("[EmisionModule] Error formateando fecha:", err);
-      // Fallback seguro
-      ["preview-dia", "preview-mes", "preview-anio"].forEach(id => {
+      ["preview-dia", "preview-mes", "preview-anio"].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.textContent = "____";
       });
     }
 
-    // 🔹 Actualización de firmas con validación defensiva
-    const firmas = this.datosAutoCargados.firmas || {};
-    
-    if (firmas.coord?.nombre) {
-      const el = document.getElementById("preview-firma1-nombre");
-      if (el) el.textContent = firmas.coord.nombre;
-    }
-    
-    if (firmas.director?.nombre) {
-      const el = document.getElementById("preview-firma2-nombre");
-      if (el) el.textContent = firmas.director.nombre;
-    }
-
-    // 🔹 Actualizar datos del docente si está seleccionado
+    // Actualizar datos del docente si está seleccionado
     if (this.contexto.docente) {
       const doc = this.datosMaestros.docentes.find(
-        d => String(d.id) === String(this.contexto.docente)
+        (d) => String(d.id) === String(this.contexto.docente),
       );
-      
+
       if (doc) {
         const tratamiento = doc.tratamiento || "El/La";
-        const nombreCompleto = [doc.nombres, doc.apellido_paterno, doc.apellido_materno]
+        const nombreCompleto = [
+          doc.nombres,
+          doc.apellido_paterno,
+          doc.apellido_materno,
+        ]
           .filter(Boolean)
           .join(" ");
-        
+
         const setDocPreview = (id, value) => {
           const el = document.getElementById(id);
           if (el) el.textContent = value;
         };
-        
+
         setDocPreview("preview-tratamiento", tratamiento);
-        setDocPreview("preview-nombre-docente", nombreCompleto || "[NOMBRE]");
+        setDocPreview(
+          "preview-nombre-docente",
+          nombreCompleto || "[NOMBRE]",
+        );
         setDocPreview("preview-codigo-docente", doc.codigo || "[CÓDIGO]");
       }
     }
+
+    // Actualizar textos editables en preview
+    const saludoEl = document.getElementById("preview-saludo");
+    if (saludoEl) {
+      saludoEl.textContent =
+        this.configuracionPanelDerecho.textosEditables.saludo;
+    }
   }
 
-  /**
-   * Limpia los datos auto-cargados del docente (sin afectar el contexto)
-   * @private
-   */
   limpiarAutoCarga() {
     this.contexto.docente = null;
-    
-    // Preservar la fecha actual al limpiar
+
     const fechaActual = this.datosAutoCargados.fecha;
-    
+    const firmasActuales = this.datosAutoCargados.firmas;
+
     this.datosAutoCargados = {
       ee: [],
       fecha: fechaActual,
-      firmas: {},
+      firmas: firmasActuales, // Preservar configuración de firmas
     };
 
-    // Resetear UI del preview
     const setPreview = (id, value) => {
       const el = document.getElementById(id);
       if (el) el.textContent = value;
@@ -650,15 +876,14 @@ export class EmisionModule {
     setPreview("preview-tratamiento", "El/La");
     setPreview("preview-nombre-docente", "[NOMBRE DEL DOCENTE]");
     setPreview("preview-codigo-docente", "[CÓDIGO]");
-    
+
     const tbody = document.getElementById("preview-tabla-body");
     if (tbody) {
-      tbody.innerHTML = 
+      tbody.innerHTML =
         '<tr><td colspan="7" class="empty-state">' +
-        'Seleccione un docente para cargar asignaciones</td></tr>';
+        "Seleccione un docente para cargar asignaciones</td></tr>";
     }
 
-    // Resetear selector de EE
     const selEE = document.getElementById("sel-ee");
     if (selEE) {
       selEE.innerHTML = '<option value="">Ninguna</option>';
@@ -669,267 +894,200 @@ export class EmisionModule {
     this.actualizarPreview();
   }
 
-  /**
-   * Limpia todo el formulario y restablece el estado inicial
-   * @public
-   */
   limpiarTodo() {
     const form = document.getElementById("form-constancia");
     if (form) form.reset();
-    
-    // Resetear contexto completo
+
     this.contexto = {
       tipo: null,
       programa: null,
       periodo: null,
       docente: null,
     };
-    
-    // Limpiar datos auto-cargados
+
     this.limpiarAutoCarga();
-    
-    // Deshabilitar selector de docente
+
     const selDoc = document.getElementById("sel-docente");
     if (selDoc) {
       selDoc.disabled = true;
       selDoc.options[0].textContent = "Primero seleccione periodo...";
     }
-    
-    // Restaurar fecha por defecto
+
     this.establecerFechaDefault();
-    
-    // Resetear folio preview
+
     const folioEl = document.getElementById("preview-folio");
     if (folioEl) folioEl.textContent = "CO/MSICU/POR GENERAR";
-    
-    // Feedback visual al usuario
+
     Toast.success("Formulario restablecido", 3000);
   }
 
-  /**
-   * Genera la constancia PDF con los datos del formulario
-   * @async
-   * @param {Event} e - Evento de submit
-   * @private
-   */
+  // ============================================================
+  // GENERACIÓN DE CONSTANCIA
+  // ============================================================
+
   async generarConstancia(e) {
     e.preventDefault();
-    
-    // 🔹 VALIDACIÓN: Lectura directa del DOM para evitar estados desincronizados
+
+    if (this._isGenerando) return;
+
     const docenteVal = document.getElementById("sel-docente")?.value;
     if (!docenteVal) {
       Toast.warning("Seleccione un docente para continuar.", 6000);
-      // Enfocar el campo para mejor UX
       document.getElementById("sel-docente")?.focus();
       return;
     }
 
-    // 🔹 Estado de carga en botón (feedback visual)
     const btn = document.getElementById("btn-generar");
     if (!btn) return;
-    
+
     const originalState = {
       disabled: btn.disabled,
       html: btn.innerHTML,
       text: btn.textContent,
     };
-    
+
+    this._isGenerando = true;
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando PDF...';
+    btn.innerHTML =
+      '<i class="fa-solid fa-spinner fa-spin"></i> Generando PDF...';
 
     try {
-      // 🔹 Construcción del payload con validación de tipos
+      const doc = this.datosMaestros.docentes.find(
+        (d) => String(d.id) === String(this.contexto.docente),
+      );
+
+      if (!doc) {
+        throw new Error("Docente no encontrado en catálogos");
+      }
+
+      const fecha = this.datosAutoCargados.fecha || new Date();
+      const opts = { day: "numeric", month: "long", year: "numeric" };
+      const fechaParts = new Intl.DateTimeFormat("es-MX", opts).formatToParts(
+        fecha,
+      );
+
       const payload = {
-        tipo_constancia_id: this.contexto.tipo 
-          ? parseInt(this.contexto.tipo, 10) 
-          : null,
-        programa_id: this.contexto.programa 
-          ? parseInt(this.contexto.programa, 10) 
-          : null,
+        tipo_constancia_id: parseInt(this.contexto.tipo, 10),
+        programa_id: parseInt(this.contexto.programa, 10),
         docente_id: parseInt(docenteVal, 10),
-        periodo_id: this.contexto.periodo 
-          ? parseInt(this.contexto.periodo, 10) 
+        periodo_id: this.contexto.periodo
+          ? parseInt(this.contexto.periodo, 10)
           : null,
-        
-        // Prioridad: ID de EE auto-cargado (garantiza integridad referencial)
         ee_id: this.datosAutoCargados.ee?.[0]?.id || null,
-        
-        fecha_emision: document.getElementById("input-fecha-emision")?.value 
-          || new Date().toISOString().split("T")[0],
-        
-        cuerpoHtml: this.generarHtmlCuerpo(),
-        cierreHtml: this.generarHtmlCierre(),
-        eeList: this.datosAutoCargados.ee || [],
-        firmaCoord: this.datosAutoCargados.firmas?.coord?.nombre || "",
-        firmaDirector: this.datosAutoCargados.firmas?.director?.nombre || "",
+        fecha_emision:
+          document.getElementById("input-fecha-emision")?.value ||
+          new Date().toISOString().split("T")[0],
+
+        // Campos para el motor de plantillas
+        docente_tratamiento: doc.tratamiento || "",
+        docente_nombre: [
+          doc.nombres,
+          doc.apellido_paterno,
+          doc.apellido_materno,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        docente_codigo: doc.codigo || "",
+        periodo_clave:
+          this.datosMaestros.periodos.find(
+            (p) => String(p.id) === String(this.contexto.periodo),
+          )?.clave || "",
+        fecha_dia: fechaParts.find((p) => p.type === "day")?.value || "",
+        fecha_mes: fechaParts.find((p) => p.type === "month")?.value || "",
+        fecha_anio: fechaParts.find((p) => p.type === "year")?.value || "",
+        ees: this.datosAutoCargados.ee || [],
+        tutorados: [],
+        firmas: this.datosAutoCargados.firmas.map((f) => ({ texto: f.texto })),
+        texto_saludo: this.configuracionPanelDerecho.textosEditables.saludo,
+        texto_mencion_final:
+          this.configuracionPanelDerecho.textosEditables.mencion_final,
+        ruta_guardado: this.configuracionPanelDerecho.rutaGuardado,
+        logotipo_url: this.configuracionPanelDerecho.logotipoUrl,
       };
 
-      // Logging para auditoría (solo desarrollo)
       if (process?.env?.NODE_ENV === "development") {
         console.log("📤 Payload generarConstancia:", {
           ...payload,
-          cuerpoHtml: "[OMITIDO]",
-          cierreHtml: "[OMITIDO]",
+          docente_nombre: payload.docente_nombre,
+          firmas: `${payload.firmas.length} firma(s)`,
         });
       }
 
-      // 🔹 Validación de reglas de negocio antes de enviar
       if (this._requiereExperienciaEducativa() && !payload.ee_id) {
         Toast.error(
           "Este tipo de constancia requiere seleccionar una Experiencia Educativa. " +
-          "Verifique que el docente tenga asignaciones registradas.", 
-          8000
+            "Verifique que el docente tenga asignaciones registradas.",
+          8000,
         );
         return;
       }
 
-      // 🔹 Verificación de API disponible
       if (!window.electronAPI?.generarConstanciaPDF) {
         throw new Error("API de generación de PDF no disponible");
       }
 
-      // 🔹 Solicitud al proceso principal de Electron
       const resp = await window.electronAPI.generarConstanciaPDF(payload);
 
       if (resp?.success) {
-        // ✅ Éxito: actualizar UI y notificar
         const folioEl = document.getElementById("preview-folio");
         if (folioEl && resp.folio) {
           folioEl.textContent = resp.folio;
         }
-        
-        Toast.success(`Constancia emitida exitosamente. Folio: ${resp.folio}`, 8000);
-        
-        // Auto-limpieza después de confirmar
+
+        Toast.success(
+          `Constancia emitida exitosamente. Folio: ${resp.folio}`,
+          8000,
+        );
+
         setTimeout(() => {
-          if (!document.hidden) { // Solo si la pestaña está visible
+          if (!document.hidden) {
             this.limpiarTodo();
           }
         }, 3000);
-        
       } else {
-        // ❌ Error del servidor
         const errorMsg = resp?.error || "Error desconocido del servidor";
         console.error("[EmisionModule] Error del servidor:", errorMsg);
         Toast.error(`No se pudo generar la constancia: ${errorMsg}`, 10000);
       }
-      
     } catch (err) {
-      // 🔹 Manejo de errores de red o ejecución
       console.error("[EmisionModule] Error crítico en generarConstancia:", {
         message: err.message,
         stack: err.stack,
-        payload: { docente_id: payload?.docente_id, ee_id: payload?.ee_id }
       });
-      
+
       Toast.error(
         `Error de conexión o procesamiento: ${err.message}. ` +
-        "Intente nuevamente o contacte a soporte técnico.", 
-        10000
+          "Intente nuevamente o contacte a soporte técnico.",
+        10000,
       );
-      
     } finally {
-      // 🔹 Restaurar estado del botón (siempre, incluso en error)
       if (btn && originalState) {
         btn.disabled = originalState.disabled;
         btn.innerHTML = originalState.html;
       }
+      this._isGenerando = false;
     }
   }
 
-  /**
-   * Determina si el tipo de constancia seleccionado requiere EE
-   * @private
-   * @returns {boolean}
-   */
   _requiereExperienciaEducativa() {
     if (!this.contexto.tipo || !this.datosMaestros.tipos.length) {
-      return false; // No se puede determinar, permitir envío
+      return false;
     }
-    
+
     const tipoSeleccionado = this.datosMaestros.tipos.find(
-      t => String(t.id) === String(this.contexto.tipo)
+      (t) => String(t.id) === String(this.contexto.tipo),
     );
-    
-    // Asumir que requiere EE si el flag existe y es verdadero
+
     return Boolean(tipoSeleccionado?.requiere_ee);
   }
 
-  /**
-   * Genera el cuerpo HTML de la constancia con datos del docente
-   * @private
-   * @returns {string} HTML seguro
-   */
-  generarHtmlCuerpo() {
-    const doc = this.datosMaestros.docentes.find(
-      d => String(d.id) === String(this.contexto.docente)
-    );
-    
-    if (!doc) return "";
-    
-    // 🔹 Escapado de HTML para prevenir XSS (aunque los datos vengan de BD)
-    const tratamiento = this._escapeHtml(doc.tratamiento || "El/La");
-    const nombres = this._escapeHtml(doc.nombres || "");
-    const paterno = this._escapeHtml(doc.apellido_paterno || "");
-    const materno = this._escapeHtml(doc.apellido_materno || "");
-    const codigo = this._escapeHtml(doc.codigo || "");
-    
-    return `Que <strong>${tratamiento} ${nombres} ${paterno} ${materno}</strong>, ` +
-           `con número de personal <strong>${codigo}</strong>, ` +
-           `pertenece al cuerpo docente del Programa Educativo de Posgrado ` +
-           `Maestría en Sistemas Interactivos Centrados en el Usuario (16156), ` +
-           `programa adscrito a la Facultad de Estadística e Informática (11304) ` +
-           `y ha impartido las siguientes experiencias educativas:`;
-  }
+  // ============================================================
+  // UTILIDADES
+  // ============================================================
 
-  /**
-   * Genera el cierre HTML con fecha formateada
-   * @private
-   * @returns {string} HTML seguro
-   */
-  generarHtmlCierre() {
-    const input = document.getElementById("input-fecha-emision");
-    const fechaInput = input?.value;
-    
-    const fecha = fechaInput 
-      ? new Date(fechaInput) 
-      : (this.datosAutoCargados.fecha || new Date());
-    
-    const opts = { day: "numeric", month: "long", year: "numeric" };
-    
-    try {
-      const partes = new Intl.DateTimeFormat("es-MX", opts).formatToParts(fecha);
-      
-      const getPart = (type) => 
-        this._escapeHtml(partes.find(p => p.type === type)?.value || "");
-      
-      const dia = getPart("day") || "__";
-      const mes = getPart("month") || "________";
-      const anio = getPart("year") || "____";
-      
-      return `Para los fines que al interesado convenga se extiende la presente ` +
-             `en la ciudad de Xalapa, Enríquez, Veracruz a los ` +
-             `<strong>${dia}</strong> días del mes de ` +
-             `<strong>${mes}</strong> del año ` +
-             `<strong>${anio}</strong>.`;
-             
-    } catch (err) {
-      console.warn("[EmisionModule] Error formateando fecha para HTML:", err);
-      // Fallback seguro
-      return `Para los fines que al interesado convenga se extiende la presente ` +
-             `en la ciudad de Xalapa, Enríquez, Veracruz.`;
-    }
-  }
-
-  /**
-   * Escapa caracteres HTML para prevenir inyección XSS
-   * @private
-   * @param {string} str - Texto a escapar
-   * @returns {string} Texto seguro para inserción en HTML
-   */
   _escapeHtml(str) {
     if (typeof str !== "string") return String(str ?? "");
-    
+
     const map = {
       "&": "&amp;",
       "<": "&lt;",
@@ -937,26 +1095,24 @@ export class EmisionModule {
       '"': "&quot;",
       "'": "&#039;",
     };
-    
-    return str.replace(/[&<>"']/g, m => map[m]);
+
+    return str.replace(/[&<>"']/g, (m) => map[m]);
   }
 
-  /**
-   * Destructor: limpia recursos al desmontar el módulo
-   * @public
-   */
   destroy() {
-    // Limpiar listeners registrados
     this._limpiarListenersPrevios();
-    
-    // Limpiar toasts pendientes
     this._limpiarToastsResiduales();
-    
-    // Resetear referencias para garbage collection
+
+    if (this._previewDebounceTimer) {
+      clearTimeout(this._previewDebounceTimer);
+      this._previewDebounceTimer = null;
+    }
+
     this.datosMaestros = {};
     this.contexto = {};
     this.datosAutoCargados = {};
-    
+    this.configuracionPanelDerecho = {};
+
     if (process?.env?.NODE_ENV === "development") {
       console.log("♻️ EmisionModule destruido - recursos liberados");
     }

@@ -1,9 +1,9 @@
-// src/main/handlers/constanciaHandlers.js
 const { ipcMain, BrowserWindow, app } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { getDB } = require("../database");
 const settings = require("../settings");
+const { procesarPlantilla } = require("../templateEngine");
 
 /**
  * Genera folio secuencial seguro: CO/MSICU/NNNN/AAAA
@@ -34,7 +34,6 @@ function generarFolioSecuencial(db) {
 
 /**
  * Valida datos según el tipo de constancia
- * 🔹 CORRECCIÓN: Usar comillas simples 'valor' para literales de texto en SQLite
  */
 function validarConstancia(db, datos, tipo) {
   const errores = [];
@@ -106,23 +105,7 @@ module.exports = () => {
     try {
       const db = getDB();
 
-      const directivos = db
-        .prepare(
-          `
-          SELECT id, cargo, nombre_completo, grado_academico 
-          FROM directivos 
-          WHERE estado = ? 
-          ORDER BY 
-            CASE cargo 
-              WHEN 'directora' THEN 1 
-              WHEN 'secretaria_academica' THEN 2 
-              WHEN 'coordinadora_posgrado' THEN 3 
-              WHEN 'administradora' THEN 4 
-            END
-        `,
-        )
-        .all("vigente");
-
+      // 1. Tipos de constancia
       const tipos = db
         .prepare(
           `
@@ -138,6 +121,7 @@ module.exports = () => {
         )
         .all("activo");
 
+      // 2. Docentes
       const docentes = db
         .prepare(
           `
@@ -147,6 +131,7 @@ module.exports = () => {
         )
         .all("activo");
 
+      // 3. Periodos
       const periodos = db
         .prepare(
           `
@@ -156,6 +141,7 @@ module.exports = () => {
         )
         .all("cerrado");
 
+      // 4. Experiencias Educativas
       const ee = db
         .prepare(
           `
@@ -165,6 +151,7 @@ module.exports = () => {
         )
         .all("activa");
 
+      // 5. Programas institucionales
       const programas = db
         .prepare(
           `
@@ -174,15 +161,22 @@ module.exports = () => {
         )
         .all("vigente");
 
+      // 6. Firmantes (catálogo de texto plano)
+      const firmantes = db
+        .prepare(
+          `SELECT id, texto FROM firmantes WHERE deleted_at IS NULL ORDER BY texto`,
+        )
+        .all();
+
       return {
         success: true,
         data: {
-          directivos: directivos || [],
           tipos: tipos || [],
           docentes: docentes || [],
           periodos: periodos || [],
           ee: ee || [],
           programas: programas || [],
+          firmantes: firmantes || [],
         },
       };
     } catch (error) {
@@ -191,12 +185,12 @@ module.exports = () => {
         success: false,
         error: error.message,
         data: {
-          directivos: [],
           tipos: [],
           docentes: [],
           periodos: [],
           ee: [],
           programas: [],
+          firmantes: [],
         },
       };
     }
@@ -274,8 +268,7 @@ module.exports = () => {
     }
   });
 
-  
-    // ==========================================================
+  // ==========================================================
   // HANDLER: Generar constancia con PDF nativo (PRODUCCIÓN)
   // ==========================================================
   ipcMain.handle("generar-constancia-pdf", async (event, payload) => {
@@ -328,10 +321,9 @@ module.exports = () => {
       })();
 
       constanciaId = resultado.constanciaId;
-      
-      // 🔹 CORRECCIÓN CLAVE: Sanitizar folio para nombre de archivo
+
+      // Sanitizar folio para nombre de archivo
       const folioSanitized = folio.replace(/\//g, "-");
-      // ✅ USAR folioSanitized para la ruta del archivo
       const filePath = path.join(rutaBase, `${folioSanitized}.pdf`);
 
       console.log("📄 Folio original:", folio);
@@ -339,29 +331,69 @@ module.exports = () => {
       console.log("📄 Ruta completa:", filePath);
 
       // ==========================================================
-      // 2. CARGAR PLANTILLA HTML: Ruta corregida con app.getAppPath()
+      // 2. OBTENER PLANTILLA Y CONFIGURACIÓN
       // ==========================================================
+      const formato = db
+        .prepare(
+          `
+        SELECT plantilla_archivo, logotipo_recurso_id
+        FROM formatos_constancia
+        WHERE tipo_constancia_id = ? AND es_actual = 1
+      `,
+        )
+        .get(payload.tipo_constancia_id);
 
-      const templatePath = path.join(
-        app.getAppPath(),
-        "src",
-        "main",
-        "templates",
-        "constancia-ee.html",
-      );
-
-      console.log("🔍 Buscando plantilla en:", templatePath);
-      console.log("✅ Existe:", fs.existsSync(templatePath));
-
-      if (!fs.existsSync(templatePath)) {
-        const templateDir = path.dirname(templatePath);
-        if (fs.existsSync(templateDir)) {
-          console.log("📁 Contenido de templates/:", fs.readdirSync(templateDir));
-        }
-        throw new Error(`Plantilla no encontrada: ${templatePath}`);
+      if (!formato) {
+        throw new Error(
+          "No se encontró formato activo para este tipo de constancia",
+        );
       }
 
-      // Crear ventana oculta para renderizado Chromium
+      // Obtener logotipo si existe
+      let logotipoUrl = null;
+      if (formato.logotipo_recurso_id) {
+        const recurso = db
+          .prepare(
+            `SELECT ruta_local FROM recursos_compartibles WHERE id = ?`,
+          )
+          .get(formato.logotipo_recurso_id);
+        if (recurso) {
+          logotipoUrl = `file://${recurso.ruta_local}`;
+        }
+      }
+
+      // ==========================================================
+      // 3. PROCESAR PLANTILLA CON MOTOR DE TOKENS
+      // ==========================================================
+      const datosPlantilla = {
+        folio: folio,
+        docente_tratamiento: payload.docente_tratamiento || "",
+        docente_nombre: payload.docente_nombre || "",
+        docente_codigo: payload.docente_codigo || "",
+        periodo_clave: payload.periodo_clave || "",
+        fecha_dia: payload.fecha_dia || "",
+        fecha_mes: payload.fecha_mes || "",
+        fecha_anio: payload.fecha_anio || "",
+        ees: payload.ees || [],
+        tutorados: payload.tutorados || [],
+        firmas: payload.firmas || [],
+      };
+
+      const textosPlantilla = {
+        saludo: payload.texto_saludo || "A quien corresponda,",
+        mencion_final:
+          payload.texto_mencion_final ||
+          "Para los fines que al interesado convenga se extiende la presente",
+      };
+
+      const htmlProcesado = procesarPlantilla(
+        formato.plantilla_archivo,
+        datosPlantilla,
+        textosPlantilla,
+        logotipoUrl,
+      );
+
+      // Crear ventana oculta con el HTML procesado
       const win = new BrowserWindow({
         show: false,
         width: 850,
@@ -372,16 +404,12 @@ module.exports = () => {
         },
       });
 
-      await win.loadFile(templatePath);
+      // Cargar el HTML procesado directamente (no el archivo)
+      await win.loadURL(
+        `data:text/html;charset=utf-8,${encodeURIComponent(htmlProcesado)}`,
+      );
 
-      // ==========================================================
-      // 3. INYECTAR DATOS Y ESPERAR RENDERIZADO
-      // ==========================================================
-      await win.webContents.executeJavaScript(`
-        window.__PDF_DATA = ${JSON.stringify(payload)};
-        window.__PDF_FOLIO = "${folio}";
-      `);
-
+      // Esperar renderizado
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       // ==========================================================
@@ -439,7 +467,6 @@ module.exports = () => {
         id: constanciaId,
         message: "Constancia generada y guardada exitosamente",
       };
-
     } catch (error) {
       console.error("❌ Error generando PDF:", error);
 
@@ -458,7 +485,7 @@ module.exports = () => {
       // Cerrar ventanas residuales
       const windows = BrowserWindow.getAllWindows();
       windows.forEach((w) => {
-        if (w.webContents.getURL().includes("constancia-ee.html")) w.close();
+        if (w.webContents.getURL().includes("data:text/html")) w.close();
       });
 
       return {
@@ -468,6 +495,7 @@ module.exports = () => {
       };
     }
   });
+
   // ==========================================================
   // HANDLER: Obtener biblioteca de constancias
   // ==========================================================
@@ -503,7 +531,6 @@ module.exports = () => {
       try {
         const db = getDB();
 
-        // 🔹 CONSULTA CORREGIDA: 'nrc' está en 'experiencias_educativas' (ee), no en 'docente_ee_asignacion' (dea)
         const asignaciones = db
           .prepare(
             `
@@ -511,7 +538,7 @@ module.exports = () => {
         ee.id AS ee_id,
         ee.nombre AS ee_nombre,
         ee.clave_ee,
-        ee.nrc,              /* ✅ CAMBIO AQUÍ: Leemos nrc de la tabla ee */
+        ee.nrc,
         dea.carga_horaria,
         p.descripcion AS periodo_desc
       FROM docente_ee_asignacion dea
@@ -526,10 +553,7 @@ module.exports = () => {
           success: true,
           data: {
             asignaciones: asignaciones || [],
-            firmas: {
-              coord: { nombre: "Dr. Roberto Méndez Ruiz" },
-              director: { nombre: "Dra. Laura Patricia Gómez" },
-            },
+            firmas: [], // Las firmas ahora vienen del panel derecho
           },
         };
       } catch (error) {
@@ -537,7 +561,7 @@ module.exports = () => {
         return {
           success: false,
           error: error.message,
-          data: { asignaciones: [], firmas: {} },
+          data: { asignaciones: [], firmas: [] },
         };
       }
     },

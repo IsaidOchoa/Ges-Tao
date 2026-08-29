@@ -1,14 +1,12 @@
-// src/main/handlers/relaciones/docenteTutoradosHandlers.js
 const { ipcMain } = require('electron');
-const { getDB } = require('../../database');
+const { getDB, generarIdGlobal } = require('../../database');
 
 module.exports = () => {
   const db = getDB();
 
-  // ✅ Listar alumnos DISPONIBLES para tutoría (CORREGIDO: columnas reales)
+  // Listar alumnos DISPONIBLES para tutoría
   ipcMain.handle('listarAlumnosDisponibles', async (event, { periodoId, excludeDocenteId }) => {
     try {
-      // ✅ Usar columnas que SÍ existen en la tabla alumnos
       let query = `
         SELECT id, matricula, nombres, apellido_paterno, apellido_materno 
         FROM alumnos 
@@ -27,7 +25,6 @@ module.exports = () => {
       query += ' ORDER BY apellido_paterno, nombres ASC';
       const rows = db.prepare(query).all(...params);
       
-      // ✅ Formatear nombre completo en JS (no en SQL)
       const data = rows.map(row => ({
         ...row,
         nombre_completo: `${row.nombres} ${row.apellido_paterno} ${row.apellido_materno || ''}`.trim()
@@ -40,7 +37,7 @@ module.exports = () => {
     }
   });
 
-  // ✅ Asignar alumno como tutorado (sin cambios, ya estaba bien)
+  // ✅ Asignar alumno como tutorado - CORREGIDO con id_global
   ipcMain.handle('asignarTutor', async (event, { docenteId, alumnoId, periodoId }) => {
     try {
       const exists = db.prepare(`
@@ -52,10 +49,14 @@ module.exports = () => {
         return { success: false, error: 'El alumno ya está asignado como tutorado a este docente.' };
       }
       
+      // Obtener installation_id para generar id_global
+      const installation = db.prepare('SELECT installation_id FROM installation WHERE id = 1').get();
+      const idGlobal = generarIdGlobal(installation.installation_id);
+      
       db.prepare(`
-        INSERT INTO tutor_alumno (docente_id, alumno_id, periodo_id, estado, fecha_asignacion)
-        VALUES (?, ?, ?, 'activo', date('now'))
-      `).run(docenteId, alumnoId, periodoId);
+        INSERT INTO tutor_alumno (id_global, docente_id, alumno_id, periodo_id, estado, fecha_asignacion)
+        VALUES (?, ?, ?, ?, 'activo', date('now'))
+      `).run(idGlobal, docenteId, alumnoId, periodoId);
       
       return { success: true, message: 'Tutorado asignado correctamente.' };
     } catch (error) {
@@ -67,51 +68,44 @@ module.exports = () => {
     }
   });
 
-  // ✅ Remover asignación (sin cambios)
-  // src/main/handlers/relaciones/docenteTutoradosHandlers.js
+  // ✅ Remover asignación
+  ipcMain.handle('removerTutor', async (event, { docenteId, alumnoId, periodoId }) => {
+    try {
+      if (!docenteId || !alumnoId) {
+        return { success: false, error: 'Se requiere docenteId y alumnoId' };
+      }
+      
+      let query = `
+        UPDATE tutor_alumno 
+        SET estado = 'inactivo', fecha_baja = datetime('now')
+        WHERE docente_id = ? AND alumno_id = ? AND estado = 'activo'
+      `;
+      const params = [docenteId, alumnoId];
+      
+      if (periodoId) {
+        query += ` AND periodo_id = ?`;
+        params.push(periodoId);
+      }
+      
+      const result = db.prepare(query).run(...params);
+      
+      if (result.changes === 0) {
+        return { success: false, error: 'Asignación no encontrada o ya inactiva' };
+      }
+      
+      return { 
+        success: true, 
+        message: 'Tutoría removida correctamente',
+        changes: result.changes 
+      };
+      
+    } catch (error) {
+      console.error('❌ Error en removerTutor:', error);
+      return { success: false, error: error.message };
+    }
+  });
 
-// ✅ Versión mejorada con periodoId (opcional pero recomendado)
-ipcMain.handle('removerTutor', async (event, { docenteId, alumnoId, periodoId }) => {
-  try {
-    const db = getDB();
-    
-    // Validar parámetros
-    if (!docenteId || !alumnoId) {
-      return { success: false, error: 'Se requiere docenteId y alumnoId' };
-    }
-    
-    // Query con periodoId opcional (para mayor precisión)
-    let query = `
-      UPDATE tutor_alumno 
-      SET estado = 'inactivo', fecha_baja = datetime('now')
-      WHERE docente_id = ? AND alumno_id = ? AND estado = 'activo'
-    `;
-    const params = [docenteId, alumnoId];
-    
-    if (periodoId) {
-      query += ` AND periodo_id = ?`;
-      params.push(periodoId);
-    }
-    
-    const result = db.prepare(query).run(...params);
-    
-    if (result.changes === 0) {
-      return { success: false, error: 'Asignación no encontrada o ya inactiva' };
-    }
-    
-    return { 
-      success: true, 
-      message: 'Tutoría removida correctamente',
-      changes: result.changes 
-    };
-    
-  } catch (error) {
-    console.error('❌ Error en removerTutor:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-  // ✅ Obtener tutorados (CORREGIDO: columnas reales)
+  // ✅ Obtener tutorados
   ipcMain.handle('obtenerTutorados', async (event, { docenteId, periodoId }) => {
     try {
       let query = `
@@ -130,7 +124,6 @@ ipcMain.handle('removerTutor', async (event, { docenteId, alumnoId, periodoId })
       query += ' ORDER BY a.apellido_paterno, a.nombres ASC';
       const rows = db.prepare(query).all(...params);
       
-      // ✅ Formatear nombre completo en JS
       const data = rows.map(row => ({
         ...row,
         nombre_completo: `${row.nombres} ${row.apellido_paterno} ${row.apellido_materno || ''}`.trim()

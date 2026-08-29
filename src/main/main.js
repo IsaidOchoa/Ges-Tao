@@ -1,3 +1,4 @@
+//src/main/main.js
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('node:path');
 const { getDB } = require('./database');

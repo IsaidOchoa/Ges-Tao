@@ -20,9 +20,6 @@
     .cert-title { text-align: center; text-transform: uppercase; margin: 1.5rem 0; font-size: 14pt; font-weight: bold; text-decoration: underline; letter-spacing: 1px; }
     .cert-text { text-align: justify; text-indent: 2.5cm; margin: 1rem 0; }
     .cert-text strong { font-weight: bold; }
-    .cert-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 9pt; }
-    .cert-table th, .cert-table td { border: 1px solid #000; padding: 6px 8px; text-align: center; vertical-align: middle; }
-    .cert-table th { background-color: #f0f0f0; font-weight: bold; text-transform: uppercase; }
     .cert-footer { text-align: justify; text-indent: 2.5cm; margin-top: 2rem; margin-bottom: 2.5rem; }
     .cert-closing { text-align: center; margin-bottom: 1.5rem; }
     .cert-closing p:first-child { font-weight: bold; margin-bottom: 0.25rem; }
@@ -52,38 +49,8 @@
   <p class="cert-text">
     Que <strong>{{DATO:docente_tratamiento}} {{DATO:docente_nombre}}</strong>, 
     con número de personal <strong>{{DATO:docente_codigo}}</strong>, 
-    pertenece al cuerpo docente del Programa Educativo de Posgrado 
-    Maestría en Sistemas Interactivos Centrados en el Usuario (16156), 
-    programa adscrito a la Facultad de Estadística e Informática (11304) 
-    y ha impartido las siguientes experiencias educativas:
+    participó en el evento académico durante el periodo <strong>{{DATO:periodo_clave}}</strong>.
   </p>
-
-  <table class="cert-table">
-    <thead>
-      <tr>
-        <th>NRC</th>
-        <th>Experiencia Educativa</th>
-        <th>H/S/M</th>
-        <th>No. Horas</th>
-        <th>No. Créditos</th>
-        <th>Periodo</th>
-        <th>No. Alumnos</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#LOOP:ees}}
-      <tr>
-        <td>{{nrc}}</td>
-        <td>{{nombre}}</td>
-        <td>{{hsm}}</td>
-        <td>{{horas}}</td>
-        <td>{{creditos}}</td>
-        <td>{{periodo}}</td>
-        <td>{{alumnos}}</td>
-      </tr>
-      {{/LOOP:ees}}
-    </tbody>
-  </table>
 
   <p class="cert-footer" data-editable-key="mencion_final">
     {{TEXTO:mencion_final}} en la ciudad de Xalapa, Enríquez, Veracruz a los 

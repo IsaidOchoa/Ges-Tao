@@ -1,3 +1,4 @@
+//src/main/preload.js
 const { contextBridge, ipcRenderer } = require("electron");
 
 console.log("[PRELOAD] Script iniciado...");
@@ -243,6 +244,12 @@ try {
     obtenerConfig: () => ipcRenderer.invoke("obtener-config"),
     guardarConfig: (data) => ipcRenderer.invoke("guardar-config", data),
     seleccionarDirectorio: () => ipcRenderer.invoke("seleccionar-directorio"),
+    seleccionarArchivoImagen: () => ipcRenderer.invoke("seleccionar-archivo-imagen"),
+
+    obtenerTextosPlantilla: () => ipcRenderer.invoke("obtener-textos-plantilla"),
+    guardarTextoPlantilla: (data) => ipcRenderer.invoke("guardar-texto-plantilla", data),
+    obtenerRecursos: () => ipcRenderer.invoke("obtener-recursos"),
+    subirRecurso: (rutaArchivo) => ipcRenderer.invoke("subir-recurso", rutaArchivo),
   });
 
   console.log(
