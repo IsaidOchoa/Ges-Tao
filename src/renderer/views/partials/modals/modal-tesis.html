@@ -1,0 +1,49 @@
+<div id="modal-tesis" class="modal-overlay hidden">
+  <div class="modal-content modal-tesis">
+    <div class="modal-header">
+      <h3>Nueva Acta de Examen de Grado</h3>
+      <button class="btn-close" type="button">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="form-tesis">
+        <input type="hidden" id="tesis-id">
+
+        <div class="tesis-form-grid">
+          <!-- COLUMNA IZQUIERDA: datos del acta -->
+          <div class="tesis-col">
+            <div class="form-row">
+              <div class="form-group"><label>Folio</label><input id="tesis-folio" class="form-control" readonly placeholder="auto"></div>
+              <div class="form-group"><label>Estado</label><select id="tesis-estado" class="form-control"><option value="aprobada">Aprobada</option><option value="cancelada">Cancelada</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Fecha</label><input type="date" id="tesis-fecha" class="form-control"></div>
+              <div class="form-group"><label>Hora</label><input type="time" id="tesis-hora" class="form-control"></div>
+            </div>
+            <div class="form-group"><label>Alumno *</label><select id="tesis-alumno" class="form-control"></select></div>
+            <div class="form-row">
+              <div class="form-group"><label>Modalidad</label><input id="tesis-modalidad" class="form-control" value="tesis"></div>
+              <div class="form-group"><label>Resultado</label><input id="tesis-resultado" class="form-control" placeholder="Aprobado por unanimidad"></div>
+            </div>
+            <div class="form-group"><label>Título del trabajo</label><textarea id="tesis-titulo" class="form-control" rows="3"></textarea></div>
+            <div class="form-row">
+              <div class="form-group"><label>Generación</label><input id="tesis-generacion" class="form-control"></div>
+              <div class="form-group"><label>Fecha de asignación</label><input type="date" id="tesis-fecha-asignacion" class="form-control"></div>
+            </div>
+          </div>
+
+          <!-- COLUMNA DERECHA: participantes -->
+          <div class="tesis-col">
+            <h4 class="tesis-col-title">Participantes</h4>
+            <div id="tesis-participantes"></div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancelar-tesis">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-tesis">Guardar</button>
+    </div>
+  </div>
+</div>

@@ -1,18 +1,13 @@
 /** src/renderer/modules/EmisionModule.js */
 /**
- * Módulo de Emisión de Constancias
- * @module EmisionModule
  * @description Gestiona la interfaz y lógica para la generación de constancias docentes
- * @version 2.0.0
+ * @version 2.2.0
  */
 
 import { Toast } from "../components/common/Toast.js";
 
 export class EmisionModule {
   constructor() {
-    // ============================================================
-    // 1. CATÁLOGOS MAESTROS (cargados desde BD al iniciar)
-    // ============================================================
     this.datosMaestros = {
       tipos: [],
       programas: [],
@@ -22,9 +17,6 @@ export class EmisionModule {
       ee: [],
     };
 
-    // ============================================================
-    // 2. CONTEXTO DE EMISIÓN (selección del panel izquierdo)
-    // ============================================================
     this.contexto = {
       tipo: null,
       programa: null,
@@ -32,18 +24,12 @@ export class EmisionModule {
       docente: null,
     };
 
-    // ============================================================
-    // 3. DATOS AUTO-CARGADOS (derivados del contexto)
-    // ============================================================
     this.datosAutoCargados = {
       ee: [],
       fecha: new Date(),
-      firmas: [], // Array de { firmante_id, texto }
+      firmas: [],
     };
 
-    // ============================================================
-    // 4. CONFIGURACIÓN DEL PANEL DERECHO (opciones de salida)
-    // ============================================================
     this.configuracionPanelDerecho = {
       rutaGuardado: null,
       recordarRuta: true,
@@ -63,18 +49,15 @@ export class EmisionModule {
       rutaResumen: "",
     };
 
-    // ============================================================
-    // 5. ESTADO INTERNO Y CONTROL
-    // ============================================================
+    this.periodosAsignadosDocente = [];
+    this.periodosIncluidos = new Set();
     this._listenersCleanup = [];
     this._previewDebounceTimer = null;
     this._firmaSlotIdCounter = 0;
     this._isGenerando = false;
+    this._previewZoom = 1;
   }
 
-  /**
-   * Inicializa el módulo: carga datos, configura UI y establece estado inicial
-   */
   async init() {
     this._limpiarToastsResiduales();
 
@@ -105,10 +88,6 @@ export class EmisionModule {
       Toast.error("No se pudo cargar el módulo de emisión", 10000);
     }
   }
-
-  // ============================================================
-  // UTILIDADES DE UI
-  // ============================================================
 
   _limpiarToastsResiduales() {
     if (typeof Toast?.clear === "function") {
@@ -142,12 +121,14 @@ export class EmisionModule {
       "form-constancia",
       "sel-tipo",
       "sel-programa",
-      "sel-periodo",
       "sel-docente",
       "input-fecha-emision",
-      "preview-tabla-body",
+      "preview-frame",
+      "preview-placeholder",
       "btn-generar",
       "btn-limpiar",
+      "panel-derecho",
+      "btn-toggle-panel-derecho",
     ];
 
     return elementosRequeridos.every((id) => {
@@ -158,10 +139,6 @@ export class EmisionModule {
       return existe;
     });
   }
-
-  // ============================================================
-  // CARGA DE DATOS INICIALES
-  // ============================================================
 
   async cargarDatosIniciales() {
     try {
@@ -200,18 +177,21 @@ export class EmisionModule {
         "Error al cargar catálogos. Verifique su conexión o contacte a soporte.",
         8000,
       );
-
       this._deshabilitarFormulario(true);
     }
   }
 
   _deshabilitarFormulario(deshabilitar) {
-    ["sel-tipo", "sel-programa", "sel-periodo", "sel-docente", "sel-ee"].forEach(
-      (id) => {
-        const el = document.getElementById(id);
-        if (el) el.disabled = deshabilitar;
-      },
-    );
+    [
+      "sel-tipo",
+      "sel-programa",
+      "sel-periodo",
+      "sel-docente",
+      "sel-ee",
+    ].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = deshabilitar;
+    });
 
     const btn = document.getElementById("btn-generar");
     if (btn) btn.disabled = deshabilitar;
@@ -255,23 +235,43 @@ export class EmisionModule {
       sel.disabled = false;
     };
 
-    fill("sel-tipo", this.datosMaestros.tipos, "Seleccione un tipo...", "id", (i) => i.nombre);
-    fill("sel-programa", this.datosMaestros.programas, "Seleccione un programa...", "id", (i) => i.nombre);
-    fill("sel-periodo", this.datosMaestros.periodos, "Seleccione un periodo...", "id", (p) => `${p.clave || ""} - ${p.descripcion || ""}`.trim());
-    fill("sel-docente", this.datosMaestros.docentes, "Seleccione un docente...", "id", (d) => {
-      const apellido = d.apellido_paterno || "";
-      const nombre = d.nombres || "";
-      const codigo = d.codigo ? `(${d.codigo})` : "";
-      return `${apellido}, ${nombre} ${codigo}`.trim();
-    });
+    fill(
+      "sel-tipo",
+      this.datosMaestros.tipos,
+      "Seleccione un tipo...",
+      "id",
+      (i) => i.nombre,
+    );
+    fill(
+      "sel-programa",
+      this.datosMaestros.programas,
+      "Seleccione un programa...",
+      "id",
+      (i) => i.nombre,
+    );
+    fill(
+      "sel-periodo",
+      this.datosMaestros.periodos,
+      "Seleccione un periodo...",
+      "id",
+      (p) => `${p.clave || ""} - ${p.descripcion || ""}`.trim(),
+    );
+    fill(
+      "sel-docente",
+      this.datosMaestros.docentes,
+      "Seleccione un docente...",
+      "id",
+      (d) => {
+        const apellido = d.apellido_paterno || "";
+        const nombre = d.nombres || "";
+        const codigo = d.codigo ? `(${d.codigo})` : "";
+        return `${apellido}, ${nombre} ${codigo}`.trim();
+      },
+    );
     fill("sel-ee", this.datosMaestros.ee, "Ninguna", "id", (i) =>
       `${i.nrc || i.clave_ee || ""} - ${i.nombre || ""}`.trim(),
     );
   }
-
-  // ============================================================
-  // CONFIGURACIÓN DEL FORMULARIO (Panel Izquierdo)
-  // ============================================================
 
   configurarFormulario() {
     this._limpiarListenersPrevios();
@@ -286,14 +286,20 @@ export class EmisionModule {
       });
     };
 
-    ["sel-tipo", "sel-programa", "sel-periodo"].forEach((id) => {
-      bindWithCleanup(id, "change", () => this.actualizarContexto());
-    });
+    bindWithCleanup("sel-tipo", "change", () => this.actualizarContexto());
+    bindWithCleanup("sel-programa", "change", () => this.actualizarContexto());
+    bindWithCleanup("sel-periodo", "change", () => this.actualizarContexto());
 
-    bindWithCleanup("sel-docente", "change", (e) => {
-      if (e.target.value) {
-        this.cargarDatosDocente(e.target.value);
+    bindWithCleanup("sel-docente", "change", async (e) => {
+      this.contexto.docente = e.target.value || null;
+      if (this.contexto.docente) {
+        await this.cargarPeriodosDocente();
+        this.renderControlPeriodos();
+        if (this._tipoRequiereEE()) await this.cargarAsignacionesMulti();
       } else {
+        this.periodosAsignadosDocente = [];
+        this.periodosIncluidos = new Set();
+        this.renderControlPeriodos();
         this.limpiarAutoCarga();
       }
     });
@@ -314,25 +320,61 @@ export class EmisionModule {
       this.generarConstancia(e);
     });
 
+    bindWithCleanup("btn-zoom-in", "click", () =>
+      this._setZoom(this._previewZoom + 0.1),
+    );
+    bindWithCleanup("btn-zoom-out", "click", () =>
+      this._setZoom(this._previewZoom - 0.1),
+    );
+    bindWithCleanup("btn-zoom-reset", "click", () => this._setZoom(1));
+
     bindWithCleanup("btn-limpiar", "click", () => this.limpiarTodo());
+
+    const search = document.getElementById("chips-search");
+    if (search) {
+      const abrir = () => this.renderChipsDropdown(search.value);
+
+      bindWithCleanup("chips-search", "input", abrir);
+      bindWithCleanup("chips-search", "focus", abrir);
+      bindWithCleanup("chips-search", "click", abrir); // tap con el input ya enfocado
+
+      bindWithCleanup("chips-search", "blur", () => {
+        setTimeout(() => this._cerrarChipsDropdown(), 150);
+      });
+      bindWithCleanup("chips-search", "keydown", (e) => {
+        if (e.key === "Escape") this._cerrarChipsDropdown();
+      });
+    }
   }
 
-  // ============================================================
-  // CONFIGURACIÓN DEL PANEL DERECHO
-  // ============================================================
+  _setZoom(z) {
+    this._previewZoom = Math.min(2, Math.max(0.5, Math.round(z * 10) / 10));
+    const label = document.getElementById("zoom-level");
+    if (label) label.textContent = `${Math.round(this._previewZoom * 100)}%`;
+    this._aplicarZoom();
+  }
+
+  _aplicarZoom() {
+    try {
+      const frame = document.getElementById("preview-frame");
+      const doc = frame?.contentDocument;
+      if (doc?.body) doc.body.style.zoom = this._previewZoom;
+    } catch (e) {
+      /* el iframe aún no está listo */
+    }
+  }
 
   async configurarPanelDerecho() {
-    // Cargar configuración inicial
     try {
-      const config = await window.electronAPI?.obtenerConfig?.() || {};
-      this.configuracionPanelDerecho.rutaGuardado = config.rutaConstancias || "";
+      const config = (await window.electronAPI?.obtenerConfig?.()) || {};
+      this.configuracionPanelDerecho.rutaGuardado =
+        config.rutaConstancias || "";
       this.actualizarDisplayRuta();
       this._actualizarResumenRuta();
     } catch (err) {
       console.warn("[EmisionModule] No se pudo cargar configuración:", err);
     }
 
-    // Listener: Cambiar ruta de guardado
     const btnCambiarRuta = document.getElementById("btn-cambiar-ruta");
     if (btnCambiarRuta) {
       btnCambiarRuta.addEventListener("click", async () => {
@@ -358,49 +400,66 @@ export class EmisionModule {
       });
     }
 
-    // Listener: Agregar firma
     const btnAgregarFirma = document.getElementById("btn-agregar-firma");
     if (btnAgregarFirma) {
       btnAgregarFirma.addEventListener("click", () => this.agregarSlotFirma());
     }
 
-    // Listener: Cambiar logotipo
-    const btnCambiarLogo = document.getElementById("btn-cambiar-logo");
-    if (btnCambiarLogo) {
-      btnCambiarLogo.addEventListener("click", async () => {
+    ["uv", "msicu"].forEach((clave) => {
+      const btn = document.getElementById(`btn-cambiar-logo-${clave}`);
+      if (!btn) return;
+
+      btn.addEventListener("click", async () => {
         try {
           const ruta = await window.electronAPI.seleccionarArchivoImagen();
-          if (ruta) {
-            this.configuracionPanelDerecho.logotipoUrl = `file://${ruta}`;
-            this.actualizarPreviewLogotipo();
+          if (!ruta) return;
+
+          const resp = await window.electronAPI.guardarLogotipo({
+            clave,
+            rutaOrigen: ruta,
+          });
+
+          if (resp?.success) {
+            Toast.success("Logotipo actualizado", 3000);
+            await this.cargarPreviewLogotipos();
+            this.actualizarPreview();
+          } else {
+            Toast.error(resp?.error || "Error al guardar el logotipo", 5000);
           }
         } catch (err) {
-          Toast.error("Error al seleccionar imagen", 5000);
+          Toast.error("Error al seleccionar la imagen", 5000);
         }
       });
-    }
+    });
 
-    // Listener: Quitar logotipo
-    const btnQuitarLogo = document.getElementById("btn-quitar-logo");
-    if (btnQuitarLogo) {
-      btnQuitarLogo.addEventListener("click", () => {
-        this.configuracionPanelDerecho.logotipoUrl = null;
-        this.configuracionPanelDerecho.logotipoRecursoId = null;
-        this.actualizarPreviewLogotipo();
-      });
-    }
-
-    // Listener: Toggle panel derecho
     const btnToggle = document.getElementById("btn-toggle-panel-derecho");
     if (btnToggle) {
       btnToggle.addEventListener("click", () => this.togglePanelDerecho());
     }
 
-    // Cargar firmas por defecto del formato
     await this.cargarFirmasPorDefecto();
+    await this.cargarPreviewLogotipos();
+  }
 
-    // Configurar textos editables inline
-    this.configurarTextosEditables();
+  async cargarPreviewLogotipos() {
+    try {
+      const resp = await window.electronAPI.obtenerLogotipos();
+      if (!resp?.success) return;
+
+      const pintar = (id, item, etiqueta) => {
+        const box = document.getElementById(id);
+        if (!box) return;
+        box.innerHTML = item?.dataUri
+          ? `<img src="${item.dataUri}" alt="${etiqueta}">`
+          : `<i class="fa-solid fa-image"></i>`;
+        box.title = item?.ruta || "Sin logotipo";
+      };
+
+      pintar("logo-uv-preview", resp.data.uv, "UV");
+      pintar("logo-msicu-preview", resp.data.msicu, "MSICU");
+    } catch (err) {
+      console.warn("[EmisionModule] No se pudieron cargar logotipos:", err);
+    }
   }
 
   actualizarDisplayRuta() {
@@ -429,7 +488,6 @@ export class EmisionModule {
       return;
     }
 
-    // Por defecto, cargar 2 firmas si hay firmantes disponibles
     const firmantes = this.datosMaestros.firmantes;
     if (firmantes.length >= 2) {
       this.datosAutoCargados.firmas = [
@@ -489,7 +547,7 @@ export class EmisionModule {
           firmante_id: e.target.value ? parseInt(e.target.value, 10) : null,
           texto: firmante?.texto || "",
         };
-        this.actualizarPreviewFirmas();
+        this.actualizarPreview();
       });
 
       const btnEliminar = document.createElement("button");
@@ -504,42 +562,6 @@ export class EmisionModule {
       slot.appendChild(btnEliminar);
       container.appendChild(slot);
     });
-
-    this.actualizarPreviewFirmas();
-  }
-
-  actualizarPreviewFirmas() {
-    const container = document.getElementById("preview-firmas-container");
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    this.datosAutoCargados.firmas.forEach((firma) => {
-      const block = document.createElement("div");
-      block.className = "signature-block";
-      block.innerHTML = `
-        <div class="signature-line"></div>
-        <p>${this._escapeHtml(firma.texto) || "[Firma pendiente]"}</p>
-      `;
-      container.appendChild(block);
-    });
-  }
-
-  actualizarPreviewLogotipo() {
-    const previewBox = document.getElementById("logotipo-preview");
-    const btnQuitar = document.getElementById("btn-quitar-logo");
-    if (!previewBox) return;
-
-    if (this.configuracionPanelDerecho.logotipoUrl) {
-      previewBox.innerHTML = `<img src="${this.configuracionPanelDerecho.logotipoUrl}" alt="Logotipo">`;
-      if (btnQuitar) btnQuitar.style.display = "block";
-    } else {
-      previewBox.innerHTML = `
-        <i class="fa-solid fa-image placeholder-icon"></i>
-        <p>Sin logotipo</p>
-      `;
-      if (btnQuitar) btnQuitar.style.display = "none";
-    }
   }
 
   togglePanelDerecho() {
@@ -560,7 +582,6 @@ export class EmisionModule {
       }
     }
 
-    // Persistir preferencia
     window.electronAPI
       ?.guardarConfig?.({
         key: "panelDerechoColapsado",
@@ -569,26 +590,6 @@ export class EmisionModule {
       .catch((err) =>
         console.warn("[EmisionModule] No se pudo guardar preferencia:", err),
       );
-  }
-
-  configurarTextosEditables() {
-    const elementos = document.querySelectorAll('[contenteditable="true"]');
-    elementos.forEach((el) => {
-      el.addEventListener("blur", () => {
-        const key = el.getAttribute("data-editable-key");
-        if (!key) return;
-
-        const nuevoValor = el.textContent.trim();
-        const valorOriginal =
-          this.configuracionPanelDerecho.textosOriginales[key];
-
-        if (nuevoValor !== valorOriginal) {
-          this.configuracionPanelDerecho.textosEditables[key] = nuevoValor;
-          // TODO: Implementar modal de confirmación para aplicar a todas las plantillas
-          console.log(`[EmisionModule] Texto editado: ${key} = "${nuevoValor}"`);
-        }
-      });
-    });
   }
 
   _restaurarEstadoPanel() {
@@ -602,7 +603,8 @@ export class EmisionModule {
             container.classList.add("panel-colapsado");
             const btn = document.getElementById("btn-toggle-panel-derecho");
             const icon = btn?.querySelector("i");
-            if (icon) icon.classList.replace("fa-chevron-right", "fa-chevron-left");
+            if (icon)
+              icon.classList.replace("fa-chevron-right", "fa-chevron-left");
           }
         }
       })
@@ -610,10 +612,6 @@ export class EmisionModule {
         console.warn("[EmisionModule] No se pudo restaurar estado:", err),
       );
   }
-
-  // ============================================================
-  // GESTIÓN DE LISTENERS
-  // ============================================================
 
   _limpiarListenersPrevios() {
     this._listenersCleanup.forEach((cleanup) => {
@@ -628,9 +626,12 @@ export class EmisionModule {
     this._listenersCleanup = [];
   }
 
-  // ============================================================
-  // ACTUALIZACIÓN DE CONTEXTO
-  // ============================================================
+  _tipoRequiereEE() {
+    const t = this.datosMaestros.tipos.find(
+      (x) => String(x.id) === String(this.contexto.tipo),
+    );
+    return Boolean(t?.requiere_ee);
+  }
 
   actualizarContexto() {
     this.contexto.tipo = document.getElementById("sel-tipo")?.value || null;
@@ -638,152 +639,138 @@ export class EmisionModule {
       document.getElementById("sel-programa")?.value || null;
     this.contexto.periodo =
       document.getElementById("sel-periodo")?.value || null;
-
-    const selDoc = document.getElementById("sel-docente");
-    if (selDoc) {
-      if (this.contexto.periodo) {
-        selDoc.disabled = false;
-        if (!selDoc.value) {
-          selDoc.options[0].textContent = "Seleccione un docente...";
-        }
-      } else {
-        selDoc.disabled = true;
-        selDoc.value = "";
-        selDoc.options[0].textContent = "Primero seleccione periodo...";
-        this.limpiarAutoCarga();
-      }
-    }
-
-    // Recargar firmas por defecto cuando cambia el tipo
+    this.renderControlPeriodos();
     if (this.contexto.tipo) {
       this.cargarFirmasPorDefecto();
     }
-
     this.actualizarPreview();
   }
 
-  async cargarDatosDocente(docenteId) {
-    if (!docenteId) {
-      this.limpiarAutoCarga();
+  async cargarPeriodosDocente() {
+    if (!this.contexto.docente) {
+      this.periodosAsignadosDocente = [];
       return;
     }
+    const resp = await window.electronAPI.obtenerPeriodosConAsignacion({
+      docenteId: this.contexto.docente,
+    });
+    this.periodosAsignadosDocente = resp?.success ? resp.data : [];
+    this.periodosIncluidos = this.periodosAsignadosDocente.length
+      ? new Set([String(this.periodosAsignadosDocente[0].id)])
+      : new Set();
+  }
 
-    this.contexto.docente = docenteId;
-    const tbody = document.getElementById("preview-tabla-body");
+  renderControlPeriodos() {
+    const t = this.datosMaestros.tipos.find(
+      (x) => String(x.id) === String(this.contexto.tipo),
+    );
+    const gEE = document.getElementById("group-periodos-ee");
+    const gSingle = document.getElementById("group-periodo-single");
+    if (!gEE || !gSingle) return;
 
-    if (tbody) {
-      tbody.innerHTML =
-        '<tr><td colspan="7" class="loading-state">' +
-        '<i class="fa-solid fa-spinner fa-spin"></i> Cargando datos...</td></tr>';
-    }
-
-    try {
-      if (!window.electronAPI?.obtenerDatosDocenteContexto) {
-        throw new Error("API 'obtenerDatosDocenteContexto' no disponible");
-      }
-
-      const resp = await window.electronAPI.obtenerDatosDocenteContexto({
-        docente_id: parseInt(docenteId, 10),
-        periodo_id: this.contexto.periodo
-          ? parseInt(this.contexto.periodo, 10)
-          : null,
-      });
-
-      if (!resp?.success) {
-        throw new Error(
-          resp?.error || "Sin datos disponibles para este docente",
-        );
-      }
-
-      const asignaciones = resp.data.asignaciones || [];
-
-      // Preservar firmas y fecha actuales
-      const firmasActuales = this.datosAutoCargados.firmas;
-      const fechaActual = this.datosAutoCargados.fecha;
-
-      this.datosAutoCargados = {
-        ee: asignaciones.map((a) => ({
-          id: Number(a.ee_id) || null,
-          nombre: String(a.ee_nombre || "Sin nombre"),
-          nrc: String(a.nrc || "N/A"),
-          hsm: Number(a.carga_horaria) || 0,
-          horas: (Number(a.carga_horaria) || 0) * 16,
-          creditos: Number(a.creditos) || 8,
-          periodo: String(a.periodo_desc || ""),
-          alumnos: Number(a.num_alumnos) || 0,
-        })),
-        firmas: firmasActuales,
-        fecha: fechaActual,
-      };
-
-      const selEE = document.getElementById("sel-ee");
-      if (selEE) {
-        if (this.datosAutoCargados.ee.length > 0) {
-          selEE.value = this.datosAutoCargados.ee[0].id;
-          selEE.disabled = false;
-        } else {
-          selEE.value = "";
-          selEE.disabled = true;
-          selEE.innerHTML = '<option value="">Sin asignaciones</option>';
-        }
-      }
-
-      this.renderTabla();
-      this.actualizarPreview();
-
-      if (process?.env?.NODE_ENV === "development") {
-        console.log("✅ Docente cargado:", {
-          id: docenteId,
-          eeCount: this.datosAutoCargados.ee.length,
-          eeId: this.datosAutoCargados.ee[0]?.id,
-        });
-      }
-    } catch (err) {
-      console.error("[EmisionModule] Error en cargarDatosDocente:", {
-        docenteId,
-        periodoId: this.contexto.periodo,
-        message: err.message,
-        stack: err.stack,
-      });
-
-      Toast.error(
-        `No se pudieron cargar los datos del docente: ${err.message}`,
-        8000,
-      );
-
-      this.limpiarAutoCarga();
+    if (t?.requiere_ee) {
+      gEE.style.display = "block";
+      gSingle.style.display = "none";
+      this.renderChips();
+    } else if (t?.requiere_periodo) {
+      gEE.style.display = "none";
+      gSingle.style.display = "block";
+    } else {
+      gEE.style.display = "none";
+      gSingle.style.display = "none";
     }
   }
 
-  renderTabla() {
-    const tbody = document.getElementById("preview-tabla-body");
-    if (!tbody) return;
+  renderChips() {
+    const box = document.getElementById("chips-container");
+    if (!box) return;
+    box.innerHTML = "";
 
-    if (!this.datosAutoCargados.ee?.length) {
-      tbody.innerHTML =
-        '<tr><td colspan="7" class="empty-state">' +
-        "Sin asignaciones registradas para este periodo</td></tr>";
+    [...this.periodosIncluidos].forEach((id) => {
+      const p = this.periodosAsignadosDocente.find((x) => String(x.id) === id);
+      if (!p) return;
+
+      const chip = document.createElement("span");
+      chip.className = "chip";
+      chip.innerHTML = `${p.clave} <button type="button" title="Quitar">&times;</button>`;
+      chip.querySelector("button").addEventListener("click", async () => {
+        this.periodosIncluidos.delete(id);
+        this.renderChips();
+        await this.cargarAsignacionesMulti();
+      });
+      box.appendChild(chip);
+    });
+
+    this._cerrarChipsDropdown();
+  }
+
+  renderChipsDropdown(query = "") {
+    const dd = document.getElementById("chips-dropdown");
+    if (!dd) return;
+    const q = (query || "").toLowerCase();
+    const opciones = this.periodosAsignadosDocente.filter(
+      (p) =>
+        !this.periodosIncluidos.has(String(p.id)) &&
+        `${p.clave} ${p.descripcion}`.toLowerCase().includes(q),
+    );
+    dd.innerHTML = "";
+    if (opciones.length === 0) {
+      dd.classList.add("hidden");
+      return;
+    }
+    opciones.forEach((p) => {
+  const item = document.createElement("div");
+  item.className = "dd-item";
+  item.textContent = `${p.clave} - ${p.descripcion}`;
+
+  item.addEventListener("mousedown", (e) => e.preventDefault());
+
+  item.addEventListener("click", async () => {
+    this.periodosIncluidos.add(String(p.id));
+    const s = document.getElementById("chips-search");
+    if (s) s.value = "";
+    this.renderChips();
+    await this.cargarAsignacionesMulti();
+  });
+
+  dd.appendChild(item);
+});
+    dd.classList.remove("hidden");
+  }
+
+  _cerrarChipsDropdown() {
+    const dd = document.getElementById("chips-dropdown");
+    if (dd) dd.classList.add("hidden");
+  }
+
+  async cargarAsignacionesMulti() {
+    if (!this.contexto.docente) return;
+    const ids = [...this.periodosIncluidos].map(Number).filter(Boolean);
+
+    if (ids.length === 0) {
+      this.datosAutoCargados.ee = [];
+      this.actualizarPreview();
       return;
     }
 
-    const fragment = document.createDocumentFragment();
-
-    this.datosAutoCargados.ee.forEach((row) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${this._escapeHtml(row.nrc)}</td>
-        <td>${this._escapeHtml(row.nombre)}</td>
-        <td>${Number(row.hsm) || 0}</td>
-        <td>${Number(row.horas) || 0}</td>
-        <td>${Number(row.creditos) || 0}</td>
-        <td>${this._escapeHtml(row.periodo)}</td>
-        <td>${Number(row.alumnos) || 0}</td>
-      `;
-      fragment.appendChild(tr);
+    const resp = await window.electronAPI.obtenerAsignacionesMulti({
+      docenteId: this.contexto.docente,
+      periodoIds: ids,
     });
 
-    tbody.innerHTML = "";
-    tbody.appendChild(fragment);
+    if (resp?.success) {
+      this.datosAutoCargados.ee = resp.data.map((a) => ({
+        id: a.ee_id,
+        nombre: a.ee_nombre,
+        nrc: a.nrc,
+        hsm: a.carga_horaria,
+        horas: (Number(a.carga_horaria) || 0) * 16,
+        creditos: 8,
+        periodo: a.periodo_clave,
+        alumnos: Number(a.alumnos) || 0,
+      }));
+      this.actualizarPreview();
+    }
   }
 
   establecerFechaDefault() {
@@ -796,64 +783,112 @@ export class EmisionModule {
   }
 
   actualizarPreview() {
+    clearTimeout(this._previewDebounceTimer);
+    this._previewDebounceTimer = setTimeout(async () => {
+      const frame = document.getElementById("preview-frame");
+      const placeholder = document.getElementById("preview-placeholder");
+      if (!frame || !placeholder) return;
+
+      if (!this.contexto.tipo) {
+        frame.classList.remove("visible");
+        placeholder.style.display = "flex";
+        return;
+      }
+
+      try {
+        const payload = this._buildPayload();
+        const resp = await window.electronAPI.previsualizarConstancia(payload);
+        if (resp?.success) {
+          frame.srcdoc = resp.html;
+          frame.classList.add("visible");
+          placeholder.style.display = "none";
+          frame.onload = () => this._habilitarEditables(frame);
+        }
+      } catch (err) {
+        console.warn("[EmisionModule] Error en preview:", err);
+      }
+    }, 250);
+  }
+
+  _habilitarEditables(frame) {
+    try {
+      const doc = frame.contentDocument;
+      if (!doc) return;
+      doc.querySelectorAll("[data-editable-key]").forEach((el) => {
+        el.setAttribute("contenteditable", "true");
+        el.addEventListener("blur", () => {
+          const key = el.getAttribute("data-editable-key");
+          const nuevo = el.textContent.trim();
+          if (nuevo !== this.configuracionPanelDerecho.textosEditables[key]) {
+            this.configuracionPanelDerecho.textosEditables[key] = nuevo;
+            console.log(`[EmisionModule] Texto editado: ${key}`);
+          }
+        });
+      });
+      this._aplicarZoom();
+    } catch (e) {
+      console.warn("[EmisionModule] No se pudieron habilitar editables:", e);
+    }
+  }
+
+  _buildPayload() {
+    const doc = this.datosMaestros.docentes.find(
+      (d) => String(d.id) === String(this.contexto.docente),
+    );
+
     const fecha = this.datosAutoCargados.fecha || new Date();
     const opts = { day: "numeric", month: "long", year: "numeric" };
+    const fechaParts = new Intl.DateTimeFormat("es-MX", opts).formatToParts(
+      fecha,
+    );
 
-    try {
-      const partes = new Intl.DateTimeFormat("es-MX", opts).formatToParts(fecha);
+    const idsEE = [...this.periodosIncluidos].map(Number).filter(Boolean);
 
-      const setValue = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value;
-      };
+    return {
+      tipo_constancia_id: this.contexto.tipo
+        ? parseInt(this.contexto.tipo, 10)
+        : null,
+      programa_id: this.contexto.programa
+        ? parseInt(this.contexto.programa, 10)
+        : null,
+      docente_id: this.contexto.docente
+        ? parseInt(this.contexto.docente, 10)
+        : null,
+      periodo_id: this._tipoRequiereEE()
+        ? idsEE[0] || null
+        : this.contexto.periodo
+          ? parseInt(this.contexto.periodo, 10)
+          : null,
+      periodo_ids: this._tipoRequiereEE() ? idsEE : [],
+      ee_id: this.datosAutoCargados.ee?.[0]?.id || null,
+      fecha_emision:
+        document.getElementById("input-fecha-emision")?.value ||
+        new Date().toISOString().split("T")[0],
 
-      setValue("preview-dia", partes.find((p) => p.type === "day")?.value || "__");
-      setValue("preview-mes", partes.find((p) => p.type === "month")?.value || "________");
-      setValue("preview-anio", partes.find((p) => p.type === "year")?.value || "____");
-    } catch (err) {
-      console.warn("[EmisionModule] Error formateando fecha:", err);
-      ["preview-dia", "preview-mes", "preview-anio"].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = "____";
-      });
-    }
-
-    // Actualizar datos del docente si está seleccionado
-    if (this.contexto.docente) {
-      const doc = this.datosMaestros.docentes.find(
-        (d) => String(d.id) === String(this.contexto.docente),
-      );
-
-      if (doc) {
-        const tratamiento = doc.tratamiento || "El/La";
-        const nombreCompleto = [
-          doc.nombres,
-          doc.apellido_paterno,
-          doc.apellido_materno,
-        ]
-          .filter(Boolean)
-          .join(" ");
-
-        const setDocPreview = (id, value) => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = value;
-        };
-
-        setDocPreview("preview-tratamiento", tratamiento);
-        setDocPreview(
-          "preview-nombre-docente",
-          nombreCompleto || "[NOMBRE]",
-        );
-        setDocPreview("preview-codigo-docente", doc.codigo || "[CÓDIGO]");
-      }
-    }
-
-    // Actualizar textos editables en preview
-    const saludoEl = document.getElementById("preview-saludo");
-    if (saludoEl) {
-      saludoEl.textContent =
-        this.configuracionPanelDerecho.textosEditables.saludo;
-    }
+      docente_tratamiento: doc?.tratamiento || "",
+      docente_articulo: doc?.articulo || "",
+      docente_nombre: [
+        doc?.nombres,
+        doc?.apellido_paterno,
+        doc?.apellido_materno,
+      ]
+        .filter(Boolean)
+        .join(" "),
+      docente_codigo: doc?.codigo || "",
+      periodo_clave:
+        this.datosMaestros.periodos.find(
+          (p) => String(p.id) === String(this.contexto.periodo),
+        )?.clave || "",
+      fecha_dia: fechaParts.find((p) => p.type === "day")?.value || "",
+      fecha_mes: fechaParts.find((p) => p.type === "month")?.value || "",
+      fecha_anio: fechaParts.find((p) => p.type === "year")?.value || "",
+      ees: this.datosAutoCargados.ee || [],
+      tutorados: [],
+      firmas: this.datosAutoCargados.firmas.map((f) => ({ texto: f.texto })),
+      textos_overrides: this.configuracionPanelDerecho.textosEditables,
+      ruta_guardado: this.configuracionPanelDerecho.rutaGuardado,
+      logotipo_url: this.configuracionPanelDerecho.logotipoUrl,
+    };
   }
 
   limpiarAutoCarga() {
@@ -865,24 +900,8 @@ export class EmisionModule {
     this.datosAutoCargados = {
       ee: [],
       fecha: fechaActual,
-      firmas: firmasActuales, // Preservar configuración de firmas
+      firmas: firmasActuales,
     };
-
-    const setPreview = (id, value) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = value;
-    };
-
-    setPreview("preview-tratamiento", "El/La");
-    setPreview("preview-nombre-docente", "[NOMBRE DEL DOCENTE]");
-    setPreview("preview-codigo-docente", "[CÓDIGO]");
-
-    const tbody = document.getElementById("preview-tabla-body");
-    if (tbody) {
-      tbody.innerHTML =
-        '<tr><td colspan="7" class="empty-state">' +
-        "Seleccione un docente para cargar asignaciones</td></tr>";
-    }
 
     const selEE = document.getElementById("sel-ee");
     if (selEE) {
@@ -905,25 +924,25 @@ export class EmisionModule {
       docente: null,
     };
 
-    this.limpiarAutoCarga();
+    this.periodosIncluidos = new Set();
+    this.periodosAsignadosDocente = [];
 
-    const selDoc = document.getElementById("sel-docente");
-    if (selDoc) {
-      selDoc.disabled = true;
-      selDoc.options[0].textContent = "Primero seleccione periodo...";
-    }
+    this.limpiarAutoCarga();
 
     this.establecerFechaDefault();
 
-    const folioEl = document.getElementById("preview-folio");
-    if (folioEl) folioEl.textContent = "CO/MSICU/POR GENERAR";
+    const frame = document.getElementById("preview-frame");
+    const placeholder = document.getElementById("preview-placeholder");
+    if (frame) {
+      frame.srcdoc = "";
+      frame.classList.remove("visible");
+    }
+    if (placeholder) {
+      placeholder.style.display = "flex";
+    }
 
     Toast.success("Formulario restablecido", 3000);
   }
-
-  // ============================================================
-  // GENERACIÓN DE CONSTANCIA
-  // ============================================================
 
   async generarConstancia(e) {
     e.preventDefault();
@@ -952,58 +971,7 @@ export class EmisionModule {
       '<i class="fa-solid fa-spinner fa-spin"></i> Generando PDF...';
 
     try {
-      const doc = this.datosMaestros.docentes.find(
-        (d) => String(d.id) === String(this.contexto.docente),
-      );
-
-      if (!doc) {
-        throw new Error("Docente no encontrado en catálogos");
-      }
-
-      const fecha = this.datosAutoCargados.fecha || new Date();
-      const opts = { day: "numeric", month: "long", year: "numeric" };
-      const fechaParts = new Intl.DateTimeFormat("es-MX", opts).formatToParts(
-        fecha,
-      );
-
-      const payload = {
-        tipo_constancia_id: parseInt(this.contexto.tipo, 10),
-        programa_id: parseInt(this.contexto.programa, 10),
-        docente_id: parseInt(docenteVal, 10),
-        periodo_id: this.contexto.periodo
-          ? parseInt(this.contexto.periodo, 10)
-          : null,
-        ee_id: this.datosAutoCargados.ee?.[0]?.id || null,
-        fecha_emision:
-          document.getElementById("input-fecha-emision")?.value ||
-          new Date().toISOString().split("T")[0],
-
-        // Campos para el motor de plantillas
-        docente_tratamiento: doc.tratamiento || "",
-        docente_nombre: [
-          doc.nombres,
-          doc.apellido_paterno,
-          doc.apellido_materno,
-        ]
-          .filter(Boolean)
-          .join(" "),
-        docente_codigo: doc.codigo || "",
-        periodo_clave:
-          this.datosMaestros.periodos.find(
-            (p) => String(p.id) === String(this.contexto.periodo),
-          )?.clave || "",
-        fecha_dia: fechaParts.find((p) => p.type === "day")?.value || "",
-        fecha_mes: fechaParts.find((p) => p.type === "month")?.value || "",
-        fecha_anio: fechaParts.find((p) => p.type === "year")?.value || "",
-        ees: this.datosAutoCargados.ee || [],
-        tutorados: [],
-        firmas: this.datosAutoCargados.firmas.map((f) => ({ texto: f.texto })),
-        texto_saludo: this.configuracionPanelDerecho.textosEditables.saludo,
-        texto_mencion_final:
-          this.configuracionPanelDerecho.textosEditables.mencion_final,
-        ruta_guardado: this.configuracionPanelDerecho.rutaGuardado,
-        logotipo_url: this.configuracionPanelDerecho.logotipoUrl,
-      };
+      const payload = this._buildPayload();
 
       if (process?.env?.NODE_ENV === "development") {
         console.log("📤 Payload generarConstancia:", {
@@ -1029,11 +997,6 @@ export class EmisionModule {
       const resp = await window.electronAPI.generarConstanciaPDF(payload);
 
       if (resp?.success) {
-        const folioEl = document.getElementById("preview-folio");
-        if (folioEl && resp.folio) {
-          folioEl.textContent = resp.folio;
-        }
-
         Toast.success(
           `Constancia emitida exitosamente. Folio: ${resp.folio}`,
           8000,
@@ -1080,10 +1043,6 @@ export class EmisionModule {
 
     return Boolean(tipoSeleccionado?.requiere_ee);
   }
-
-  // ============================================================
-  // UTILIDADES
-  // ============================================================
 
   _escapeHtml(str) {
     if (typeof str !== "string") return String(str ?? "");

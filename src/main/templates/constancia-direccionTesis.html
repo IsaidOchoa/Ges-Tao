@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8">{{INCLUDE:estilos}}</head>
+<body>
+<div class="cert-page">
+  {{INCLUDE:membrete}}
+  <div class="cert-grid">
+    <aside class="cert-sidebar">
+      <div class="cert-folio">No. Constancia<br><span>{{DATO:folio}}</span></div>
+      {{INCLUDE:sidebar}}
+    </aside>
+    <main class="cert-main">
+      <p class="cert-greeting" data-editable-key="saludo">{{TEXTO:saludo}}</p>
+      <p class="cert-intro">Por medio de la presente se</p>
+      <h2 class="cert-title">HACE CONSTAR</h2>
+
+      <p class="cert-text">
+        Que <strong>{{DATO:docente_articulo}} {{DATO:docente_tratamiento}} {{DATO:docente_nombre}}</strong>,
+        con número de personal <strong>{{DATO:docente_codigo}}</strong>, fue asignada como directora
+        del siguiente trabajo de tesis del Programa Educativo de Posgrado Maestría en Sistemas
+        Interactivos Centrados en el Usuario.
+      </p>
+
+      <table class="cert-table">
+        <thead>
+          <tr><th colspan="4">Dirección</th></tr>
+          <tr><th>Generación</th><th>Fecha de Asignación</th><th>Nombre del Alumno</th><th>Título del trabajo</th></tr>
+        </thead>
+        <tbody>
+          {{#LOOP:tesis}}
+          <tr><td>{{generacion}}</td><td>{{fecha_asignacion}}</td><td>{{alumno}}</td><td>{{titulo}}</td></tr>
+          {{/LOOP:tesis}}
+        </tbody>
+      </table>
+
+      {{INCLUDE:pie}}
+    </main>
+  </div>
+</div>
+</body>
+</html>

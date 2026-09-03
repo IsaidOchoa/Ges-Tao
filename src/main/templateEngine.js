@@ -1,64 +1,70 @@
 const fs = require("fs");
 const path = require("path");
+const { app } = require("electron");
 const { rutaPlantilla } = require("./templates/index");
 
-/**
- * Procesa una plantilla HTML con el sistema de tokens.
- * @param {string} plantillaArchivo - Nombre del archivo de plantilla (ej: "constancia-ee.html")
- * @param {object} datos - Datos a inyectar (folio, docente, ees, tutorados, firmas, etc.)
- * @param {object} textos - Textos personalizables (saludo, mencion_final)
- * @param {string|null} logotipoUrl - URL del logotipo (file://...) o null
- * @returns {string} HTML procesado
- */
-function procesarPlantilla(plantillaArchivo, datos, textos, logotipoUrl) {
-  const rutaArchivo = rutaPlantilla(plantillaArchivo);
-  let html = fs.readFileSync(rutaArchivo, "utf-8");
+// ⚠️ IMPORTANTE: usar app.getAppPath() y NO __dirname.
+// Con el main empaquetado por webpack, __dirname apunta a .webpack/main/,
+// no al código fuente. app.getAppPath() apunta a la raíz del proyecto.
+const PARTIALS_DIR = path.join(
+  app.getAppPath(),
+  "src",
+  "main",
+  "templates",
+  "partials",
+);
 
-  // 1. Reemplazar {{LOGO}}
-  if (logotipoUrl) {
-    html = html.replace("{{LOGO}}", `<img src="${logotipoUrl}" alt="Logotipo">`);
-  } else {
-    html = html.replace("{{LOGO}}", "");
+function leerPartial(nombre) {
+  const ruta = path.join(PARTIALS_DIR, `${nombre}.html`);
+  if (!fs.existsSync(ruta)) {
+    console.warn(`⚠️ [templateEngine] Partial NO encontrado: ${ruta}`);
+    return `<!-- partial ${nombre} no encontrado -->`;
   }
+  return fs.readFileSync(ruta, "utf-8");
+}
 
-  // 2. Reemplazar {{DATO:clave}} con valores de datos
-  const datosRegex = /\{\{DATO:([a-z_]+)\}\}/g;
-  html = html.replace(datosRegex, (match, clave) => {
-    return escapeHtml(datos[clave] || "");
+function procesarPlantilla(plantillaArchivo, datos, textos, logos = {}) {
+  let html = fs.readFileSync(rutaPlantilla(plantillaArchivo), "utf-8");
+
+  // 1. INCLUDE de parciales (antes que cualquier token)
+  html = html.replace(/\{\{INCLUDE:([a-z_]+)\}\}/g, (m, nombre) =>
+    leerPartial(nombre),
+  );
+
+  // 2. Logotipos globales: {{LOGO:uv}} / {{LOGO:msicu}}
+  html = html.replace(/\{\{LOGO:([a-z_]+)\}\}/g, (m, clave) => {
+    return logos[clave] ? `<img src="${logos[clave]}" alt="${clave}">` : "";
   });
 
-  // 3. Reemplazar {{TEXTO:clave}} con valores de textos personalizables
-  const textosRegex = /\{\{TEXTO:([a-z_]+)\}\}/g;
-  html = html.replace(textosRegex, (match, clave) => {
-    return escapeHtml(textos[clave] || "");
-  });
+  // 3. Datos de BD
+  html = html.replace(/\{\{DATO:([a-z_]+)\}\}/g, (m, clave) =>
+    escapeHtml(datos[clave] ?? ""),
+  );
 
-  // 4. Procesar {{#LOOP:clave}} ... {{/LOOP:clave}}
-  const loopRegex = /\{\{#LOOP:([a-z_]+)\}\}([\s\S]*?)\{\{\/LOOP:\1\}\}/g;
-  html = html.replace(loopRegex, (match, clave, template) => {
-    const array = datos[clave] || [];
-    if (!Array.isArray(array) || array.length === 0) {
-      return ""; // Si no hay datos, eliminar el bloque
-    }
-    return array
-      .map((item) => {
-        let rowHtml = template;
-        // Reemplazar {{campo}} con valores del item
-        const campoRegex = /\{\{([a-z_]+)\}\}/g;
-        rowHtml = rowHtml.replace(campoRegex, (m, campo) => {
-          return escapeHtml(item[campo] || "");
-        });
-        return rowHtml;
-      })
-      .join("");
-  });
+  // 4. Textos personalizables
+  html = html.replace(/\{\{TEXTO:([a-z_]+)\}\}/g, (m, clave) =>
+    escapeHtml(textos[clave] ?? ""),
+  );
+
+  // 5. Loops
+  html = html.replace(
+    /\{\{#LOOP:([a-z_]+)\}\}([\s\S]*?)\{\{\/LOOP:\1\}\}/g,
+    (m, clave, template) => {
+      const arr = datos[clave];
+      if (!Array.isArray(arr) || arr.length === 0) return "";
+      return arr
+        .map((item) =>
+          template.replace(/\{\{([a-z_]+)\}\}/g, (mm, campo) =>
+            escapeHtml(item[campo] ?? ""),
+          ),
+        )
+        .join("");
+    },
+  );
 
   return html;
 }
 
-/**
- * Escapa HTML para prevenir inyección XSS
- */
 function escapeHtml(str) {
   if (typeof str !== "string") return String(str ?? "");
   const map = {

@@ -1,3 +1,4 @@
+// src/main/handlers/entityPeriodHadlers.js
 const { ipcMain } = require('electron');
 const { getDB, generarIdGlobal } = require('../database');
 

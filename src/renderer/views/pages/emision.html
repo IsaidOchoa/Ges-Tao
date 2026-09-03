@@ -1,15 +1,19 @@
 <!-- src/renderer/views/pages/emision.html -->
 <div class="fade-in">
   <div class="emission-container">
-    
     <!-- FORMULARIO (Izquierda) -->
     <div class="card emission-form">
       <div class="section-header">
-        <h3 class="section-title"><i class="fa-solid fa-sliders"></i> Configuración de Emisión</h3>
-        <p class="section-desc">Defina el contexto. Los datos del docente se cargarán automáticamente.</p>
+        <h3 class="section-title">
+          <i class="fa-solid fa-sliders"></i> Configuración de Emisión
+        </h3>
+        <p class="section-desc">
+          Defina el contexto. Los datos del docente se cargarán automáticamente.
+        </p>
       </div>
 
       <form id="form-constancia">
+        <!-- 1. Tipo de Constancia -->
         <div class="form-group">
           <label>Tipo de Constancia *</label>
           <select id="sel-tipo" class="form-control" required>
@@ -17,6 +21,7 @@
           </select>
         </div>
 
+        <!-- 2. Programa Institucional -->
         <div class="form-group">
           <label>Programa Institucional *</label>
           <select id="sel-programa" class="form-control" required>
@@ -24,144 +29,185 @@
           </select>
         </div>
 
+        <!-- 3. Docente (ahora SIEMPRE habilitado, no depende del periodo) -->
         <div class="form-group">
+          <label>Docente *</label>
+          <select id="sel-docente" class="form-control" required>
+            <option value="">Seleccione un docente...</option>
+          </select>
+        </div>
+
+        <!-- 4a. Periodo simple (para tipos que requieren periodo pero NO EE) -->
+        <div class="form-group" id="group-periodo-single" style="display:none;">
           <label>Periodo Escolar *</label>
-          <select id="sel-periodo" class="form-control" required>
+          <select id="sel-periodo" class="form-control">
             <option value="">Seleccione un periodo...</option>
           </select>
         </div>
 
-        <div class="form-group">
-          <label>Docente *</label>
-          <select id="sel-docente" class="form-control" required disabled>
-            <option value="">Primero seleccione periodo...</option>
-          </select>
+        <!-- 4b. Chips multi-periodo (para tipos que requieren EE) -->
+        <div class="form-group" id="group-periodos-ee" style="display:none;">
+          <label>Periodos incluidos *</label>
+          <div class="chips-box">
+            <!-- Buscador fijo arriba, con su dropdown -->
+            <div class="chips-search-wrap">
+              <input
+                type="text"
+                id="chips-search"
+                class="chips-search"
+                placeholder="Agregar periodo..."
+                autocomplete="off"
+              />
+              <div id="chips-dropdown" class="chips-dropdown hidden"></div>
+            </div>
+            <!-- Los chips se apilan aquí, debajo del buscador -->
+            <div class="chips-container" id="chips-container"></div>
+          </div>
+          <small class="form-help">
+            Solo se muestran periodos con asignaciones del docente.
+          </small>
         </div>
 
+        <!-- 5. Fecha de Emisión -->
         <div class="form-group">
           <label>Fecha de Emisión</label>
-          <input type="date" id="input-fecha-emision" class="form-control">
-          <small class="form-help">Por defecto: hoy. Editable para constancias históricas.</small>
+          <input type="date" id="input-fecha-emision" class="form-control" />
+          <small class="form-help">
+            Por defecto: hoy. Editable para constancias históricas.
+          </small>
         </div>
 
-        <hr>
+        <hr />
         <div class="form-actions">
-          <button type="button" class="btn btn-secondary" id="btn-limpiar">Limpiar</button>
-          <button type="submit" class="btn btn-primary" id="btn-generar">Emitir Constancia</button>
+          <button type="button" class="btn btn-secondary" id="btn-limpiar">
+            Limpiar
+          </button>
+          <button type="submit" class="btn btn-primary" id="btn-generar">
+            Emitir Constancia
+          </button>
         </div>
       </form>
     </div>
 
     <!-- 📄 VISTA PREVIA (Centro) -->
     <div class="card emission-preview">
-      <div class="section-header">
-        <h3 class="section-title"><i class="fa-regular fa-eye"></i> Vista Previa Oficial</h3>
+      <div class="section-header preview-header">
+        <h3 class="section-title">
+          <i class="fa-regular fa-eye"></i> Vista Previa Oficial
+        </h3>
+        <div class="zoom-controls">
+          <button id="btn-zoom-out" class="btn-icon" title="Alejar">
+            <i class="fa-solid fa-minus"></i>
+          </button>
+          <span id="zoom-level" class="zoom-level">100%</span>
+          <button id="btn-zoom-in" class="btn-icon" title="Acercar">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+          <button id="btn-zoom-reset" class="btn-icon" title="Restablecer">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
       </div>
 
-      <div id="preview-area" class="preview-sheet cert-template-ee">
-        <div class="cert-folio">
-          No. Constancia<br>
-          <span id="preview-folio">CO/MSICU/POR GENERAR</span>
-        </div>
-
-        <div class="cert-content">
-          <p class="cert-greeting" contenteditable="true" data-editable-key="saludo" id="preview-saludo">A quien corresponda,</p>
-          <p class="cert-intro">Por medio de la presente se</p>
-          
-          <h2 class="cert-title">HACE CONSTAR</h2>
-          
-          <p class="cert-text-justified">
-            Que <span id="preview-tratamiento">El/La</span> 
-            <strong id="preview-nombre-docente">[NOMBRE DEL DOCENTE]</strong>, 
-            con número de personal <span id="preview-codigo-docente">[CÓDIGO]</span>, 
-            pertenece al cuerpo docente del Programa Educativo de Posgrado Maestría en Sistemas Interactivos Centrados en el Usuario (16156), 
-            programa adscrito a la Facultad de Estadística e Informática (11304) 
-            y ha impartido las siguientes experiencias educativas:
+      <div id="preview-area" class="preview-area">
+        <div id="preview-placeholder" class="preview-placeholder">
+          <i class="fa-solid fa-file-lines"></i>
+          <p>
+            Seleccione un tipo de constancia y un docente para generar la vista
+            previa.
           </p>
-
-          <table class="cert-table" id="preview-tabla-ee">
-            <thead>
-              <tr>
-                <th>NRC</th>
-                <th>Experiencia Educativa</th>
-                <th>H/S/M</th>
-                <th>No. Horas</th>
-                <th>No. Créditos</th>
-                <th>Periodo</th>
-                <th>No. Alumnos</th>
-              </tr>
-            </thead>
-            <tbody id="preview-tabla-body">
-              <tr><td colspan="7" class="empty-state">Seleccione un docente para cargar asignaciones</td></tr>
-            </tbody>
-          </table>
-
-          <p class="cert-text-justified cert-footer-text" contenteditable="true" data-editable-key="mencion_final" id="preview-mencion-final">
-            Para los fines que al interesado convenga se extiende la presente en la ciudad de Xalapa, Enríquez, Veracruz a los 
-            <span id="preview-dia">__</span> días del mes de <span id="preview-mes">________</span> del año <span id="preview-anio">____</span>.
-          </p>
-
-          <div class="cert-closing">
-            <p>ATENTAMENTE</p>
-            <p class="cert-motto">"Lis de Veracruz, Arte, Ciencia y Luz"</p>
-          </div>
-
-          <div class="cert-signatures" id="preview-firmas-container">
-            <!-- Se generan dinámicamente -->
-          </div>
         </div>
+        <iframe
+          id="preview-frame"
+          class="preview-frame"
+          title="Vista previa de constancia"
+        ></iframe>
       </div>
     </div>
 
     <!-- ⚙️ PANEL DERECHO (Opciones de Salida) -->
-<div class="card emission-options" id="panel-derecho">
-  <div class="section-header options-header">
-    <h3 class="section-title">
-      <i class="fa-solid fa-gear"></i> <span class="options-label">Opciones de Salida</span>
-    </h3>
-    <button id="btn-toggle-panel-derecho" class="btn-icon" title="Mostrar/Ocultar panel de opciones">
-      <i class="fa-solid fa-chevron-right"></i>
-    </button>
-  </div>
+    <div class="card emission-options" id="panel-derecho">
+      <div class="section-header options-header">
+        <h3 class="section-title">
+          <i class="fa-solid fa-gear"></i>
+          <span class="options-label">Opciones de Salida</span>
+        </h3>
+        <button
+          id="btn-toggle-panel-derecho"
+          class="btn-icon"
+          title="Mostrar/Ocultar panel de opciones"
+        >
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
 
-  <!-- Sección 1: Guardar en -->
-  <div class="options-section">
-    <h4 title="Guardar en"><i class="fa-solid fa-folder"></i> <span class="options-label">Guardar en</span></h4>
-    <p class="ruta-actual" id="ruta-constancias-display" title="">Cargando...</p>
-    <button class="btn btn-secondary btn-sm" id="btn-cambiar-ruta">
-      <i class="fa-solid fa-folder-open"></i> Cambiar carpeta
-    </button>
-    <label class="checkbox-inline">
-      <input type="checkbox" id="chk-recordar-ruta" checked>
-      <span>Recordar como predeterminada</span>
-    </label>
-  </div>
+      <!-- Sección 1: Guardar en -->
+      <div class="options-section">
+        <h4 title="Guardar en">
+          <i class="fa-solid fa-folder"></i>
+          <span class="options-label">Guardar en</span>
+        </h4>
+        <p class="ruta-actual" id="ruta-constancias-display" title="">
+          Cargando...
+        </p>
+        <button class="btn btn-secondary btn-sm" id="btn-cambiar-ruta">
+          <i class="fa-solid fa-folder-open"></i> Cambiar carpeta
+        </button>
+        <label class="checkbox-inline">
+          <input type="checkbox" id="chk-recordar-ruta" checked />
+          <span>Recordar como predeterminada</span>
+        </label>
+      </div>
 
-  <!-- Sección 2: Firmas dinámicas -->
-  <div class="options-section">
-    <h4 title="Firmas"><i class="fa-solid fa-pen"></i> <span class="options-label">Firmas (<span id="firma-count">0</span>)</span></h4>
-    <div id="firma-slots-container"></div>
-    <button class="btn btn-secondary btn-sm" id="btn-agregar-firma">
-      <i class="fa-solid fa-plus"></i> Agregar Firma
-    </button>
-    <button class="btn btn-link btn-sm" id="btn-gestionar-firmantes">
-      <i class="fa-solid fa-list"></i> Gestionar catálogo
-    </button>
-  </div>
+      <!-- Sección 2: Firmas dinámicas -->
+      <div class="options-section">
+        <h4 title="Firmas">
+          <i class="fa-solid fa-pen"></i>
+          <span class="options-label">
+            Firmas (<span id="firma-count">0</span>)
+          </span>
+        </h4>
+        <div id="firma-slots-container"></div>
+        <button class="btn btn-secondary btn-sm" id="btn-agregar-firma">
+          <i class="fa-solid fa-plus"></i> Agregar Firma
+        </button>
+        <button class="btn btn-link btn-sm" id="btn-gestionar-firmantes">
+          <i class="fa-solid fa-list"></i> Gestionar catálogo
+        </button>
+      </div>
 
-  <!-- Sección 3: Logotipo -->
-  <div class="options-section">
-    <h4 title="Logotipo"><i class="fa-solid fa-image"></i> <span class="options-label">Logotipo</span></h4>
-    <div id="logotipo-preview" class="logotipo-preview-box">
-      <i class="fa-solid fa-image placeholder-icon"></i>
-      <p>Sin logotipo</p>
+      <!-- Sección 3: Logotipos del membrete -->
+      <div class="options-section">
+        <h4 title="Logotipos">
+          <i class="fa-solid fa-image"></i>
+          <span class="options-label">Logotipos del membrete</span>
+        </h4>
+
+        <div class="logo-slot">
+          <div class="logo-slot-preview" id="logo-uv-preview"></div>
+          <div class="logo-slot-info">
+            <span class="options-label">Universidad Veracruzana</span>
+            <button class="btn btn-secondary btn-sm" id="btn-cambiar-logo-uv">
+              <i class="fa-solid fa-upload"></i> Cambiar
+            </button>
+          </div>
+        </div>
+
+        <div class="logo-slot">
+          <div class="logo-slot-preview" id="logo-msicu-preview"></div>
+          <div class="logo-slot-info">
+            <span class="options-label">MSICU</span>
+            <button class="btn btn-secondary btn-sm" id="btn-cambiar-logo-msicu">
+              <i class="fa-solid fa-upload"></i> Cambiar
+            </button>
+          </div>
+        </div>
+
+        <small class="form-help options-label">
+          Los logotipos aplican a todas las plantillas.
+        </small>
+      </div>
     </div>
-    <button class="btn btn-secondary btn-sm" id="btn-cambiar-logo">
-      <i class="fa-solid fa-upload"></i> Cambiar logotipo
-    </button>
-    <button class="btn btn-link btn-sm" id="btn-quitar-logo" style="display:none;">
-      <i class="fa-solid fa-times"></i> Quitar logotipo
-    </button>
   </div>
 </div>
 
@@ -170,23 +216,29 @@
   <div class="modal-content">
     <div class="modal-header">
       <h3>Confirmar cambios de texto</h3>
-      <button class="btn-close" onclick="cerrarModal('modal-confirmar-texto')">&times;</button>
+      <button class="btn-close" onclick="cerrarModal('modal-confirmar-texto')">
+        &times;
+      </button>
     </div>
     <div class="modal-body">
-      <p>Has modificado un texto personalizable. ¿Deseas aplicar este cambio?</p>
+      <p>
+        Has modificado un texto personalizable. ¿Deseas aplicar este cambio?
+      </p>
       <div class="radio-group">
         <label>
-          <input type="radio" name="aplicar-texto" value="solo-esta" checked>
+          <input type="radio" name="aplicar-texto" value="solo-esta" checked />
           Solo a esta constancia
         </label>
         <label>
-          <input type="radio" name="aplicar-texto" value="todas">
+          <input type="radio" name="aplicar-texto" value="todas" />
           A todas las plantillas (guardar como predeterminado)
         </label>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="cerrarModal('modal-confirmar-texto')">Cancelar</button>
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-confirmar-texto')">
+        Cancelar
+      </button>
       <button class="btn btn-primary" id="btn-confirmar-texto">Aplicar</button>
     </div>
   </div>

@@ -132,7 +132,6 @@
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-
 /* =========================================
    COLUMNA DE CONTROL (Expansión)
    ========================================= */
@@ -596,6 +595,37 @@
 
 .tab-nav-arrow.right.animate-hint {
   animation: slideHint 0.6s ease-in-out;
+}
+
+.table-tesis { min-width: 1600px; }        /* fuerza scroll horizontal */
+.catalog-table-wrapper { overflow-x: auto; }
+
+/* ===== Modal de Tesis: ancho, 2 columnas, sin corte ===== */
+#modal-tesis .modal-content {
+  width: 980px;
+  max-width: 95vw;
+  max-height: 88vh;          /* nunca excede la ventana */
+  display: flex;
+  flex-direction: column;
+}
+
+#modal-tesis .modal-body {
+  overflow-y: auto;          /* scroll interno si aún falta espacio */
+  padding: 1rem 1.5rem;
+}
+
+.tesis-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 2rem;
+  align-items: start;
+}
+
+.tesis-col-title { margin: 0 0 0.75rem 0; }
+
+/* Responsive: si la ventana es angosta, vuelve a 1 columna */
+@media (max-width: 900px) {
+  .tesis-form-grid { grid-template-columns: 1fr; }
 }
 
 /* Mejorar visualización de optgroup en select */

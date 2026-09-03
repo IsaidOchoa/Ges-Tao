@@ -1,3 +1,5 @@
+// src/main/handlers/relacionHandlers.js
+
 const { ipcMain } = require('electron');
 const { getDB, generarIdGlobal } = require('../database');
 

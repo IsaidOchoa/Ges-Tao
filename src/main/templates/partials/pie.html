@@ -1,0 +1,13 @@
+<p class="cert-cierre">{{TEXTO:mencion_final}} en la ciudad de Xalapa, Enríquez, Veracruz a los <strong>{{DATO:fecha_dia}}</strong> días del mes de <strong>{{DATO:fecha_mes}}</strong> del año <strong>{{DATO:fecha_anio}}</strong>.</p>
+
+<p class="cert-atentamente">ATENTAMENTE</p>
+<p class="cert-motto">"Lis de Veracruz, Arte, Ciencia y Luz"</p>
+
+<div class="cert-signatures">
+  {{#LOOP:firmas}}
+  <div class="signature-block">
+    <p>{{nombre}}</p>
+    <p>{{cargo}}</p>
+  </div>
+  {{/LOOP:firmas}}
+</div>

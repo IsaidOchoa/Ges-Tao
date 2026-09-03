@@ -1,7 +1,7 @@
 const { ipcMain, BrowserWindow, app } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const { getDB } = require("../database");
+const { getDB, generarIdGlobal } = require("../database");
 const settings = require("../settings");
 const { procesarPlantilla } = require("../templateEngine");
 
@@ -38,14 +38,12 @@ function generarFolioSecuencial(db) {
 function validarConstancia(db, datos, tipo) {
   const errores = [];
 
-  // Docente siempre requerido
   const docente = db
     .prepare("SELECT id FROM docentes WHERE id = ? AND estado = ?")
     .get(datos.docente_id, "activo");
   if (!docente)
     errores.push("El docente seleccionado no existe o está inactivo.");
 
-  // Programa institucional SIEMPRE requerido
   if (!datos.programa_id) {
     errores.push("Debe seleccionar un Programa Institucional.");
   } else {
@@ -58,13 +56,11 @@ function validarConstancia(db, datos, tipo) {
       errores.push("El programa institucional seleccionado no es válido.");
   }
 
-  // Validar tipo
   if (!tipo) {
     errores.push("El tipo de constancia no es válido.");
     return errores;
   }
 
-  // Validaciones condicionales según tipo
   if (tipo.requiere_ee === 1 && !datos.ee_id) {
     errores.push(
       `El tipo "${tipo.nombre}" requiere una Experiencia Educativa.`,
@@ -75,7 +71,6 @@ function validarConstancia(db, datos, tipo) {
     errores.push(`El tipo "${tipo.nombre}" requiere un Periodo Escolar.`);
   }
 
-  // Validar EE si se proporcionó
   if (datos.ee_id) {
     const ee = db
       .prepare(
@@ -86,7 +81,6 @@ function validarConstancia(db, datos, tipo) {
       errores.push("La Experiencia Educativa no existe o está inactiva.");
   }
 
-  // Validar Periodo si se proporcionó
   if (datos.periodo_id) {
     const periodo = db
       .prepare("SELECT id FROM periodos WHERE id = ? AND estado != ?")
@@ -97,6 +91,55 @@ function validarConstancia(db, datos, tipo) {
   return errores;
 }
 
+/**
+ * Resolvedor de HTML: procesa plantilla con parciales, logotipos y datos
+ * Usado tanto por preview como por generación de PDF (misma fuente de verdad)
+ */
+function resolverHtmlConstancia(db, payload) {
+  const formato = db
+    .prepare(
+      `
+    SELECT plantilla_archivo FROM formatos_constancia
+    WHERE tipo_constancia_id = ? AND es_actual = 1
+  `,
+    )
+    .get(payload.tipo_constancia_id);
+
+  if (!formato) {
+    throw new Error("No hay formato activo para este tipo de constancia");
+  }
+
+  // Logotipos GLOBALES (aplican a todas las plantillas)
+  const config = settings.get();
+  const aBase64 = (ruta) => {
+    if (!ruta || !fs.existsSync(ruta)) return "";
+    const ext = path.extname(ruta).slice(1).toLowerCase() || "png";
+    const mime = ext === "svg" ? "image/svg+xml" : `image/${ext}`;
+    return `data:${mime};base64,${fs.readFileSync(ruta).toString("base64")}`;
+  };
+
+  const logos = {
+    uv: aBase64(config.logoUvRuta),
+    msicu: aBase64(config.logoMsicuRuta),
+  };
+
+  // Textos: defaults de BD + overrides de la emisión
+  const filas = db.prepare("SELECT clave, texto FROM textos_plantilla").all();
+  const textos = {};
+  filas.forEach((f) => (textos[f.clave] = f.texto));
+  Object.assign(textos, payload.textos_overrides || {});
+
+  // Firmas: separar nombre/cargo si el texto contiene "—"
+  const firmas = (payload.firmas || []).map((f) => {
+    const [nombre, ...resto] = String(f.texto || "").split("—");
+    return { nombre: (nombre || "").trim(), cargo: resto.join("—").trim() };
+  });
+
+  const datos = { ...payload, firmas };
+
+  return procesarPlantilla(formato.plantilla_archivo, datos, textos, logos);
+}
+
 module.exports = () => {
   // ==========================================================
   // HANDLER: Obtener catálogos para emisión
@@ -105,7 +148,6 @@ module.exports = () => {
     try {
       const db = getDB();
 
-      // 1. Tipos de constancia
       const tipos = db
         .prepare(
           `
@@ -121,17 +163,15 @@ module.exports = () => {
         )
         .all("activo");
 
-      // 2. Docentes
       const docentes = db
         .prepare(
           `
-          SELECT id, codigo, apellido_paterno, apellido_materno, nombres, tratamiento
+          SELECT id, codigo, apellido_paterno, apellido_materno, nombres, tratamiento, articulo
           FROM docentes WHERE estado = ? ORDER BY apellido_paterno, nombres
         `,
         )
         .all("activo");
 
-      // 3. Periodos
       const periodos = db
         .prepare(
           `
@@ -141,7 +181,6 @@ module.exports = () => {
         )
         .all("cerrado");
 
-      // 4. Experiencias Educativas
       const ee = db
         .prepare(
           `
@@ -151,7 +190,6 @@ module.exports = () => {
         )
         .all("activa");
 
-      // 5. Programas institucionales
       const programas = db
         .prepare(
           `
@@ -161,7 +199,6 @@ module.exports = () => {
         )
         .all("vigente");
 
-      // 6. Firmantes (catálogo de texto plano)
       const firmantes = db
         .prepare(
           `SELECT id, texto FROM firmantes WHERE deleted_at IS NULL ORDER BY texto`,
@@ -220,13 +257,20 @@ module.exports = () => {
 
         const folio = generarFolioSecuencial(db);
 
+        // Generar id_global antes del insert
+        const installation = db
+          .prepare("SELECT installation_id FROM installation WHERE id = 1")
+          .get();
+        const idGlobal = generarIdGlobal(installation.installation_id);
+
         const stmt = db.prepare(`
           INSERT INTO constancias 
-          (folio, docente_id, periodo_id, ee_id, programa_id, tipo_constancia_id, estado, fecha_emision)
-          VALUES (?, ?, ?, ?, ?, ?, ?, date('now'))
+          (id_global, folio, docente_id, periodo_id, ee_id, programa_id, tipo_constancia_id, estado, fecha_emision)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, date('now'))
         `);
 
         const info = stmt.run(
+          idGlobal,
           folio,
           datos.docente_id,
           datos.periodo_id || null,
@@ -269,6 +313,25 @@ module.exports = () => {
   });
 
   // ==========================================================
+  // HANDLER: Vista previa (devuelve HTML resuelto)
+  // ==========================================================
+  ipcMain.handle("previsualizar-constancia", async (event, payload) => {
+    try {
+      const db = getDB();
+      // Folio de muestra (solo lectura, no consume numeración)
+      const folioPreview = generarFolioSecuencial(db);
+      const html = resolverHtmlConstancia(db, {
+        ...payload,
+        folio: folioPreview,
+      });
+      return { success: true, html };
+    } catch (error) {
+      console.error("❌ Error en previsualizar-constancia:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // ==========================================================
   // HANDLER: Generar constancia con PDF nativo (PRODUCCIÓN)
   // ==========================================================
   ipcMain.handle("generar-constancia-pdf", async (event, payload) => {
@@ -280,9 +343,7 @@ module.exports = () => {
     let folio = null;
 
     try {
-      // ==========================================================
       // 1. TRANSACCIÓN ATÓMICA: Folio + Insert en BD
-      // ==========================================================
       const resultado = db.transaction(() => {
         const tipo = db
           .prepare(
@@ -300,13 +361,20 @@ module.exports = () => {
 
         folio = generarFolioSecuencial(db);
 
+        // Generar id_global antes del insert
+        const installation = db
+          .prepare("SELECT installation_id FROM installation WHERE id = 1")
+          .get();
+        const idGlobal = generarIdGlobal(installation.installation_id);
+
         const stmt = db.prepare(`
         INSERT INTO constancias 
-        (folio, docente_id, periodo_id, ee_id, programa_id, tipo_constancia_id, fecha_emision, estado)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (id_global, folio, docente_id, periodo_id, ee_id, programa_id, tipo_constancia_id, fecha_emision, estado)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
         const info = stmt.run(
+          idGlobal,
           folio,
           payload.docente_id,
           payload.periodo_id || null,
@@ -322,7 +390,6 @@ module.exports = () => {
 
       constanciaId = resultado.constanciaId;
 
-      // Sanitizar folio para nombre de archivo
       const folioSanitized = folio.replace(/\//g, "-");
       const filePath = path.join(rutaBase, `${folioSanitized}.pdf`);
 
@@ -330,70 +397,17 @@ module.exports = () => {
       console.log("📄 Folio para archivo:", folioSanitized);
       console.log("📄 Ruta completa:", filePath);
 
-      // ==========================================================
-      // 2. OBTENER PLANTILLA Y CONFIGURACIÓN
-      // ==========================================================
-      const formato = db
-        .prepare(
-          `
-        SELECT plantilla_archivo, logotipo_recurso_id
-        FROM formatos_constancia
-        WHERE tipo_constancia_id = ? AND es_actual = 1
-      `,
-        )
-        .get(payload.tipo_constancia_id);
+      // 2. Resolver HTML con el mismo motor que la preview
+      const htmlProcesado = resolverHtmlConstancia(db, { ...payload, folio });
 
-      if (!formato) {
-        throw new Error(
-          "No se encontró formato activo para este tipo de constancia",
-        );
-      }
-
-      // Obtener logotipo si existe
-      let logotipoUrl = null;
-      if (formato.logotipo_recurso_id) {
-        const recurso = db
-          .prepare(
-            `SELECT ruta_local FROM recursos_compartibles WHERE id = ?`,
-          )
-          .get(formato.logotipo_recurso_id);
-        if (recurso) {
-          logotipoUrl = `file://${recurso.ruta_local}`;
-        }
-      }
-
-      // ==========================================================
-      // 3. PROCESAR PLANTILLA CON MOTOR DE TOKENS
-      // ==========================================================
-      const datosPlantilla = {
-        folio: folio,
-        docente_tratamiento: payload.docente_tratamiento || "",
-        docente_nombre: payload.docente_nombre || "",
-        docente_codigo: payload.docente_codigo || "",
-        periodo_clave: payload.periodo_clave || "",
-        fecha_dia: payload.fecha_dia || "",
-        fecha_mes: payload.fecha_mes || "",
-        fecha_anio: payload.fecha_anio || "",
-        ees: payload.ees || [],
-        tutorados: payload.tutorados || [],
-        firmas: payload.firmas || [],
-      };
-
-      const textosPlantilla = {
-        saludo: payload.texto_saludo || "A quien corresponda,",
-        mencion_final:
-          payload.texto_mencion_final ||
-          "Para los fines que al interesado convenga se extiende la presente",
-      };
-
-      const htmlProcesado = procesarPlantilla(
-        formato.plantilla_archivo,
-        datosPlantilla,
-        textosPlantilla,
-        logotipoUrl,
+      // Escribir a archivo temporal (origen file:// → impresión fiel)
+      const tmpPath = path.join(
+        app.getPath("userData"),
+        `preview_${Date.now()}.html`,
       );
+      fs.writeFileSync(tmpPath, htmlProcesado);
 
-      // Crear ventana oculta con el HTML procesado
+      // Crear ventana oculta
       const win = new BrowserWindow({
         show: false,
         width: 850,
@@ -404,44 +418,27 @@ module.exports = () => {
         },
       });
 
-      // Cargar el HTML procesado directamente (no el archivo)
-      await win.loadURL(
-        `data:text/html;charset=utf-8,${encodeURIComponent(htmlProcesado)}`,
-      );
+      await win.loadFile(tmpPath);
+      await new Promise((r) => setTimeout(r, 400));
 
-      // Esperar renderizado
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // ==========================================================
-      // 4. EXPORTAR A PDF
-      // ==========================================================
+      // 3. Exportar a PDF
       const buffer = await win.webContents.printToPDF({
-        pageSize: "A4",
-        margins: {
-          top: 0.6,
-          bottom: 0.6,
-          left: 0.8,
-          right: 0.8,
-        },
+        pageSize: "Letter",
+        margins: { top: 0, bottom: 0, left: 0, right: 0 },
         printBackground: true,
-        preferCSSPageSize: false,
         displayHeaderFooter: false,
-        landscape: false,
       });
 
-      // ==========================================================
-      // 5. GUARDAR Y ACTUALIZAR BD
-      // ==========================================================
+      // 4. Guardar y actualizar BD
       fs.writeFileSync(filePath, buffer);
       win.close();
+      fs.unlinkSync(tmpPath);
 
-      // Actualizar registro con la ruta del PDF generado
       db.prepare("UPDATE constancias SET ruta_archivo = ? WHERE id = ?").run(
         filePath,
         constanciaId,
       );
 
-      // Registrar en auditoría
       db.prepare(
         `
       INSERT INTO historial_auditoria 
@@ -470,7 +467,6 @@ module.exports = () => {
     } catch (error) {
       console.error("❌ Error generando PDF:", error);
 
-      // Limpieza: eliminar registro BD si falló la generación del archivo
       if (constanciaId) {
         try {
           db.prepare("DELETE FROM constancias WHERE id = ?").run(constanciaId);
@@ -482,10 +478,13 @@ module.exports = () => {
         }
       }
 
-      // Cerrar ventanas residuales
       const windows = BrowserWindow.getAllWindows();
       windows.forEach((w) => {
-        if (w.webContents.getURL().includes("data:text/html")) w.close();
+        if (
+          w.webContents.getURL().includes("data:text/html") ||
+          w.webContents.getURL().includes("preview_")
+        )
+          w.close();
       });
 
       return {
@@ -553,7 +552,7 @@ module.exports = () => {
           success: true,
           data: {
             asignaciones: asignaciones || [],
-            firmas: [], // Las firmas ahora vienen del panel derecho
+            firmas: [],
           },
         };
       } catch (error) {
@@ -563,6 +562,75 @@ module.exports = () => {
           error: error.message,
           data: { asignaciones: [], firmas: [] },
         };
+      }
+    },
+  );
+  // Periodos donde el docente tiene asignaciones activas
+  ipcMain.handle(
+    "obtener-periodos-con-asignacion",
+    async (event, { docenteId }) => {
+      try {
+        const db = getDB();
+        const rows = db
+          .prepare(
+            `
+      SELECT DISTINCT p.id, p.clave, p.descripcion, p.fecha_inicio
+      FROM docente_ee_asignacion dea
+      INNER JOIN periodos p ON dea.periodo_id = p.id
+      WHERE dea.docente_id = ? AND dea.estado = 'activo'
+      ORDER BY p.fecha_inicio DESC
+    `,
+          )
+          .all(docenteId);
+        return { success: true, data: rows };
+      } catch (error) {
+        console.error("❌ Error obteniendo periodos con asignación:", error);
+        return { success: false, error: error.message };
+      }
+    },
+  );
+  // ==========================================================
+  // HANDLER: Obtener asignaciones de un docente en múltiples periodos
+  // ==========================================================
+  ipcMain.handle(
+    "obtener-asignaciones-multi",
+    async (event, { docenteId, periodoIds }) => {
+      try {
+        const db = getDB();
+
+        if (!Array.isArray(periodoIds) || periodoIds.length === 0) {
+          return { success: true, data: [] };
+        }
+
+        const marks = periodoIds.map(() => "?").join(",");
+        const rows = db
+          .prepare(
+            `
+        SELECT 
+          ee.id AS ee_id, 
+          ee.nombre AS ee_nombre, 
+          ee.clave_ee, 
+          ee.nrc,
+          dea.carga_horaria, 
+          p.id AS periodo_id, 
+          p.clave AS periodo_clave,
+          p.descripcion AS periodo_desc,
+          COALESCE(ep.total_alumnos, 0) AS alumnos
+        FROM docente_ee_asignacion dea
+        INNER JOIN experiencias_educativas ee ON dea.ee_id = ee.id
+        INNER JOIN periodos p ON dea.periodo_id = p.id
+        LEFT JOIN estadisticas_ee_periodo ep 
+          ON ep.ee_id = ee.id AND ep.periodo_id = p.id
+        WHERE dea.docente_id = ? AND dea.periodo_id IN (${marks})
+        ORDER BY p.fecha_inicio, ee.clave_ee
+      `,
+          )
+          .all(docenteId, ...periodoIds);
+
+        return { success: true, data: rows };
+      } catch (error) {
+        console.error("❌ Error obteniendo asignaciones multi:", error);
+        return { success: false, error: error.message };
       }
     },
   );

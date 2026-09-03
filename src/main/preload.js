@@ -38,7 +38,8 @@ try {
       return ipcRenderer.invoke("eliminar-docente", id);
     },
 
-    actualizarEstadoDocente: (data) => ipcRenderer.invoke('actualizar-estado-docente', data),
+    actualizarEstadoDocente: (data) =>
+      ipcRenderer.invoke("actualizar-estado-docente", data),
 
     // ==========================================
     // 3. EMISIÓN DE CONSTANCIAS
@@ -47,6 +48,9 @@ try {
       console.log("[PRELOAD] Solicitando datos maestros para constancias...");
       return ipcRenderer.invoke("obtener-datos-constancia");
     },
+
+    previsualizarConstancia: (payload) =>
+      ipcRenderer.invoke("previsualizar-constancia", payload),
 
     guardarConstancia: (datos) => {
       console.log(
@@ -93,14 +97,15 @@ try {
       return ipcRenderer.invoke("guardar-ee", datos);
     },
 
-    actualizarEstadoEE: (data) => ipcRenderer.invoke('actualizar-estado-ee', data),
+    actualizarEstadoEE: (data) =>
+      ipcRenderer.invoke("actualizar-estado-ee", data),
 
     listarPeriodos: () => {
-      
       return ipcRenderer.invoke("obtener-periodos");
     },
 
-      actualizarEstadoPeriodo: (data) => ipcRenderer.invoke('actualizar-estado-periodo', data),
+    actualizarEstadoPeriodo: (data) =>
+      ipcRenderer.invoke("actualizar-estado-periodo", data),
     guardarPeriodo: (datos) => {
       console.log("[PRELOAD] Guardando periodo:", datos.clave);
       return ipcRenderer.invoke("guardar-periodo", datos);
@@ -144,7 +149,8 @@ try {
       return ipcRenderer.invoke("guardar-alumno", datos);
     },
 
-    actualizarEstadoAlumno: (data) => ipcRenderer.invoke('actualizar-estado-alumno', data),
+    actualizarEstadoAlumno: (data) =>
+      ipcRenderer.invoke("actualizar-estado-alumno", data),
 
     eliminarAlumno: (id) => {
       console.log("[PRELOAD] Eliminando alumno ID:", id);
@@ -206,6 +212,10 @@ try {
       ipcRenderer.invoke("listarAlumnosDisponibles", params),
     listarEEDisponibles: (params) =>
       ipcRenderer.invoke("listarEEDisponibles", params),
+    obtenerPeriodosConAsignacion: (d) =>
+      ipcRenderer.invoke("obtener-periodos-con-asignacion", d),
+    obtenerAsignacionesMulti: (data) =>
+      ipcRenderer.invoke("obtener-asignaciones-multi", data),
 
     // Tutoría
     asignarTutor: (data) => ipcRenderer.invoke("asignarTutor", data),
@@ -228,28 +238,49 @@ try {
       ipcRenderer.invoke("remover-entidad-de-periodo", params),
 
     // Contexto Alumno: Obtener su tutor
-    obtenerTutorDeAlumno: (params) => ipcRenderer.invoke("obtenerTutorDeAlumno", params),
-    obtenerEEDeAlumno: (params) => ipcRenderer.invoke("obtenerEEDeAlumno", params),
+    obtenerTutorDeAlumno: (params) =>
+      ipcRenderer.invoke("obtenerTutorDeAlumno", params),
+    obtenerEEDeAlumno: (params) =>
+      ipcRenderer.invoke("obtenerEEDeAlumno", params),
 
     // Contexto EE: Obtener su docente y actualizar carga
-    obtenerDocenteDeEE: (params) => ipcRenderer.invoke("obtenerDocenteDeEE", params),
-    actualizarRelacionDocenteEE: (data) => ipcRenderer.invoke("actualizarRelacionDocenteEE", data),
-    obtenerEstadisticasEE: (params) => ipcRenderer.invoke("obtenerEstadisticasEE", params),
-    actualizarEstadisticasEE: (data) => ipcRenderer.invoke("actualizarEstadisticasEE", data),
-    
+    obtenerDocenteDeEE: (params) =>
+      ipcRenderer.invoke("obtenerDocenteDeEE", params),
+    actualizarRelacionDocenteEE: (data) =>
+      ipcRenderer.invoke("actualizarRelacionDocenteEE", data),
+    obtenerEstadisticasEE: (params) =>
+      ipcRenderer.invoke("obtenerEstadisticasEE", params),
+    actualizarEstadisticasEE: (data) =>
+      ipcRenderer.invoke("actualizarEstadisticasEE", data),
+
     // Alias para consistencia en el frontend
-    listarDocentesDisponibles: (params) => ipcRenderer.invoke("listarDocentesSelect", params),
+    listarDocentesDisponibles: (params) =>
+      ipcRenderer.invoke("listarDocentesSelect", params),
+
+    // Tesis
+    obtenerListaTesis: () => ipcRenderer.invoke("obtener-lista-tesis"),
+    guardarTesis: (d) => ipcRenderer.invoke("guardar-tesis", d),
+    actualizarEstadoTesis: (d) =>
+      ipcRenderer.invoke("actualizar-estado-tesis", d),
+    obtenerAlumnosSelect: () => ipcRenderer.invoke("obtener-alumnos-select"),
+    obtenerDetalleTesis: (d) => ipcRenderer.invoke("obtener-detalle-tesis", d),
 
     // CONFIGURACIÓN
     obtenerConfig: () => ipcRenderer.invoke("obtener-config"),
     guardarConfig: (data) => ipcRenderer.invoke("guardar-config", data),
     seleccionarDirectorio: () => ipcRenderer.invoke("seleccionar-directorio"),
-    seleccionarArchivoImagen: () => ipcRenderer.invoke("seleccionar-archivo-imagen"),
+    seleccionarArchivoImagen: () =>
+      ipcRenderer.invoke("seleccionar-archivo-imagen"),
 
-    obtenerTextosPlantilla: () => ipcRenderer.invoke("obtener-textos-plantilla"),
-    guardarTextoPlantilla: (data) => ipcRenderer.invoke("guardar-texto-plantilla", data),
+    obtenerTextosPlantilla: () =>
+      ipcRenderer.invoke("obtener-textos-plantilla"),
+    guardarTextoPlantilla: (data) =>
+      ipcRenderer.invoke("guardar-texto-plantilla", data),
     obtenerRecursos: () => ipcRenderer.invoke("obtener-recursos"),
-    subirRecurso: (rutaArchivo) => ipcRenderer.invoke("subir-recurso", rutaArchivo),
+    subirRecurso: (rutaArchivo) =>
+      ipcRenderer.invoke("subir-recurso", rutaArchivo),
+    guardarLogotipo: (data) => ipcRenderer.invoke("guardar-logotipo", data),
+    obtenerLogotipos: () => ipcRenderer.invoke("obtener-logotipos"),
   });
 
   console.log(

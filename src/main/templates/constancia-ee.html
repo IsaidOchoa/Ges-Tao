@@ -1,108 +1,62 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    @page { size: A4; margin: 0; }
-    body {
-      margin: 0; padding: 2.5cm 2cm;
-      font-family: 'Times New Roman', Times, serif;
-      font-size: 11pt; color: #000; line-height: 1.5;
-    }
-    .cert-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 1rem; margin-bottom: 1.5rem; }
-    .cert-header h3 { margin: 0; font-size: 12pt; text-transform: uppercase; font-weight: bold; }
-    .cert-header h4 { margin: 0; font-size: 11pt; font-weight: normal; }
-    .cert-logo { text-align: center; margin-bottom: 1rem; }
-    .cert-logo img { max-height: 80px; max-width: 200px; }
-    .cert-folio { text-align: left; font-size: 10pt; font-weight: bold; margin-bottom: 2rem; line-height: 1.3; }
-    .cert-folio span { display: block; font-family: 'Courier New', monospace; font-size: 11pt; margin-top: 2px; }
-    .cert-greeting { margin-bottom: 1rem; font-weight: bold; }
-    .cert-title { text-align: center; text-transform: uppercase; margin: 1.5rem 0; font-size: 14pt; font-weight: bold; text-decoration: underline; letter-spacing: 1px; }
-    .cert-text { text-align: justify; text-indent: 2.5cm; margin: 1rem 0; }
-    .cert-text strong { font-weight: bold; }
-    .cert-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 9pt; }
-    .cert-table th, .cert-table td { border: 1px solid #000; padding: 6px 8px; text-align: center; vertical-align: middle; }
-    .cert-table th { background-color: #f0f0f0; font-weight: bold; text-transform: uppercase; }
-    .cert-footer { text-align: justify; text-indent: 2.5cm; margin-top: 2rem; margin-bottom: 2.5rem; }
-    .cert-closing { text-align: center; margin-bottom: 1.5rem; }
-    .cert-closing p:first-child { font-weight: bold; margin-bottom: 0.25rem; }
-    .cert-motto { font-style: italic; font-size: 10pt; margin-bottom: 3rem; }
-    .cert-signatures { display: flex; justify-content: space-between; margin-top: 3rem; gap: 2rem; flex-wrap: wrap; }
-    .signature-block { text-align: center; flex: 1; min-width: 200px; margin-bottom: 1rem; }
-    .signature-line { border-top: 1px solid #000; width: 85%; margin: 0 auto 0.5rem auto; }
-    .signature-block p { margin: 0; font-size: 9pt; line-height: 1.3; }
-    .signature-block p:first-child { font-weight: bold; margin-bottom: 0.3rem; min-height: 1.2em; }
-    .signature-title { font-size: 8pt; color: #333; }
-  </style>
-</head>
-<body>
-  <div class="cert-header">
-    <div class="cert-logo">{{LOGO}}</div>
-    <h3>UNIVERSIDAD VERACRUZANA</h3>
-    <h4>Facultad de Estadística e Informática</h4>
-  </div>
-  
-  <div class="cert-folio">No. Constancia<br><span>{{DATO:folio}}</span></div>
-  
-  <p class="cert-greeting" data-editable-key="saludo">{{TEXTO:saludo}}</p>
-  <p class="cert-text">Por medio de la presente se</p>
-  
-  <h2 class="cert-title">HACE CONSTAR</h2>
-  
-  <p class="cert-text">
-    Que <strong>{{DATO:docente_tratamiento}} {{DATO:docente_nombre}}</strong>, 
-    con número de personal <strong>{{DATO:docente_codigo}}</strong>, 
-    pertenece al cuerpo docente del Programa Educativo de Posgrado 
-    Maestría en Sistemas Interactivos Centrados en el Usuario (16156), 
-    programa adscrito a la Facultad de Estadística e Informática (11304) 
-    y ha impartido las siguientes experiencias educativas:
-  </p>
-
-  <table class="cert-table">
-    <thead>
-      <tr>
-        <th>NRC</th>
-        <th>Experiencia Educativa</th>
-        <th>H/S/M</th>
-        <th>No. Horas</th>
-        <th>No. Créditos</th>
-        <th>Periodo</th>
-        <th>No. Alumnos</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#LOOP:ees}}
-      <tr>
-        <td>{{nrc}}</td>
-        <td>{{nombre}}</td>
-        <td>{{hsm}}</td>
-        <td>{{horas}}</td>
-        <td>{{creditos}}</td>
-        <td>{{periodo}}</td>
-        <td>{{alumnos}}</td>
-      </tr>
-      {{/LOOP:ees}}
-    </tbody>
-  </table>
-
-  <p class="cert-footer" data-editable-key="mencion_final">
-    {{TEXTO:mencion_final}} en la ciudad de Xalapa, Enríquez, Veracruz a los 
-    <strong>{{DATO:fecha_dia}}</strong> días del mes de 
-    <strong>{{DATO:fecha_mes}}</strong> del año <strong>{{DATO:fecha_anio}}</strong>.
-  </p>
-
-  <div class="cert-closing">
-    <p>ATENTAMENTE</p>
-    <p class="cert-motto">"Lis de Veracruz, Arte, Ciencia y Luz"</p>
-  </div>
-
-  <div class="cert-signatures">
-    {{#LOOP:firmas}}
-    <div class="signature-block">
-      <div class="signature-line"></div>
-      <p>{{texto}}</p>
+  <head>
+    <meta charset="UTF-8" />
+    {{INCLUDE:estilos}}
+  </head>
+  <body>
+    <div class="cert-page">
+      {{INCLUDE:membrete}}
+      <div class="cert-grid">
+        <aside class="cert-sidebar">
+          <div class="cert-folio">
+            No. Constancia<br /><span>{{DATO:folio}}</span>
+          </div>
+          {{INCLUDE:sidebar}}
+        </aside>
+        <main class="cert-main">
+          <p class="cert-greeting" data-editable-key="saludo">
+            {{TEXTO:saludo}}
+          </p>
+          <p class="cert-intro">Por medio de la presente se</p>
+          <h2 class="cert-title">HACE CONSTAR</h2>
+          <p class="cert-text">
+            Que
+            <strong
+              >{{DATO:docente_articulo}} {{DATO:docente_tratamiento}}
+              {{DATO:docente_nombre}}</strong
+            >, con número de personal <strong>{{DATO:docente_codigo}}</strong>,
+            pertenece al cuerpo docente del Programa Educativo de Posgrado
+            Maestría en Sistemas Interactivos Centrados en el Usuario, y ha
+            participado impartiendo las siguientes Experiencias Educativas:
+          </p>
+          <table class="cert-table">
+            <thead>
+              <tr>
+                <th>Experiencia Educativa</th>
+                <th>H/S/M</th>
+                <th>No. Horas impartidas</th>
+                <th>No. Créditos</th>
+                <th>Alumnos que cursaron</th>
+                <th>Periodo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#LOOP:ees}}
+              <tr>
+                <td>{{nombre}}</td>
+                <td>{{hsm}}</td>
+                <td>{{horas}}</td>
+                <td>{{creditos}}</td>
+                <td>{{alumnos}}</td>
+                <td>{{periodo}}</td>
+              </tr>
+              {{/LOOP:ees}}
+            </tbody>
+          </table>
+          {{INCLUDE:pie}}
+        </main>
+      </div>
     </div>
-    {{/LOOP:firmas}}
-  </div>
-</body>
+  </body>
 </html>

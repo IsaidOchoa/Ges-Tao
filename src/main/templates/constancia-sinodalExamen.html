@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8">{{INCLUDE:estilos}}</head>
+<body>
+<div class="cert-page">
+  {{INCLUDE:membrete}}
+  <div class="cert-grid">
+    <aside class="cert-sidebar">
+      <div class="cert-folio">No. Constancia<br><span>{{DATO:folio}}</span></div>
+      {{INCLUDE:sidebar}}
+    </aside>
+    <main class="cert-main">
+      <p class="cert-greeting" data-editable-key="saludo">{{TEXTO:saludo}}</p>
+      <p class="cert-intro">Por medio de la presente se</p>
+      <h2 class="cert-title">HACE CONSTAR</h2>
+
+      <p class="cert-text">
+        Que <strong>{{DATO:docente_articulo}} {{DATO:docente_tratamiento}} {{DATO:docente_nombre}}</strong>,
+        con número de personal <strong>{{DATO:docente_codigo}}</strong>, participó como Jurado/Sinodal
+        analizando el trabajo escrito, haciendo las observaciones pertinentes y valorando la disertación
+        oral para la obtención del grado del siguiente alumno de la Maestría en Sistemas Interactivos
+        Centrados en el Usuario:
+      </p>
+
+      <table class="cert-table">
+        <thead>
+          <tr><th>Alumno</th><th>Fecha de Examen</th><th>Título de Trabajo</th><th>Resultado</th><th>Modalidad</th><th>Sinodal/Jurado</th></tr>
+        </thead>
+        <tbody>
+          {{#LOOP:jurados}}
+          <tr><td>{{alumno}}</td><td>{{fecha_examen}}</td><td>{{titulo}}</td><td>{{resultado}}</td><td>{{modalidad}}</td><td>{{rol}}</td></tr>
+          {{/LOOP:jurados}}
+        </tbody>
+      </table>
+
+      {{INCLUDE:pie}}
+    </main>
+  </div>
+</div>
+</body>
+</html>

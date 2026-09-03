@@ -1,15 +1,17 @@
 <div class="fade-in">
-  
   <!-- =========================================
        PESTAÑAS DE NAVEGACIÓN
        ========================================= -->
   <div class="tabs-wrapper" id="tabs-wrapper">
-    
     <!-- Flecha Izquierda -->
-    <button class="tab-nav-arrow left" id="tab-arrow-left" title="Ver pestañas anteriores">
+    <button
+      class="tab-nav-arrow left"
+      id="tab-arrow-left"
+      title="Ver pestañas anteriores"
+    >
       <i class="fa-solid fa-chevron-left"></i>
     </button>
-    
+
     <!-- Contenedor de Pestañas -->
     <div class="tabs-container" id="tabs-container">
       <button class="tab-btn" id="btn-tab-docentes" data-tab="tab-docentes">
@@ -20,32 +22,46 @@
       </button>
       <button class="tab-btn" id="btn-tab-ee" data-tab="tab-ee">
         <i class="fa-solid fa-book-open"></i> Experiencias (EE)
-      </button> 
+      </button>
+      <button class="tab-btn" id="btn-tab-tesis" data-tab="tab-tesis">
+        <i class="fa-solid fa-file-signature"></i> Tesis
+      </button>
       <button class="tab-btn" id="btn-tab-periodos" data-tab="tab-periodos">
         <i class="fa-regular fa-calendar-days"></i> Periodos
       </button>
       <button class="tab-btn" id="btn-tab-semestres" data-tab="tab-semestres">
         <i class="fa-solid fa-layer-group"></i> Semestres
       </button>
-      <button class="tab-btn" id="btn-tab-generaciones" data-tab="tab-generaciones">
+      <button
+        class="tab-btn"
+        id="btn-tab-generaciones"
+        data-tab="tab-generaciones"
+      >
         <i class="fa-solid fa-users"></i> Generaciones
       </button>
       <button class="tab-btn" id="btn-tab-planes" data-tab="tab-planes">
         <i class="fa-solid fa-book-open"></i> Planes de Estudio
       </button>
-      <button class="tab-btn" id="btn-tab-tipos-constancia" data-tab="tab-tipos-constancia">
+      <button
+        class="tab-btn"
+        id="btn-tab-tipos-constancia"
+        data-tab="tab-tipos-constancia"
+      >
         <i class="fa-solid fa-certificate"></i> Tipos de Constancia
       </button>
       <button class="tab-btn" id="btn-tab-programas" data-tab="tab-programas">
         <i class="fa-solid fa-trophy"></i> Programas de Estímulo
       </button>
     </div>
-    
+
     <!-- Flecha Derecha -->
-    <button class="tab-nav-arrow right" id="tab-arrow-right" title="Ver más pestañas">
+    <button
+      class="tab-nav-arrow right"
+      id="tab-arrow-right"
+      title="Ver más pestañas"
+    >
       <i class="fa-solid fa-chevron-right"></i>
     </button>
-    
   </div>
 
   <!-- =========================================
@@ -56,21 +72,32 @@
       <div class="card-header-action">
         <div class="section-title-group">
           <h3 class="section-title">Directorio de Docentes</h3>
-          <p class="section-desc">Gestione la información del personal académico.</p>
+          <p class="section-desc">
+            Gestione la información del personal académico.
+          </p>
         </div>
         <button class="btn btn-primary" id="btn-nuevo-docente">
           <i class="fa-solid fa-plus"></i> Nuevo Docente
         </button>
       </div>
-      
+
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-docentes" class="buscador-catalogos" placeholder="Buscar docente por nombre, código o correo...">
-        <button class="btn-clear hidden" id="btn-clear-docentes" title="Limpiar búsqueda">
+        <input
+          type="text"
+          id="buscador-docentes"
+          class="buscador-catalogos"
+          placeholder="Buscar docente por nombre, código o correo..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-docentes"
+          title="Limpiar búsqueda"
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      
+
       <div class="table-responsive catalog-table-wrapper">
         <table class="data-table">
           <thead>
@@ -86,7 +113,7 @@
           </tbody>
         </table>
       </div>
-      
+
       <!-- Estado vacío (fallback) -->
       <div id="empty-docentes" class="empty-state hidden">
         <i class="fa-regular fa-folder-open"></i>
@@ -106,21 +133,32 @@
       <div class="card-header-action">
         <div class="section-title-group">
           <h3 class="section-title">Registro de Alumnos</h3>
-          <p class="section-desc">Administre matrículas, tutores y asignaciones académicas.</p>
+          <p class="section-desc">
+            Administre matrículas, tutores y asignaciones académicas.
+          </p>
         </div>
         <button class="btn btn-primary" id="btn-nuevo-alumno">
           <i class="fa-solid fa-plus"></i> Nuevo Alumno
         </button>
       </div>
-      
+
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-alumnos" class="buscador-catalogos" placeholder="Buscar por matrícula o nombre...">
-        <button class="btn-clear hidden" id="btn-clear-alumnos" title="Limpiar búsqueda">
+        <input
+          type="text"
+          id="buscador-alumnos"
+          class="buscador-catalogos"
+          placeholder="Buscar por matrícula o nombre..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-alumnos"
+          title="Limpiar búsqueda"
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      
+
       <div class="table-responsive catalog-table-wrapper">
         <table class="data-table">
           <thead>
@@ -137,7 +175,7 @@
           </tbody>
         </table>
       </div>
-      
+
       <!-- Estado vacío (fallback) -->
       <div id="empty-alumnos" class="empty-state hidden">
         <i class="fa-regular fa-folder-open"></i>
@@ -166,12 +204,21 @@
 
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-ee" class="buscador-catalogos" placeholder="Buscar EE por nombre o clave...">
-        <button class="btn-clear hidden" id="btn-clear-ee" title="Limpiar búsqueda">
+        <input
+          type="text"
+          id="buscador-ee"
+          class="buscador-catalogos"
+          placeholder="Buscar EE por nombre o clave..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-ee"
+          title="Limpiar búsqueda"
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      
+
       <div class="table-responsive catalog-table-wrapper">
         <table class="data-table">
           <thead>
@@ -188,7 +235,7 @@
           </tbody>
         </table>
       </div>
-      
+
       <!-- Estado vacío (fallback) -->
       <div id="empty-ee" class="empty-state hidden">
         <i class="fa-regular fa-folder-open"></i>
@@ -206,7 +253,10 @@
           <h3 id="panel-ee-titulo">Detalles de la EE</h3>
           <span id="panel-ee-clave" class="badge badge-secondary">CLAVE</span>
         </div>
-        <button class="btn btn-sm btn-secondary" onclick="catalogoModuleInstance.cerrarPanelEE()">
+        <button
+          class="btn btn-sm btn-secondary"
+          onclick="catalogoModuleInstance.cerrarPanelEE()"
+        >
           <i class="fa-solid fa-times"></i> Cerrar
         </button>
       </div>
@@ -224,27 +274,90 @@
       <!-- Contenido Pestaña 1: Contenidos -->
       <div id="tab-contenidos" class="panel-tab-content active">
         <div class="panel-toolbar">
-          <p class="text-muted small">Gestione los temas curriculares de esta materia.</p>
-          <button class="btn btn-primary btn-sm" onclick="alert('Función: Agregar Tema (Próximamente)')">
+          <p class="text-muted small">
+            Gestione los temas curriculares de esta materia.
+          </p>
+          <button
+            class="btn btn-primary btn-sm"
+            onclick="alert('Función: Agregar Tema (Próximamente)')"
+          >
             <i class="fa-solid fa-plus"></i> Agregar Tema
           </button>
         </div>
         <div class="panel-list-container" id="lista-contenidos-ee">
-          <div class="empty-state">Seleccione una EE para ver sus contenidos.</div>
+          <div class="empty-state">
+            Seleccione una EE para ver sus contenidos.
+          </div>
         </div>
       </div>
 
       <!-- Contenido Pestaña 2: Docentes -->
       <div id="tab-docentes-ee" class="panel-tab-content">
         <div class="panel-toolbar">
-          <p class="text-muted small">Asigne docentes a esta materia por periodo.</p>
-          <button class="btn btn-primary btn-sm" onclick="alert('Función: Asignar Docente (Próximamente)')">
+          <p class="text-muted small">
+            Asigne docentes a esta materia por periodo.
+          </p>
+          <button
+            class="btn btn-primary btn-sm"
+            onclick="alert('Función: Asignar Docente (Próximamente)')"
+          >
             <i class="fa-solid fa-user-plus"></i> Asignar Docente
           </button>
         </div>
         <div class="panel-list-container" id="lista-docentes-ee">
-          <div class="empty-state">Seleccione una EE para ver los docentes asignados.</div>
+          <div class="empty-state">
+            Seleccione una EE para ver los docentes asignados.
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+     SECCIÓN: TESIS (ACTAS DE GRADO)
+     ========================================= -->
+  <div id="tab-tesis" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <div class="section-title-group">
+          <h3 class="section-title">Actas de Examen de Grado</h3>
+          <p class="section-desc">Registre tesis, jurados y direcciones.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-nueva-tesis">
+          <i class="fa-solid fa-plus"></i> Nueva Acta
+        </button>
+      </div>
+
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input
+          type="text"
+          id="buscador-tesis"
+          class="buscador-catalogos"
+          placeholder="Buscar por folio, alumno o título..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-tesis"
+          title="Limpiar búsqueda"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Sin thead: DataTable lo renderiza según columnas -->
+      <div class="table-responsive catalog-table-wrapper">
+        <table class="data-table table-tesis">
+          <tbody id="tabla-tesis-body"></tbody>
+        </table>
+      </div>
+
+      <div id="empty-tesis" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay actas registradas</p>
+        <button class="btn btn-primary" id="btn-empty-tesis">
+          <i class="fa-solid fa-plus"></i> Crear primera acta
+        </button>
       </div>
     </div>
   </div>
@@ -259,21 +372,32 @@
           <h3 class="section-title">
             <i class="fa-solid fa-certificate"></i> Tipos de Constancia
           </h3>
-          <p class="section-desc">Defina los modelos de documentos disponibles para emisión.</p>
+          <p class="section-desc">
+            Defina los modelos de documentos disponibles para emisión.
+          </p>
         </div>
         <button class="btn btn-primary" id="btn-nuevo-tipo-constancia">
           <i class="fa-solid fa-plus"></i> Nuevo Tipo
         </button>
       </div>
-      
+
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-tipos-constancia" class="buscador-catalogos" placeholder="Buscar por nombre o clave...">
-        <button class="btn-clear hidden" id="btn-clear-tipos" title="Limpiar búsqueda">
+        <input
+          type="text"
+          id="buscador-tipos-constancia"
+          class="buscador-catalogos"
+          placeholder="Buscar por nombre o clave..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-tipos"
+          title="Limpiar búsqueda"
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      
+
       <div class="table-responsive catalog-table-wrapper">
         <table class="data-table">
           <thead>
@@ -290,7 +414,7 @@
           </tbody>
         </table>
       </div>
-      
+
       <!-- Estado vacío (fallback) -->
       <div id="empty-tipos" class="empty-state hidden">
         <i class="fa-regular fa-folder-open"></i>
@@ -316,15 +440,24 @@
           <i class="fa-solid fa-plus"></i> Nuevo Periodo
         </button>
       </div>
-      
+
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-periodos" class="buscador-catalogos" placeholder="Buscar periodo por clave o descripción...">
-        <button class="btn-clear hidden" id="btn-clear-periodos" title="Limpiar búsqueda">
+        <input
+          type="text"
+          id="buscador-periodos"
+          class="buscador-catalogos"
+          placeholder="Buscar periodo por clave o descripción..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-periodos"
+          title="Limpiar búsqueda"
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      
+
       <div class="table-responsive catalog-table-wrapper">
         <table class="data-table">
           <thead>
@@ -341,7 +474,7 @@
           </tbody>
         </table>
       </div>
-      
+
       <!-- Estado vacío (fallback) -->
       <div id="empty-periodos" class="empty-state hidden">
         <i class="fa-regular fa-folder-open"></i>
@@ -361,21 +494,32 @@
       <div class="card-header-action">
         <div class="section-title-group">
           <h3 class="section-title">Programas Institucionales</h3>
-          <p class="section-desc">Registre los proyectos y programas especiales.</p>
+          <p class="section-desc">
+            Registre los proyectos y programas especiales.
+          </p>
         </div>
         <button class="btn btn-primary" id="btn-nuevo-programa">
           <i class="fa-solid fa-plus"></i> Nuevo Programa
         </button>
       </div>
-      
+
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-programas" class="buscador-catalogos" placeholder="Buscar programa por nombre o responsable...">
-        <button class="btn-clear hidden" id="btn-clear-programas" title="Limpiar búsqueda">
+        <input
+          type="text"
+          id="buscador-programas"
+          class="buscador-catalogos"
+          placeholder="Buscar programa por nombre o responsable..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-programas"
+          title="Limpiar búsqueda"
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      
+
       <div class="table-responsive catalog-table-wrapper">
         <table class="data-table">
           <thead>
@@ -391,7 +535,7 @@
           </tbody>
         </table>
       </div>
-      
+
       <!-- Estado vacío (fallback) -->
       <div id="empty-programas" class="empty-state hidden">
         <i class="fa-regular fa-folder-open"></i>
@@ -406,96 +550,118 @@
   <!-- =========================================
      SECCIÓN: PLANES DE ESTUDIO
      ========================================= -->
-<div id="tab-planes" class="tab-content">
-  <div class="card">
-    <div class="card-header-action">
-      <div class="section-title-group">
-        <h3 class="section-title">Planes de Estudio</h3>
-        <p class="section-desc">Gestione los marcos curriculares del programa académico.</p>
+  <div id="tab-planes" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <div class="section-title-group">
+          <h3 class="section-title">Planes de Estudio</h3>
+          <p class="section-desc">
+            Gestione los marcos curriculares del programa académico.
+          </p>
+        </div>
+        <button class="btn btn-primary" id="btn-nuevo-plan">
+          <i class="fa-solid fa-plus"></i> Nuevo Plan
+        </button>
       </div>
-      <button class="btn btn-primary" id="btn-nuevo-plan">
-        <i class="fa-solid fa-plus"></i> Nuevo Plan
-      </button>
-    </div>
-    
-    <div class="search-wrapper">
-      <i class="fa-solid fa-search search-icon"></i>
-      <input type="text" id="buscador-planes" class="buscador-catalogos" placeholder="Buscar plan por clave, nombre o nivel...">
-      <button class="btn-clear hidden" id="btn-clear-planes" title="Limpiar búsqueda">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-    
-    <div class="table-responsive catalog-table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>CLAVE</th>
-            <th>NOMBRE</th>
-            <th>NIVEL</th>
-            <th>ESTADO</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-planes-body"></tbody>
-      </table>
-    </div>
-    
-    <div id="empty-planes" class="empty-state hidden">
-      <i class="fa-regular fa-folder-open"></i>
-      <p>No hay planes de estudio registrados</p>
-      <button class="btn btn-primary" id="btn-empty-plan">
-        <i class="fa-solid fa-plus"></i> Crear primer plan
-      </button>
+
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input
+          type="text"
+          id="buscador-planes"
+          class="buscador-catalogos"
+          placeholder="Buscar plan por clave, nombre o nivel..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-planes"
+          title="Limpiar búsqueda"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="table-responsive catalog-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>CLAVE</th>
+              <th>NOMBRE</th>
+              <th>NIVEL</th>
+              <th>ESTADO</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-planes-body"></tbody>
+        </table>
+      </div>
+
+      <div id="empty-planes" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay planes de estudio registrados</p>
+        <button class="btn btn-primary" id="btn-empty-plan">
+          <i class="fa-solid fa-plus"></i> Crear primer plan
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- =========================================
+  <!-- =========================================
      SECCIÓN: SEMESTRES
      ========================================= -->
-<div id="tab-semestres" class="tab-content">
-  <div class="card">
-    <div class="card-header-action">
-      <div class="section-title-group">
-        <h3 class="section-title">Semestres Académicos</h3>
-        <p class="section-desc">Defina la progresión académica del plan de estudios.</p>
+  <div id="tab-semestres" class="tab-content">
+    <div class="card">
+      <div class="card-header-action">
+        <div class="section-title-group">
+          <h3 class="section-title">Semestres Académicos</h3>
+          <p class="section-desc">
+            Defina la progresión académica del plan de estudios.
+          </p>
+        </div>
+        <button class="btn btn-primary" id="btn-nuevo-semestre">
+          <i class="fa-solid fa-plus"></i> Nuevo Semestre
+        </button>
       </div>
-      <button class="btn btn-primary" id="btn-nuevo-semestre">
-        <i class="fa-solid fa-plus"></i> Nuevo Semestre
-      </button>
-    </div>
-    
-    <div class="search-wrapper">
-      <i class="fa-solid fa-search search-icon"></i>
-      <input type="text" id="buscador-semestres" class="buscador-catalogos" placeholder="Buscar semestre por nombre, clave u orden...">
-      <button class="btn-clear hidden" id="btn-clear-semestres" title="Limpiar búsqueda">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-    
-    <div class="table-responsive catalog-table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ORDEN</th>
-            <th>NOMBRE</th>
-            <th>CLAVE</th>
-            <th>ESTADO</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-semestres-body"></tbody>
-      </table>
-    </div>
-    
-    <div id="empty-semestres" class="empty-state hidden">
-      <i class="fa-regular fa-folder-open"></i>
-      <p>No hay semestres registrados</p>
-      <button class="btn btn-primary" id="btn-empty-semestre">
-        <i class="fa-solid fa-plus"></i> Crear primer semestre
-      </button>
+
+      <div class="search-wrapper">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input
+          type="text"
+          id="buscador-semestres"
+          class="buscador-catalogos"
+          placeholder="Buscar semestre por nombre, clave u orden..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-semestres"
+          title="Limpiar búsqueda"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="table-responsive catalog-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ORDEN</th>
+              <th>NOMBRE</th>
+              <th>CLAVE</th>
+              <th>ESTADO</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-semestres-body"></tbody>
+        </table>
+      </div>
+
+      <div id="empty-semestres" class="empty-state hidden">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>No hay semestres registrados</p>
+        <button class="btn btn-primary" id="btn-empty-semestre">
+          <i class="fa-solid fa-plus"></i> Crear primer semestre
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
   <!-- =========================================
       SECCIÓN: GENERACIONES
@@ -505,21 +671,32 @@
       <div class="card-header-action">
         <div class="section-title-group">
           <h3 class="section-title">Generaciones de Alumnos</h3>
-          <p class="section-desc">Gestione las cohortes de alumnos por periodo de ingreso.</p>
+          <p class="section-desc">
+            Gestione las cohortes de alumnos por periodo de ingreso.
+          </p>
         </div>
         <button class="btn btn-primary" id="btn-nueva-generacion">
           <i class="fa-solid fa-plus"></i> Nueva Generación
         </button>
       </div>
-      
+
       <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="buscador-generaciones" class="buscador-catalogos" placeholder="Buscar generación por clave, nombre, plan o periodo...">
-        <button class="btn-clear hidden" id="btn-clear-generaciones" title="Limpiar búsqueda">
+        <input
+          type="text"
+          id="buscador-generaciones"
+          class="buscador-catalogos"
+          placeholder="Buscar generación por clave, nombre, plan o periodo..."
+        />
+        <button
+          class="btn-clear hidden"
+          id="btn-clear-generaciones"
+          title="Limpiar búsqueda"
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      
+
       <div class="table-responsive catalog-table-wrapper">
         <table class="data-table">
           <thead>
@@ -534,7 +711,7 @@
           <tbody id="tabla-generaciones-body"></tbody>
         </table>
       </div>
-      
+
       <div id="empty-generaciones" class="empty-state hidden">
         <i class="fa-regular fa-folder-open"></i>
         <p>No hay generaciones registradas</p>

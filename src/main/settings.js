@@ -4,7 +4,10 @@ const fs = require('fs');
 const path = require('path');
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'settings.json');
-const DEFAULTS = { rutaConstancias: app.getPath('documents') };
+const DEFAULTS = { rutaConstancias: app.getPath('documents'),
+  logoUvRuta: path.join(app.getAppPath(), 'src', 'main', 'templates', 'assets', 'logo-uv.png'),
+  logoMsicuRuta: path.join(app.getAppPath(), 'src', 'main', 'templates', 'assets', 'logo-msicu.png')
+ };
 
 module.exports = {
   get() {

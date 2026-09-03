@@ -574,6 +574,50 @@ function initSchema(db) {
   )`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_contadores_id_global ON contadores_folio(id_global)`);
 
+  //  TESIS (actas de examen de grado)
+  db.exec(`CREATE TABLE IF NOT EXISTS tesis (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_global TEXT NOT NULL UNIQUE,
+    folio INTEGER NOT NULL UNIQUE,
+    fecha DATE,
+    hora TEXT,
+    alumno_id INTEGER NOT NULL,
+    alumno_nombre TEXT NOT NULL,
+    alumno_matricula TEXT,
+    modalidad TEXT NOT NULL DEFAULT 'tesis',
+    titulo TEXT,
+    resultado TEXT,
+    generacion TEXT,
+    fecha_asignacion DATE,
+    estado TEXT NOT NULL DEFAULT 'aprobada',
+    version INTEGER NOT NULL DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    FOREIGN KEY (alumno_id) REFERENCES alumnos(id)
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_id_global ON tesis(id_global)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_alumno ON tesis(alumno_id)`);
+
+  //  PARTICIPANTES DE TESIS (por rol)
+  db.exec(`CREATE TABLE IF NOT EXISTS tesis_participante (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_global TEXT NOT NULL UNIQUE,
+    tesis_id INTEGER NOT NULL,
+    docente_id INTEGER,
+    nombre TEXT NOT NULL,
+    rol TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    FOREIGN KEY (tesis_id) REFERENCES tesis(id),
+    FOREIGN KEY (docente_id) REFERENCES docentes(id),
+    UNIQUE(tesis_id, rol, nombre)
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_id_global ON tesis_participante(id_global)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_tesis ON tesis_participante(tesis_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_docente ON tesis_participante(docente_id)`);
   // ============================================================
   // CAPA DE SINCRONIZACIÓN
   // ============================================================
@@ -728,7 +772,11 @@ function instalarTriggersCaptura(db) {
     { nombre: "estadisticas_ee_periodo", softDelete: false,
       columnas: ["ee_id","periodo_id","total_alumnos"] },
     { nombre: "contadores_folio", softDelete: false,
-      columnas: ["space_gid","ano","siguiente"] }
+      columnas: ["space_gid","ano","siguiente"] },
+    { nombre: "tesis", softDelete: true,
+      columnas: ["folio","fecha","hora","alumno_id","alumno_nombre","alumno_matricula","modalidad","titulo","resultado","generacion","fecha_asignacion","estado"] },
+    { nombre: "tesis_participante", softDelete: true,
+      columnas: ["tesis_id","docente_id","nombre","rol"] }
   ];
 
   const installationId = obtenerOCrearInstallation(db);
@@ -886,6 +934,9 @@ function seedData(db) {
     const s = db.prepare("INSERT INTO textos_plantilla(id_global,clave,texto)VALUES(?,?,?)");
     s.run(generarIdGlobal(installationId), "saludo", "A quien corresponda,");
     s.run(generarIdGlobal(installationId), "mencion_final", "Para los fines que al interesado convenga se extiende la presente");
+    s.run(generarIdGlobal(installationId), "dependencia", "Facultad de Estadística e Informática");
+    s.run(generarIdGlobal(installationId), "direccion", "Av. Xalapa esq. Manuel Ávila Camacho S/N, Col. Obrero Campesina, C.P. 91020, Xalapa-Enríquez, Veracruz, México");
+    s.run(generarIdGlobal(installationId), "contacto", "http://www.uv.mx/msicu · msicu@uv.mx");
   }
 
   // 10. FORMATOS CONSTANCIA (configuración; el HTML vive en archivos)
