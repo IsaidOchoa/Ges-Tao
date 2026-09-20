@@ -22,7 +22,7 @@ export class DataTableRow {
 
   isActive() {
     const estado = (this.data.estado || this.data.estatus || "").toLowerCase();
-    return ["activo", "activa", "vigente", "abierto"].includes(estado);
+    return ["activo", "activa", "vigente", "abierto","aprobada"].includes(estado);
   }
 
   render() {

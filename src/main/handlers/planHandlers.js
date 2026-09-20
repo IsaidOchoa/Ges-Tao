@@ -1,16 +1,33 @@
 // src/main/handlers/planHandlers.js
 const { ipcMain } = require('electron');
-const { getDB } = require('../database');
+const { getDB, generarIdGlobal } = require('../database');  // ← agregar generarIdGlobal
+
+// Unifica vocabulario de estados para que los selects ('activo') siempre los vean
+function normalizarEstadoPlan(estado) {
+  if (['vigente', 'activo', 'activa'].includes(estado)) return 'activo';
+  if (['inactivo', 'inactiva', 'archivado'].includes(estado)) return 'inactivo';
+  return 'activo';
+}
+function generarClavePlan(db) {
+  const row = db.prepare(`
+    SELECT clave FROM planes_estudio
+    WHERE clave LIKE 'PLAN-%'
+    ORDER BY CAST(SUBSTR(clave, 6) AS INTEGER) DESC
+    LIMIT 1
+  `).get();
+  const n = row ? parseInt(row.clave.slice(5), 10) : NaN;
+  return `PLAN-${String((isNaN(n) ? 0 : n) + 1).padStart(4, '0')}`;
+}
 
 module.exports = () => {
-  
-  // Obtener todos los planes (para tablas)
+
   ipcMain.handle('obtener-planes', async () => {
     try {
       const db = getDB();
       const rows = db.prepare(`
-        SELECT id, clave, nombre, nivel, estado, fecha_creacion 
-        FROM planes_estudio 
+        SELECT id, clave, nombre, nivel, estado, created_at
+        FROM planes_estudio
+        WHERE deleted_at IS NULL
         ORDER BY clave ASC
       `).all();
       return { success: true, data: rows };
@@ -20,14 +37,13 @@ module.exports = () => {
     }
   });
 
-  // Obtener planes disponibles para selects (solo activos)
   ipcMain.handle('obtener-planes-disponibles', async () => {
     try {
       const db = getDB();
       const rows = db.prepare(`
-        SELECT id, clave, nombre, nivel 
-        FROM planes_estudio 
-        WHERE estado = 'activo' 
+        SELECT id, clave, nombre, nivel
+        FROM planes_estudio
+        WHERE estado = 'activo' AND deleted_at IS NULL
         ORDER BY clave ASC
       `).all();
       return { success: true, data: rows };
@@ -36,38 +52,35 @@ module.exports = () => {
     }
   });
 
-  // Guardar plan (insertar o actualizar)
   ipcMain.handle('guardar-plan', async (event, datos) => {
-    console.log('[IPC] Guardando plan:', datos.clave);
     try {
       const db = getDB();
-      let stmt;
-      
+      const estado = normalizarEstadoPlan(datos.estado);
+      const clave = datos.clave?.trim().toUpperCase() || generarClavePlan(db);
+
       if (datos.id) {
-        // Actualizar
-        stmt = db.prepare(`
-          UPDATE planes_estudio SET 
-            clave = ?, nombre = ?, nivel = ?, estado = ?
+        db.prepare(`
+          UPDATE planes_estudio
+          SET clave = ?, nombre = ?, nivel = ?, estado = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `);
-        stmt.run(
-          datos.clave?.trim().toUpperCase(),
+        `).run(
+          clave,
           datos.nombre?.trim(),
           datos.nivel,
-          datos.estado || 'activo',
+          estado,
           datos.id
         );
       } else {
-        // Insertar
-        stmt = db.prepare(`
-          INSERT INTO planes_estudio (clave, nombre, nivel, estado) 
-          VALUES (?, ?, ?, ?)
-        `);
-        stmt.run(
-          datos.clave?.trim().toUpperCase(),
+        const installation = db.prepare("SELECT installation_id FROM installation WHERE id = 1").get();
+        db.prepare(`
+          INSERT INTO planes_estudio (id_global, clave, nombre, nivel, estado)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(
+          generarIdGlobal(installation.installation_id),
+          clave,
           datos.nombre?.trim(),
           datos.nivel,
-          datos.estado || 'activo'
+          estado
         );
       }
       return { success: true, message: 'Plan guardado correctamente' };
@@ -80,15 +93,12 @@ module.exports = () => {
     }
   });
 
-  // Cambiar estado (soft-delete)
   ipcMain.handle('cambiar-estado-plan', async (event, id, nuevoEstado) => {
     try {
       const db = getDB();
-      const stmt = db.prepare(`UPDATE planes_estudio SET estado = ? WHERE id = ?`);
-      const result = stmt.run(nuevoEstado, id);
-      if (result.changes === 0) {
-        return { success: false, error: 'Plan no encontrado.' };
-      }
+      const result = db.prepare(`UPDATE planes_estudio SET estado = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+        .run(normalizarEstadoPlan(nuevoEstado), id);
+      if (result.changes === 0) return { success: false, error: 'Plan no encontrado.' };
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };

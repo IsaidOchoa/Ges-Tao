@@ -8,8 +8,8 @@ let dbInstance = null;
 // ============================================================
 // VERSIONADO (punto 12: identificadores que no deben confundirse)
 // ============================================================
-const SCHEMA_VERSION = 1;          // versión de la estructura de la BD
-const SYNC_PROTOCOL_VERSION = 1;   // versión del protocolo de sincronización
+const SCHEMA_VERSION = 1; // versión de la estructura de la BD
+const SYNC_PROTOCOL_VERSION = 1; // versión del protocolo de sincronización
 
 // ============================================================
 // UTILIDADES
@@ -39,10 +39,17 @@ function obtenerOCrearInstallation(db) {
   if (row) return row.installation_id;
 
   const newId = crypto.randomUUID();
-  db.prepare(`INSERT INTO installation
+  db.prepare(
+    `INSERT INTO installation
     (id, installation_id, nombre, app_version, schema_version, sync_protocol_version)
-    VALUES (1, ?, ?, ?, ?, ?)`)
-    .run(newId, "Instalación Ges-TAO", app.getVersion(), SCHEMA_VERSION, SYNC_PROTOCOL_VERSION);
+    VALUES (1, ?, ?, ?, ?, ?)`,
+  ).run(
+    newId,
+    "Instalación Ges-TAO",
+    app.getVersion(),
+    SCHEMA_VERSION,
+    SYNC_PROTOCOL_VERSION,
+  );
 
   console.log(`[DB] Installation creada: ${newId}`);
   return newId;
@@ -52,10 +59,11 @@ function obtenerOCrearInstallation(db) {
  * Actualiza versiones sin tocar installation_id (identidad permanente).
  */
 function actualizarVersionesInstallation(db) {
-  db.prepare(`UPDATE installation
+  db.prepare(
+    `UPDATE installation
     SET app_version = ?, schema_version = ?, sync_protocol_version = ?
-    WHERE id = 1`)
-    .run(app.getVersion(), SCHEMA_VERSION, SYNC_PROTOCOL_VERSION);
+    WHERE id = 1`,
+  ).run(app.getVersion(), SCHEMA_VERSION, SYNC_PROTOCOL_VERSION);
 }
 
 // ============================================================
@@ -121,7 +129,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_docentes_id_global ON docentes(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_docentes_id_global ON docentes(id_global)`,
+  );
   db.exec(`CREATE INDEX IF NOT EXISTS idx_docentes_codigo ON docentes(codigo)`);
 
   // 3. PERIODOS (sincronizable + soft delete)
@@ -140,7 +150,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_periodos_id_global ON periodos(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_periodos_id_global ON periodos(id_global)`,
+  );
 
   // 4. SEMESTRES (sincronizable + soft delete)
   db.exec(`CREATE TABLE IF NOT EXISTS semestres (
@@ -155,7 +167,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_semestres_id_global ON semestres(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_semestres_id_global ON semestres(id_global)`,
+  );
 
   // 5. PLANES DE ESTUDIO (sincronizable + soft delete)
   db.exec(`CREATE TABLE IF NOT EXISTS planes_estudio (
@@ -170,7 +184,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_planes_id_global ON planes_estudio(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_planes_id_global ON planes_estudio(id_global)`,
+  );
 
   // 6. EXPERIENCIAS EDUCATIVAS (sincronizable + soft delete)
   db.exec(`CREATE TABLE IF NOT EXISTS experiencias_educativas (
@@ -195,7 +211,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_ee_id_global ON experiencias_educativas(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_ee_id_global ON experiencias_educativas(id_global)`,
+  );
 
   // 7. MALLA CURRICULAR (sincronizable como relación)
   db.exec(`CREATE TABLE IF NOT EXISTS malla_curricular (
@@ -214,7 +232,9 @@ function initSchema(db) {
     FOREIGN KEY (semestre_id) REFERENCES semestres(id) ON DELETE RESTRICT,
     UNIQUE(ee_id, plan_id)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_malla_id_global ON malla_curricular(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_malla_id_global ON malla_curricular(id_global)`,
+  );
 
   // 8. PROGRAMAS INSTITUCIONALES (sincronizable + soft delete)
   db.exec(`CREATE TABLE IF NOT EXISTS programas_institucionales (
@@ -229,7 +249,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_programas_id_global ON programas_institucionales(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_programas_id_global ON programas_institucionales(id_global)`,
+  );
 
   // 9. TIPOS CONSTANCIA (sincronizable + soft delete)
   db.exec(`CREATE TABLE IF NOT EXISTS tipos_constancia (
@@ -246,7 +268,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_tipos_id_global ON tipos_constancia(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_tipos_id_global ON tipos_constancia(id_global)`,
+  );
 
   // 10. FORMATOS CONSTANCIA (configuración; el HTML vive en archivos)
   db.exec(`CREATE TABLE IF NOT EXISTS formatos_constancia (
@@ -267,7 +291,9 @@ function initSchema(db) {
     FOREIGN KEY (tipo_constancia_id) REFERENCES tipos_constancia(id) ON DELETE CASCADE,
     UNIQUE(tipo_constancia_id, version_formato)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_formatos_id_global ON formatos_constancia(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_formatos_id_global ON formatos_constancia(id_global)`,
+  );
 
   // 11. CONSTANCIAS (sincronizable + soft delete)
   db.exec(`CREATE TABLE IF NOT EXISTS constancias (
@@ -296,8 +322,12 @@ function initSchema(db) {
     FOREIGN KEY (tipo_constancia_id) REFERENCES tipos_constancia(id) ON DELETE RESTRICT,
     UNIQUE(folio, space_gid)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_constancias_id_global ON constancias(id_global)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_constancias_folio ON constancias(folio)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_constancias_id_global ON constancias(id_global)`,
+  );
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_constancias_folio ON constancias(folio)`,
+  );
 
   // 12. FIRMANTES (catálogo reutilizable, texto plano, sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS firmantes (
@@ -309,7 +339,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_firmantes_id_global ON firmantes(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_firmantes_id_global ON firmantes(id_global)`,
+  );
 
   // 13. RECURSOS COMPARTIBLES (identidad por id_global/hash; ruta_local solo ubicación)
   db.exec(`CREATE TABLE IF NOT EXISTS recursos_compartibles (
@@ -326,8 +358,12 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_recursos_id_global ON recursos_compartibles(id_global)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_recursos_hash ON recursos_compartibles(hash_sha256)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_recursos_id_global ON recursos_compartibles(id_global)`,
+  );
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_recursos_hash ON recursos_compartibles(hash_sha256)`,
+  );
 
   // 14. FORMATO FIRMAS (relación formato ↔ firmantes, sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS formato_firmas (
@@ -341,7 +377,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(formato_id, orden)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_formato_firmas_id_global ON formato_firmas(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_formato_firmas_id_global ON formato_firmas(id_global)`,
+  );
 
   // 15. TEXTOS PLANTILLA (defaults globales, sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS textos_plantilla (
@@ -353,7 +391,9 @@ function initSchema(db) {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_textos_id_global ON textos_plantilla(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_textos_id_global ON textos_plantilla(id_global)`,
+  );
 
   // 16. CONSTANCIA FIRMAS (histórico, snapshot, sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS constancia_firmas (
@@ -367,7 +407,9 @@ function initSchema(db) {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_constancia_firmas_id_global ON constancia_firmas(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_constancia_firmas_id_global ON constancia_firmas(id_global)`,
+  );
 
   // 17. HISTORIAL (local, NO sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS historial_auditoria (
@@ -403,7 +445,9 @@ function initSchema(db) {
     deleted_at DATETIME,
     FOREIGN KEY (generacion_id) REFERENCES generaciones(id) ON DELETE RESTRICT
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_alumnos_id_global ON alumnos(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_alumnos_id_global ON alumnos(id_global)`,
+  );
 
   // 19. GENERACIONES (sincronizable + soft delete)
   db.exec(`CREATE TABLE IF NOT EXISTS generaciones (
@@ -421,7 +465,9 @@ function initSchema(db) {
     FOREIGN KEY (plan_id) REFERENCES planes_estudio(id) ON DELETE RESTRICT,
     FOREIGN KEY (periodo_ingreso_id) REFERENCES periodos(id) ON DELETE RESTRICT
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_generaciones_id_global ON generaciones(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_generaciones_id_global ON generaciones(id_global)`,
+  );
 
   // 20. TUTOR_ALUMNO (relación sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS tutor_alumno (
@@ -440,8 +486,12 @@ function initSchema(db) {
     FOREIGN KEY (alumno_id) REFERENCES alumnos(id) ON DELETE RESTRICT,
     FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE SET NULL
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_tutor_id_global ON tutor_alumno(id_global)`);
-  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_tutor_unique ON tutor_alumno(docente_id, alumno_id) WHERE estado='activo'`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_tutor_id_global ON tutor_alumno(id_global)`,
+  );
+  db.exec(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_tutor_unique ON tutor_alumno(docente_id, alumno_id) WHERE estado='activo'`,
+  );
 
   // 21. DOCENTE_EE_ASIGNACION (relación sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS docente_ee_asignacion (
@@ -462,7 +512,9 @@ function initSchema(db) {
     FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE RESTRICT,
     UNIQUE(docente_id, ee_id, periodo_id)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_docente_ee_id_global ON docente_ee_asignacion(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_docente_ee_id_global ON docente_ee_asignacion(id_global)`,
+  );
 
   // 22. INSCRIPCIONES (relación sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS inscripciones (
@@ -484,7 +536,9 @@ function initSchema(db) {
     FOREIGN KEY (asignado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
     UNIQUE(alumno_id, ee_id, periodo_id)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_inscripciones_id_global ON inscripciones(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_inscripciones_id_global ON inscripciones(id_global)`,
+  );
 
   // 23. ESTADISTICAS (sincronizable, sin triggers de negocio)
   db.exec(`CREATE TABLE IF NOT EXISTS estadisticas_ee_periodo (
@@ -500,7 +554,9 @@ function initSchema(db) {
     FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE CASCADE,
     UNIQUE(ee_id, periodo_id)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_estadisticas_id_global ON estadisticas_ee_periodo(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_estadisticas_id_global ON estadisticas_ee_periodo(id_global)`,
+  );
 
   // 24. PLAN PERIODO (relación sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS plan_periodo (
@@ -516,7 +572,9 @@ function initSchema(db) {
     FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE RESTRICT,
     UNIQUE(plan_id, periodo_id)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_plan_periodo_id_global ON plan_periodo(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_plan_periodo_id_global ON plan_periodo(id_global)`,
+  );
 
   // 25. AUDITORIA RELACIONES (local, NO sincronizable)
   db.exec(`CREATE TABLE IF NOT EXISTS auditoria_relaciones (
@@ -558,7 +616,9 @@ function initSchema(db) {
     FOREIGN KEY (period_id) REFERENCES periodos(id) ON DELETE CASCADE,
     UNIQUE(entity_type, entity_id, period_id)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_period_id_global ON entity_period(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_entity_period_id_global ON entity_period(id_global)`,
+  );
 
   // 28. CONTADORES FOLIO (folio continuo por espacio)
   db.exec(`CREATE TABLE IF NOT EXISTS contadores_folio (
@@ -572,7 +632,9 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(space_gid, ano)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_contadores_id_global ON contadores_folio(id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_contadores_id_global ON contadores_folio(id_global)`,
+  );
 
   //  TESIS (actas de examen de grado)
   db.exec(`CREATE TABLE IF NOT EXISTS tesis (
@@ -612,12 +674,15 @@ function initSchema(db) {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME,
     FOREIGN KEY (tesis_id) REFERENCES tesis(id),
-    FOREIGN KEY (docente_id) REFERENCES docentes(id),
-    UNIQUE(tesis_id, rol, nombre)
+    FOREIGN KEY (docente_id) REFERENCES docentes(id)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_id_global ON tesis_participante(id_global)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_tesis ON tesis_participante(tesis_id)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_docente ON tesis_participante(docente_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_id_global ON tesis_participante(id_global)`,);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_tesis ON tesis_participante(tesis_id)`,);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_docente ON tesis_participante(docente_id)`,);
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_tesis_participante_activos
+    ON tesis_participante(tesis_id, rol, nombre)
+    WHERE deleted_at IS NULL`);
+
   // ============================================================
   // CAPA DE SINCRONIZACIÓN
   // ============================================================
@@ -653,8 +718,12 @@ function initSchema(db) {
     recibido_en DATETIME,
     synced_at DATETIME
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_change_pending ON change_log(status, timestamp)`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_change_entity ON change_log(entity_type, entity_id_global)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_change_pending ON change_log(status, timestamp)`,
+  );
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_change_entity ON change_log(entity_type, entity_id_global)`,
+  );
 
   // S3. SYNC CONTROL (anti-bucles, espacio activo, actor activo)
   db.exec(`CREATE TABLE IF NOT EXISTS sync_control (
@@ -663,7 +732,9 @@ function initSchema(db) {
     space_gid_activo TEXT,
     actor_name_activo TEXT
   )`);
-  db.exec(`INSERT OR IGNORE INTO sync_control (id, suprimir_captura) VALUES (1, 0)`);
+  db.exec(
+    `INSERT OR IGNORE INTO sync_control (id, suprimir_captura) VALUES (1, 0)`,
+  );
 
   // S4. SYNC INBOX (paquetes recibidos no aplicables aún; conservar sin destruir)
   db.exec(`CREATE TABLE IF NOT EXISTS sync_inbox (
@@ -733,50 +804,164 @@ function initSchema(db) {
     UNIQUE(space_gid, peer_installation_id, direccion)
   )`);
 
-  console.log("[DB] Esquema verificado ✅");
+  console.log("[DB] Esquema verificado");
 }
 
 // ============================================================
 // GENERADOR AUTOMÁTICO DE TRIGGERS DE CAPTURA
 // - DROP + CREATE en cada arranque (esquema siempre vigente)
-// - suprimir_captura evita bucles de sincronización 
+// - suprimir_captura evita bucles de sincronización
 // ============================================================
 
 function instalarTriggersCaptura(db) {
   console.log("[DB] Instalando triggers de captura...");
 
   const TABLAS_SINCRONIZABLES = [
-    { nombre: "docentes", softDelete: true,
-      columnas: ["codigo","nombres","apellido_paterno","apellido_materno","tratamiento","articulo","nivel_academico","correo_contacto","estado"] },
-    { nombre: "periodos", softDelete: true,
-      columnas: ["clave","descripcion","fecha_inicio","fecha_fin","estado"] },
-    { nombre: "experiencias_educativas", softDelete: true,
-      columnas: ["clave_ee","nombre","tipo","creditos","horas_teoria","horas_practica","nrc","estado"] },
-    { nombre: "programas_institucionales", softDelete: true,
-      columnas: ["nombre","descripcion","responsable","estado"] },
-    { nombre: "tipos_constancia", softDelete: true,
-      columnas: ["clave","nombre","descripcion","requiere_ee","requiere_periodo","estado"] },
+    {
+      nombre: "docentes",
+      softDelete: true,
+      columnas: [
+        "codigo",
+        "nombres",
+        "apellido_paterno",
+        "apellido_materno",
+        "tratamiento",
+        "articulo",
+        "nivel_academico",
+        "correo_contacto",
+        "estado",
+      ],
+    },
+    {
+      nombre: "periodos",
+      softDelete: true,
+      columnas: ["clave", "descripcion", "fecha_inicio", "fecha_fin", "estado"],
+    },
+    {
+      nombre: "experiencias_educativas",
+      softDelete: true,
+      columnas: [
+        "clave_ee",
+        "nombre",
+        "tipo",
+        "creditos",
+        "horas_teoria",
+        "horas_practica",
+        "nrc",
+        "estado",
+      ],
+    },
+    {
+      nombre: "programas_institucionales",
+      softDelete: true,
+      columnas: ["nombre", "descripcion", "responsable", "estado"],
+    },
+    {
+      nombre: "tipos_constancia",
+      softDelete: true,
+      columnas: [
+        "clave",
+        "nombre",
+        "descripcion",
+        "requiere_ee",
+        "requiere_periodo",
+        "estado",
+      ],
+    },
     { nombre: "firmantes", softDelete: true, columnas: ["texto"] },
-    { nombre: "recursos_compartibles", softDelete: true,
-      columnas: ["nombre","categoria","mime_type","size_bytes","hash_sha256","ruta_local"] },
-    { nombre: "formatos_constancia", softDelete: true,
-      columnas: ["tipo_constancia_id","version_formato","nombre_version","plantilla_archivo","logotipo_recurso_id","es_actual"] },
-    { nombre: "constancias", softDelete: true,
-      columnas: ["folio","space_gid","docente_id","periodo_id","ee_id","programa_id","tipo_constancia_id","fecha_emision","estado"] },
-    { nombre: "constancia_firmas", softDelete: false,
-      columnas: ["constancia_id","orden","firmante_id","texto_firma"] },
-    { nombre: "docente_ee_asignacion", softDelete: false,
-      columnas: ["docente_id","ee_id","periodo_id","carga_horaria","estado"] },
-    { nombre: "tutor_alumno", softDelete: false,
-      columnas: ["docente_id","alumno_id","periodo_id","estado"] },
-    { nombre: "estadisticas_ee_periodo", softDelete: false,
-      columnas: ["ee_id","periodo_id","total_alumnos"] },
-    { nombre: "contadores_folio", softDelete: false,
-      columnas: ["space_gid","ano","siguiente"] },
-    { nombre: "tesis", softDelete: true,
-      columnas: ["folio","fecha","hora","alumno_id","alumno_nombre","alumno_matricula","modalidad","titulo","resultado","generacion","fecha_asignacion","estado"] },
-    { nombre: "tesis_participante", softDelete: true,
-      columnas: ["tesis_id","docente_id","nombre","rol"] }
+    {
+      nombre: "recursos_compartibles",
+      softDelete: true,
+      columnas: [
+        "nombre",
+        "categoria",
+        "mime_type",
+        "size_bytes",
+        "hash_sha256",
+        "ruta_local",
+      ],
+    },
+    {
+      nombre: "formatos_constancia",
+      softDelete: true,
+      columnas: [
+        "tipo_constancia_id",
+        "version_formato",
+        "nombre_version",
+        "plantilla_archivo",
+        "logotipo_recurso_id",
+        "es_actual",
+      ],
+    },
+    {
+      nombre: "constancias",
+      softDelete: true,
+      columnas: [
+        "folio",
+        "space_gid",
+        "docente_id",
+        "periodo_id",
+        "ee_id",
+        "programa_id",
+        "tipo_constancia_id",
+        "fecha_emision",
+        "estado",
+      ],
+    },
+    {
+      nombre: "constancia_firmas",
+      softDelete: false,
+      columnas: ["constancia_id", "orden", "firmante_id", "texto_firma"],
+    },
+    {
+      nombre: "docente_ee_asignacion",
+      softDelete: false,
+      columnas: [
+        "docente_id",
+        "ee_id",
+        "periodo_id",
+        "carga_horaria",
+        "estado",
+      ],
+    },
+    {
+      nombre: "tutor_alumno",
+      softDelete: false,
+      columnas: ["docente_id", "alumno_id", "periodo_id", "estado"],
+    },
+    {
+      nombre: "estadisticas_ee_periodo",
+      softDelete: false,
+      columnas: ["ee_id", "periodo_id", "total_alumnos"],
+    },
+    {
+      nombre: "contadores_folio",
+      softDelete: false,
+      columnas: ["space_gid", "ano", "siguiente"],
+    },
+    {
+      nombre: "tesis",
+      softDelete: true,
+      columnas: [
+        "folio",
+        "fecha",
+        "hora",
+        "alumno_id",
+        "alumno_nombre",
+        "alumno_matricula",
+        "modalidad",
+        "titulo",
+        "resultado",
+        "generacion",
+        "fecha_asignacion",
+        "estado",
+      ],
+    },
+    {
+      nombre: "tesis_participante",
+      softDelete: true,
+      columnas: ["tesis_id", "docente_id", "nombre", "rol"],
+    },
   ];
 
   const installationId = obtenerOCrearInstallation(db);
@@ -787,7 +972,6 @@ function instalarTriggersCaptura(db) {
   TABLAS_SINCRONIZABLES.forEach(({ nombre, columnas, softDelete }) => {
     const jsonCols = columnas.map((c) => `'${c}', NEW.${c}`).join(", ");
 
-    // INSERT - CORREGIDO: FOR EACH ROW antes de WHEN
     db.exec(`DROP TRIGGER IF EXISTS trg_${nombre}_insert_log`);
     db.exec(`
       CREATE TRIGGER trg_${nombre}_insert_log
@@ -802,7 +986,6 @@ function instalarTriggersCaptura(db) {
       END;
     `);
 
-    // UPDATE - CORREGIDO: FOR EACH ROW antes de WHEN
     db.exec(`DROP TRIGGER IF EXISTS trg_${nombre}_update_log`);
     db.exec(`
       CREATE TRIGGER trg_${nombre}_update_log
@@ -817,7 +1000,6 @@ function instalarTriggersCaptura(db) {
       END;
     `);
 
-    // DELETE (lógico o físico según la tabla) - CORREGIDO: FOR EACH ROW antes de WHEN
     db.exec(`DROP TRIGGER IF EXISTS trg_${nombre}_delete_log`);
     if (softDelete) {
       db.exec(`
@@ -848,7 +1030,9 @@ function instalarTriggersCaptura(db) {
     }
   });
 
-  console.log(`[DB] Triggers instalados para ${TABLAS_SINCRONIZABLES.length} tablas ✅`);
+  console.log(
+    `[DB] Triggers instalados para ${TABLAS_SINCRONIZABLES.length} tablas ✅`,
+  );
 }
 
 // ============================================================
@@ -861,110 +1045,382 @@ function seedData(db) {
 
   // 1. USUARIOS
   if (db.prepare("SELECT count(*) as c FROM usuarios").get().c === 0) {
-    db.prepare("INSERT INTO usuarios(username,password_hash,nombre_completo,rol)VALUES(?,?,?,?)")
-      .run("admin", "admin", "Administrador", "administrador");
+    db.prepare(
+      "INSERT INTO usuarios(username,password_hash,nombre_completo,rol)VALUES(?,?,?,?)",
+    ).run("admin", "admin", "Administrador", "administrador");
   }
 
   // 2. DOCENTES
   if (db.prepare("SELECT count(*) as c FROM docentes").get().c === 0) {
-    const s = db.prepare("INSERT INTO docentes(id_global,codigo,apellido_paterno,nombres,tratamiento,articulo,estado)VALUES(?,?,?,?,?,?,?)");
-    s.run(generarIdGlobal(installationId), "DOC-001", "Perez", "Juan", "Dr.", "El", "activo");
-    s.run(generarIdGlobal(installationId), "DOC-002", "Lopez", "Maria", "Dra.", "La", "activo");
+    const s = db.prepare(
+      "INSERT INTO docentes(id_global,codigo,apellido_paterno,nombres,tratamiento,articulo,estado)VALUES(?,?,?,?,?,?,?)",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "34562",
+      "Perez",
+      "Juan",
+      "Dr.",
+      "El",
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "34512",
+      "Lopez",
+      "Maria",
+      "Dra.",
+      "La",
+      "activo",
+    );
   }
 
   // 3. PERIODOS
   if (db.prepare("SELECT count(*) as c FROM periodos").get().c === 0) {
-    const s = db.prepare("INSERT INTO periodos(id_global,clave,descripcion,fecha_inicio,fecha_fin,estado)VALUES(?,?,?,?,?,?)");
-    s.run(generarIdGlobal(installationId), "FEB-JUL24", "Feb-Jul 2024", "2024-02-15", "2024-07-31", "inactivo");
-    s.run(generarIdGlobal(installationId), "AGO-DIC24", "Ago-Dic 2024", "2024-08-01", "2024-12-15", "activo");
-    s.run(generarIdGlobal(installationId), "ENE-JUN25", "Ene-Jun 2025", "2025-01-15", "2025-06-30", "activo");
+    const s = db.prepare(
+      "INSERT INTO periodos(id_global,clave,descripcion,fecha_inicio,fecha_fin,estado)VALUES(?,?,?,?,?,?)",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "FEB-JUL24",
+      "Feb-Jul 2024",
+      "2024-02-15",
+      "2024-07-31",
+      "inactivo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "AGO-DIC24",
+      "Ago-Dic 2024",
+      "2024-08-01",
+      "2024-12-15",
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "ENE-JUN25",
+      "Ene-Jun 2025",
+      "2025-01-15",
+      "2025-06-30",
+      "activo",
+    );
   }
 
   // 4. PROGRAMAS INSTITUCIONALES
-  if (db.prepare("SELECT count(*) as c FROM programas_institucionales").get().c === 0) {
-    const s = db.prepare("INSERT INTO programas_institucionales(id_global,nombre,descripcion,responsable,estado)VALUES(?,?,?,?,?)");
-    s.run(generarIdGlobal(installationId), "PRODEV", "Programa de Desarrollo Profesional Docente", "Coordinación de formación", "vigente");
-    s.run(generarIdGlobal(installationId), "SNII", "Sistema Nacional de Investigadores", "Gestión de reconocimientos", "vigente");
+  if (
+    db.prepare("SELECT count(*) as c FROM programas_institucionales").get()
+      .c === 0
+  ) {
+    const s = db.prepare(
+      "INSERT INTO programas_institucionales(id_global,nombre,descripcion,responsable,estado)VALUES(?,?,?,?,?)",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "PRODEV",
+      "Programa de Desarrollo Profesional Docente",
+      "Coordinación de formación",
+      "vigente",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "SNII",
+      "Sistema Nacional de Investigadores",
+      "Gestión de reconocimientos",
+      "vigente",
+    );
   }
 
   // 5. TIPOS DE CONSTANCIA
   if (db.prepare("SELECT count(*) as c FROM tipos_constancia").get().c === 0) {
-    const s = db.prepare("INSERT INTO tipos_constancia(id_global,clave,nombre,descripcion,requiere_ee,requiere_periodo,estado)VALUES(?,?,?,?,?,?,?)");
-    s.run(generarIdGlobal(installationId), "EE",  "Constancia de impartición de Experiencia Educativa", "Acredita impartición de materia", 1, 1, "activo");
-    s.run(generarIdGlobal(installationId), "DT",  "Constancia de dirección/codirección de tesis/trabajo recepcional", "Acredita dirección de trabajos", 0, 0, "activo");
-    s.run(generarIdGlobal(installationId), "JE",  "Constancia participación Sinodal/jurado de examen profesional", "Acredita jurados de examen", 0, 1, "activo");
-    s.run(generarIdGlobal(installationId), "SNP", "Constancia de evaluación SNP", "Evaluación Sistema Nacional de Posgrados", 0, 0, "activo");
-    s.run(generarIdGlobal(installationId), "EV",  "Constancia de eventos académicos", "Congresos, seminarios, talleres", 0, 1, "activo");
-    s.run(generarIdGlobal(installationId), "TUT", "Constancia de tutorías académica", "Función como tutor de alumnos", 0, 1, "activo");
-    s.run(generarIdGlobal(installationId), "CAP", "Constancia de comité de admisión al posgrado", "Procesos de selección", 0, 1, "activo");
-    s.run(generarIdGlobal(installationId), "DDT", "Constancia de designación de directora o codirectora de tesis", "Asignación administrativa", 0, 0, "activo");
-    s.run(generarIdGlobal(installationId), "DTA", "Constancia de designación de tutor académico", "Asignación formal", 0, 1, "activo");
-    s.run(generarIdGlobal(installationId), "DJG", "Constancia de designación de jurado de examen de grado", "Nombramiento para jurados", 0, 1, "activo");
-    s.run(generarIdGlobal(installationId), "PE",  "Constancia de elaboración, participación y/o actualización de planes de estudios", "Diseño curricular", 0, 0, "activo");
-    s.run(generarIdGlobal(installationId), "NAB", "Constancia que acredita ser miembro del Núcleo Académico Básico (NAB)", "Membresía posgrado", 0, 1, "activo");
-    s.run(generarIdGlobal(installationId), "CA",  "Constancia que acredita ser miembro del Comité Académico (CA)", "Membresía comité", 0, 1, "activo");
+    const s = db.prepare(
+      "INSERT INTO tipos_constancia(id_global,clave,nombre,descripcion,requiere_ee,requiere_periodo,estado)VALUES(?,?,?,?,?,?,?)",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "EE",
+      "Constancia de impartición de Experiencia Educativa",
+      "Acredita impartición de materia",
+      1,
+      1,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "DT",
+      "Constancia de dirección/codirección de tesis/trabajo recepcional",
+      "Acredita dirección de trabajos",
+      0,
+      0,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "JE",
+      "Constancia participación Sinodal/jurado de examen profesional",
+      "Acredita jurados de examen",
+      0,
+      1,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "SNP",
+      "Constancia de evaluación SNP",
+      "Evaluación Sistema Nacional de Posgrados",
+      0,
+      0,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "EV",
+      "Constancia de eventos académicos",
+      "Congresos, seminarios, talleres",
+      0,
+      1,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "TUT",
+      "Constancia de tutorías académica",
+      "Función como tutor de alumnos",
+      0,
+      1,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "CAP",
+      "Constancia de comité de admisión al posgrado",
+      "Procesos de selección",
+      0,
+      1,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "DDT",
+      "Constancia de designación de directora o codirectora de tesis",
+      "Asignación administrativa",
+      0,
+      0,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "DTA",
+      "Constancia de designación de tutor académico",
+      "Asignación formal",
+      0,
+      1,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "DJG",
+      "Constancia de designación de jurado de examen de grado",
+      "Nombramiento para jurados",
+      0,
+      1,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "PE",
+      "Constancia de elaboración, participación y/o actualización de planes de estudios",
+      "Diseño curricular",
+      0,
+      0,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "NAB",
+      "Constancia que acredita ser miembro del Núcleo Académico Básico (NAB)",
+      "Membresía posgrado",
+      0,
+      1,
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "CA",
+      "Constancia que acredita ser miembro del Comité Académico (CA)",
+      "Membresía comité",
+      0,
+      1,
+      "activo",
+    );
   }
 
   // 6. EXPERIENCIAS EDUCATIVAS
-  if (db.prepare("SELECT count(*) as c FROM experiencias_educativas").get().c === 0) {
-    const s = db.prepare("INSERT INTO experiencias_educativas(id_global,clave_ee,nombre,tipo,creditos,estado)VALUES(?,?,?,?,?,?)");
-    s.run(generarIdGlobal(installationId), "34563", "Programación I", "Obligatoria", 8, "activa");
-    s.run(generarIdGlobal(installationId), "09384", "Base de Datos", "Obligatoria", 8, "activa");
-    s.run(generarIdGlobal(installationId), "12345", "Estadística Avanzada", "Especialidad", 10, "activa");
+  if (
+    db.prepare("SELECT count(*) as c FROM experiencias_educativas").get().c ===
+    0
+  ) {
+    const s = db.prepare(
+      "INSERT INTO experiencias_educativas(id_global,clave_ee,nombre,tipo,creditos,estado)VALUES(?,?,?,?,?,?)",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "34563",
+      "Programación I",
+      "Obligatoria",
+      8,
+      "activa",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "09384",
+      "Base de Datos",
+      "Obligatoria",
+      8,
+      "activa",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "12345",
+      "Estadística Avanzada",
+      "Especialidad",
+      10,
+      "activa",
+    );
   }
 
   // 7. ALUMNOS
   if (db.prepare("SELECT count(*) as c FROM alumnos").get().c === 0) {
-    const s = db.prepare("INSERT INTO alumnos(id_global,matricula,apellido_paterno,nombres,estado)VALUES(?,?,?,?,?)");
-    s.run(generarIdGlobal(installationId), "MAT-001", "Garcia", "Carlos", "activo");
-    s.run(generarIdGlobal(installationId), "MAT-002", "Ruiz", "Laura", "activo");
+    const s = db.prepare(
+      "INSERT INTO alumnos(id_global,matricula,apellido_paterno,nombres,estado)VALUES(?,?,?,?,?)",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "s22017635",
+      "Garcia",
+      "Carlos",
+      "activo",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "s18013840",
+      "Ruiz",
+      "Laura",
+      "activo",
+    );
   }
 
   // 8. FIRMANTES (catálogo de texto plano)
   if (db.prepare("SELECT count(*) as c FROM firmantes").get().c === 0) {
     const s = db.prepare("INSERT INTO firmantes(id_global,texto)VALUES(?,?)");
-    s.run(generarIdGlobal(installationId), "Dr. Juan Pérez — Director de la Facultad");
-    s.run(generarIdGlobal(installationId), "Mtra. María López — Secretaria Académica");
-    s.run(generarIdGlobal(installationId), "Dr. Carlos Ruiz — Coordinador de Posgrado");
+    s.run(
+      generarIdGlobal(installationId),
+      "Dr. Juan Pérez — Director de la Facultad",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "Mtra. María López — Secretaria Académica",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "Dr. Carlos Ruiz — Coordinador de Posgrado",
+    );
     s.run(generarIdGlobal(installationId), "Lic. Ana García — Administradora");
   }
 
   // 9. TEXTOS PLANTILLA (defaults globales)
   if (db.prepare("SELECT count(*) as c FROM textos_plantilla").get().c === 0) {
-    const s = db.prepare("INSERT INTO textos_plantilla(id_global,clave,texto)VALUES(?,?,?)");
+    const s = db.prepare(
+      "INSERT INTO textos_plantilla(id_global,clave,texto)VALUES(?,?,?)",
+    );
     s.run(generarIdGlobal(installationId), "saludo", "A quien corresponda,");
-    s.run(generarIdGlobal(installationId), "mencion_final", "Para los fines que al interesado convenga se extiende la presente");
-    s.run(generarIdGlobal(installationId), "dependencia", "Facultad de Estadística e Informática");
-    s.run(generarIdGlobal(installationId), "direccion", "Av. Xalapa esq. Manuel Ávila Camacho S/N, Col. Obrero Campesina, C.P. 91020, Xalapa-Enríquez, Veracruz, México");
-    s.run(generarIdGlobal(installationId), "contacto", "http://www.uv.mx/msicu · msicu@uv.mx");
+    s.run(
+      generarIdGlobal(installationId),
+      "mencion_final",
+      "Para los fines que al interesado convenga se extiende la presente",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "dependencia",
+      "Facultad de Estadística e Informática",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "direccion",
+      "Av. Xalapa esq. Manuel Ávila Camacho S/N, Col. Obrero Campesina, C.P. 91020, Xalapa-Enríquez, Veracruz, México",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      "contacto",
+      "http://www.uv.mx/msicu · msicu@uv.mx",
+    );
   }
 
   // 10. FORMATOS CONSTANCIA (configuración; el HTML vive en archivos)
-  if (db.prepare("SELECT count(*) as c FROM formatos_constancia").get().c === 0) {
-    const tipoEE  = db.prepare("SELECT id FROM tipos_constancia WHERE clave = 'EE'").get();
-    const tipoTUT = db.prepare("SELECT id FROM tipos_constancia WHERE clave = 'TUT'").get();
-    const tipoEV  = db.prepare("SELECT id FROM tipos_constancia WHERE clave = 'EV'").get();
+  if (
+    db.prepare("SELECT count(*) as c FROM formatos_constancia").get().c === 0
+  ) {
+    const tipoEE = db
+      .prepare("SELECT id FROM tipos_constancia WHERE clave = 'EE'")
+      .get();
+    const tipoTUT = db
+      .prepare("SELECT id FROM tipos_constancia WHERE clave = 'TUT'")
+      .get();
+    const tipoEV = db
+      .prepare("SELECT id FROM tipos_constancia WHERE clave = 'EV'")
+      .get();
 
     const s = db.prepare(`INSERT INTO formatos_constancia
       (id_global, tipo_constancia_id, version_formato, nombre_version, plantilla_archivo, es_actual)
       VALUES (?,?,?,?,?,1)`);
-    s.run(generarIdGlobal(installationId), tipoEE.id,  1, "v1.0 EE",  "constancia-ee.html");
-    s.run(generarIdGlobal(installationId), tipoTUT.id, 1, "v1.0 TUT", "constancia-tut.html");
-    s.run(generarIdGlobal(installationId), tipoEV.id,  1, "v1.0 EV",  "constancia-ev.html");
+    s.run(
+      generarIdGlobal(installationId),
+      tipoEE.id,
+      1,
+      "v1.0 EE",
+      "constancia-ee.html",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      tipoTUT.id,
+      1,
+      "v1.0 TUT",
+      "constancia-tut.html",
+    );
+    s.run(
+      generarIdGlobal(installationId),
+      tipoEV.id,
+      1,
+      "v1.0 EV",
+      "constancia-ev.html",
+    );
 
     // Firmas por defecto de cada formato (el orden define aparición en el documento)
     const firmantes = db.prepare("SELECT id FROM firmantes ORDER BY id").all();
-    const sf = db.prepare(`INSERT INTO formato_firmas (id_global, formato_id, firmante_id, orden) VALUES (?,?,?,?)`);
+    const sf = db.prepare(
+      `INSERT INTO formato_firmas (id_global, formato_id, firmante_id, orden) VALUES (?,?,?,?)`,
+    );
 
-    const fmtEE  = db.prepare("SELECT id FROM formatos_constancia WHERE tipo_constancia_id = ?").get(tipoEE.id);
-    const fmtTUT = db.prepare("SELECT id FROM formatos_constancia WHERE tipo_constancia_id = ?").get(tipoTUT.id);
-    const fmtEV  = db.prepare("SELECT id FROM formatos_constancia WHERE tipo_constancia_id = ?").get(tipoEV.id);
+    const fmtEE = db
+      .prepare(
+        "SELECT id FROM formatos_constancia WHERE tipo_constancia_id = ?",
+      )
+      .get(tipoEE.id);
+    const fmtTUT = db
+      .prepare(
+        "SELECT id FROM formatos_constancia WHERE tipo_constancia_id = ?",
+      )
+      .get(tipoTUT.id);
+    const fmtEV = db
+      .prepare(
+        "SELECT id FROM formatos_constancia WHERE tipo_constancia_id = ?",
+      )
+      .get(tipoEV.id);
 
-    sf.run(generarIdGlobal(installationId), fmtEE.id,  firmantes[2].id, 1);
-    sf.run(generarIdGlobal(installationId), fmtEE.id,  firmantes[0].id, 2);
+    sf.run(generarIdGlobal(installationId), fmtEE.id, firmantes[2].id, 1);
+    sf.run(generarIdGlobal(installationId), fmtEE.id, firmantes[0].id, 2);
     sf.run(generarIdGlobal(installationId), fmtTUT.id, firmantes[2].id, 1);
-    sf.run(generarIdGlobal(installationId), fmtEV.id,  firmantes[1].id, 1);
-    sf.run(generarIdGlobal(installationId), fmtEV.id,  firmantes[0].id, 2);
+    sf.run(generarIdGlobal(installationId), fmtEV.id, firmantes[1].id, 1);
+    sf.run(generarIdGlobal(installationId), fmtEV.id, firmantes[0].id, 2);
   }
 
   console.log("[DB] Seeds cargados ✅");

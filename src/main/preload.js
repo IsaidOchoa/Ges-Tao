@@ -121,7 +121,7 @@ try {
     },
 
     // ==========================================
-    // 7. TIPOS DE CONSTANCIA (NUEVO)
+    // 7. TIPOS DE CONSTANCIA
     // ==========================================
     listarTiposConstancia: () => {
       console.log("[PRELOAD] Obteniendo lista de tipos de constancia...");
@@ -137,7 +137,7 @@ try {
     },
 
     // ==========================================
-    // 8. GESTIÓN DE ALUMNOS (NUEVO)
+    // 8. GESTIÓN DE ALUMNOS
     // ==========================================
     listarAlumnos: () => {
       console.log("[PRELOAD] Obteniendo lista de alumnos...");
@@ -158,7 +158,7 @@ try {
     },
 
     // ==========================================
-    // 9. PLANES DE ESTUDIO (NUEVO)
+    // 9. PLANES DE ESTUDIO 
     // ==========================================
     listarPlanes: () => {
       console.log("[PRELOAD] Obteniendo lista de planes de estudio...");
@@ -178,7 +178,7 @@ try {
     },
 
     // ==========================================
-    // 10. SEMESTRES (NUEVO)
+    // 10. SEMESTRES
     // ==========================================
     listarSemestres: () => {
       console.log("[PRELOAD] Obteniendo lista de semestres...");
@@ -190,7 +190,7 @@ try {
     },
 
     // ==========================================
-    // 11. GENERACIONES (NUEVO)
+    // 11. GENERACIONES
     // ==========================================
     listarGeneraciones: () => {
       console.log("[PRELOAD] Obteniendo lista de generaciones...");
@@ -204,6 +204,7 @@ try {
       console.log("[PRELOAD] Obteniendo datos para selects de generación...");
       return ipcRenderer.invoke("obtener-datos-selects-generacion");
     },
+    cambiarEstadoGeneracion: (d) => ipcRenderer.invoke("cambiar-estado-generacion", d),
 
     listarPeriodosSelect: () => ipcRenderer.invoke("listarPeriodosSelect"),
     listarDocentesSelect: (params) =>

@@ -597,7 +597,7 @@
   animation: slideHint 0.6s ease-in-out;
 }
 
-.table-tesis { min-width: 1600px; }        /* fuerza scroll horizontal */
+.table-tesis { min-width: 2100px; }        /* fuerza scroll horizontal */
 .catalog-table-wrapper { overflow-x: auto; }
 
 /* ===== Modal de Tesis: ancho, 2 columnas, sin corte ===== */
@@ -641,3 +641,13 @@
   padding-left: 10px;
 }
 
+.input-readonly-compact {
+  width: 45%;
+  min-width: 150px;
+  background: var(--bg-light);
+  color: var(--text-muted);
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.5px;
+  border-style: dashed;
+  cursor: not-allowed;
+}

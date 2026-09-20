@@ -9,10 +9,11 @@ export class Tooltip {
     this.tooltip = null;
     this.timeoutId = null;
     this.isVisible = false;
-    
+    this._onKeydown = null;
+
     // Clases CSS personalizables
     this.className = options.className || 'tooltip-custom';
-    
+
     this.init();
   }
 
@@ -28,17 +29,15 @@ export class Tooltip {
     this.target.addEventListener('focus', () => this.show());
     this.target.addEventListener('blur', () => this.hide());
     this.target.addEventListener('click', (e) => {
-      // Si es clic, toggle en lugar de solo mostrar
       e.stopPropagation();
       this.isVisible ? this.hide() : this.show();
     });
 
-    // Cerrar con ESC
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isVisible) {
-        this.hide();
-      }
-    });
+    // Cerrar con ESC (referencia guardada para poder removerla)
+    this._onKeydown = (e) => {
+      if (e.key === 'Escape' && this.isVisible) this.hide();
+    };
+    document.addEventListener('keydown', this._onKeydown);
   }
 
   show() {
@@ -48,14 +47,12 @@ export class Tooltip {
       this.createTooltip();
       this.positionTooltip();
       this.isVisible = true;
-      
-      // Animación de entrada
+
       requestAnimationFrame(() => {
         this.tooltip.style.opacity = '1';
         this.tooltip.style.transform = 'translateY(0)';
       });
 
-      // Cerrar al hacer clic fuera
       setTimeout(() => {
         document.addEventListener('click', this.handleOutsideClick);
       }, 100);
@@ -71,10 +68,9 @@ export class Tooltip {
     }
 
     if (this.tooltip) {
-      // Animación de salida
       this.tooltip.style.opacity = '0';
       this.tooltip.style.transform = 'translateY(-5px)';
-      
+
       setTimeout(() => {
         this.destroyTooltip();
       }, 200);
@@ -85,14 +81,12 @@ export class Tooltip {
   }
 
   createTooltip() {
-    // Eliminar tooltip existente si lo hay
     this.destroyTooltip();
 
     this.tooltip = document.createElement('div');
     this.tooltip.className = `tooltip-custom ${this.className}`;
     this.tooltip.setAttribute('role', 'tooltip');
-    
-    // Contenido (soporta HTML)
+
     if (typeof this.content === 'function') {
       this.tooltip.innerHTML = this.content();
     } else {
@@ -114,7 +108,6 @@ export class Tooltip {
 
     let top, left;
 
-    // Calcular posición según la dirección solicitada
     switch (this.position) {
       case 'top':
         top = targetRect.top + scrollY - tooltipRect.height - 10;
@@ -135,7 +128,6 @@ export class Tooltip {
         break;
     }
 
-    // Ajustar si se sale del viewport
     if (left < scrollX) {
       left = targetRect.right + scrollX + 10;
     }
@@ -168,7 +160,6 @@ export class Tooltip {
     }
   };
 
-  // Método público para actualizar contenido dinámicamente
   updateContent(newContent) {
     this.content = newContent;
     if (this.isVisible) {
@@ -178,9 +169,12 @@ export class Tooltip {
     }
   }
 
-  // Destruir instancia y limpiar listeners
   destroy() {
     this.hide();
+    if (this._onKeydown) {
+      document.removeEventListener('keydown', this._onKeydown);
+      this._onKeydown = null;
+    }
     this.target = null;
   }
 }

@@ -5,21 +5,31 @@
       <h3 id="modal-plan-title">Nuevo Plan de Estudio</h3>
       <button class="btn-close" id="btn-cerrar-modal-plan">&times;</button>
     </div>
-    
+
     <form id="form-plan">
-      <input type="hidden" id="plan-id">
-      
+      <input type="hidden" id="plan-id" />
+
       <!-- Clave (Generada automáticamente) -->
       <div class="form-group">
         <label>Clave del Plan</label>
-        <input type="text" id="plan-clave" readonly class="form-control-readonly" placeholder="Se genera automáticamente">
-        <small class="form-hint">Identificador único del sistema</small>
+        <input
+          type="text"
+          id="plan-clave"
+          readonly
+          class="form-control input-readonly-compact"
+          placeholder="Se genera al guardar"
+        />
       </div>
 
       <!-- Nombre -->
       <div class="form-group">
         <label>Nombre *</label>
-        <input type="text" id="plan-nombre" required placeholder="Ej: Maestría en Ciencias">
+        <input
+          type="text"
+          id="plan-nombre"
+          required
+          placeholder="Ej: Maestría en Ciencias"
+        />
       </div>
 
       <!-- Nivel Académico -->
@@ -35,12 +45,14 @@
       </div>
 
       <!-- Estado (Oculto en modal, gestionado por tabla) -->
-      <input type="hidden" id="plan-estado" value="vigente">
+      <input type="hidden" id="plan-estado" value="vigente" />
     </form>
 
     <div class="modal-footer">
       <button class="btn btn-cancel" id="btn-cancelar-plan">Cancelar</button>
-      <button class="btn btn-primary" id="btn-guardar-plan">Guardar Plan</button>
+      <button class="btn btn-primary" id="btn-guardar-plan">
+        Guardar Plan
+      </button>
     </div>
   </div>
 </div>

@@ -106,6 +106,7 @@ export class CatalogoModule {
       console.warn("⚠️ [CatalogoModule] Contenedor de pestañas no encontrado");
       return false;
     }
+    this.initializedModules.clear(); // Limpiar módulos inicializados al reiniciar
 
     console.log("🚀 [CatalogoModule] Sincronizando con vista...");
 
@@ -114,12 +115,10 @@ export class CatalogoModule {
     this.setupTabNavigation();
     this.setupDelegation(tabsContainer);
 
-    // 🆕 Normalizar el ID recibido a cualquier formato
     let buttonId = this._normalizeTabId(targetTab) || "btn-tab-docentes";
 
     console.log(`🔄 Pestaña objetivo normalizada: ${buttonId}`);
 
-    // ✅ Inicializar SOLO el módulo de la pestaña activa (Lazy Load)
     setTimeout(() => this.initializeModuleByTab(buttonId), 50);
 
     this.setupGlobalHelpers();
@@ -229,7 +228,7 @@ export class CatalogoModule {
       const index = this.tabButtons.indexOf(btn);
       this.tabButtons[index] = newBtn;
 
-      newBtn._hasClickListener = true; // ← Marcar que tiene listener
+      newBtn._hasClickListener = true;
       newBtn.addEventListener("click", () => {
         this.activateTab(newBtn.id);
         const initFn = this.moduleMap[newBtn.id];

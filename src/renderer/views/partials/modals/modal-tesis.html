@@ -13,22 +13,62 @@
           <!-- COLUMNA IZQUIERDA: datos del acta -->
           <div class="tesis-col">
             <div class="form-row">
-              <div class="form-group"><label>Folio</label><input id="tesis-folio" class="form-control" readonly placeholder="auto"></div>
-              <div class="form-group"><label>Estado</label><select id="tesis-estado" class="form-control"><option value="aprobada">Aprobada</option><option value="cancelada">Cancelada</option></select></div>
+              <div class="form-group">
+                <label>Folio</label>
+                <input id="tesis-folio" class="form-control input-readonly-compact" readonly placeholder="Se asigna al guardar">
+              </div>
+              <div class="form-group">
+                <label>Estado <i class="fa-solid fa-circle-info field-tip" data-tip="estado" tabindex="0"></i></label>
+                <select id="tesis-estado" class="form-control">
+                  <option value="aprobada">Aprobada</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </div>
             </div>
+
+            <h4 class="tesis-col-title">Datos del examen</h4>
             <div class="form-row">
-              <div class="form-group"><label>Fecha</label><input type="date" id="tesis-fecha" class="form-control"></div>
-              <div class="form-group"><label>Hora</label><input type="time" id="tesis-hora" class="form-control"></div>
+              <div class="form-group">
+                <label>Fecha del examen <i class="fa-solid fa-circle-info field-tip" data-tip="fecha-examen" tabindex="0"></i></label>
+                <input type="date" id="tesis-fecha" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Hora del examen <i class="fa-solid fa-circle-info field-tip" data-tip="hora-examen" tabindex="0"></i></label>
+                <input type="time" id="tesis-hora" class="form-control">
+              </div>
             </div>
-            <div class="form-group"><label>Alumno *</label><select id="tesis-alumno" class="form-control"></select></div>
-            <div class="form-row">
-              <div class="form-group"><label>Modalidad</label><input id="tesis-modalidad" class="form-control" value="tesis"></div>
-              <div class="form-group"><label>Resultado</label><input id="tesis-resultado" class="form-control" placeholder="Aprobado por unanimidad"></div>
+
+            <div class="form-group">
+              <label>Alumno *</label>
+              <select id="tesis-alumno" class="form-control"></select>
             </div>
-            <div class="form-group"><label>Título del trabajo</label><textarea id="tesis-titulo" class="form-control" rows="3"></textarea></div>
+
             <div class="form-row">
-              <div class="form-group"><label>Generación</label><input id="tesis-generacion" class="form-control"></div>
-              <div class="form-group"><label>Fecha de asignación</label><input type="date" id="tesis-fecha-asignacion" class="form-control"></div>
+              <div class="form-group">
+                <label>Modalidad</label>
+                <input id="tesis-modalidad" class="form-control" value="tesis">
+              </div>
+              <div class="form-group">
+                <label>Resultado <i class="fa-solid fa-circle-info field-tip" data-tip="resultado" tabindex="0"></i></label>
+                <input id="tesis-resultado" class="form-control" list="lista-resultados" placeholder="Aprobado por unanimidad">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Título del trabajo</label>
+              <textarea id="tesis-titulo" class="form-control" rows="3"></textarea>
+            </div>
+
+            <h4 class="tesis-col-title">Dirección y generación</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Generación * <i class="fa-solid fa-circle-info field-tip" data-tip="generacion" tabindex="0"></i></label>
+                <select id="tesis-generacion" class="form-control"></select>
+              </div>
+              <div class="form-group">
+                <label>Fecha de asignación <i class="fa-solid fa-circle-info field-tip" data-tip="fecha-asignacion" tabindex="0"></i></label>
+                <input type="date" id="tesis-fecha-asignacion" class="form-control">
+              </div>
             </div>
           </div>
 
@@ -38,6 +78,11 @@
             <div id="tesis-participantes"></div>
           </div>
         </div>
+
+        <datalist id="lista-resultados">
+          <option value="Aprobado por Unanimidad"></option>
+          <option value="Aprobado por Unanimidad con mención Honorífica"></option>
+        </datalist>
       </form>
     </div>
 

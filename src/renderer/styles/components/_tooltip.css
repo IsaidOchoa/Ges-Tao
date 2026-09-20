@@ -1,6 +1,6 @@
-/* =========================================
+/* src/renderer/styles/components/_tooltip.css
    TOOLTIP REUTILIZABLE (Usa Variables Globales)
-   ========================================= */
+    */
 
 .tooltip-custom {
   /* Usa tus variables globales automáticamente */
@@ -65,4 +65,18 @@
 .tooltip-custom .tooltip-error {
   color: var(--danger-color) !important;
   font-weight: 600;
+}
+
+.field-tip {
+  margin-left: 6px;
+  color: var(--text-muted);
+  cursor: help;
+  font-size: 0.85em;
+  transition: color 0.2s ease;
+}
+
+.field-tip:hover,
+.field-tip:focus {
+  color: var(--accent-color, #4da3ff);
+  outline: none;
 }
