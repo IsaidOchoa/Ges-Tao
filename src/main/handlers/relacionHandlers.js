@@ -6,7 +6,7 @@ const { getDB, generarIdGlobal } = require('../database');
 module.exports = () => {
   
   // =========================================
-  // 👨‍🎓 TUTORÍA: Docente ↔ Alumno
+  // TUTORIA: Docente <> Alumno
   // =========================================
   
   // Listar alumnos disponibles para asignar como tutorados
@@ -122,7 +122,7 @@ module.exports = () => {
   });
   
   // =========================================
-  // 📚 ASIGNACIÓN DOCENTE ↔ EE (por Periodo)
+  // ASIGNACIÓN DOCENTE <> EE (por Periodo)
   // =========================================
   
   // Listar docentes disponibles para dropdowns

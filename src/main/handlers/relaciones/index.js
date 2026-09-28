@@ -6,6 +6,7 @@ module.exports = () => {
   require('./periodos.js')();
   require('./docenteTutoradosHandlers.js')();
   require('./alumnoTutorHandlers.js')();
+  require('./generacionAlumnosHandlers.js')();
   
   console.log('[relaciones] Todos los módulos de relaciónes registrados');
 };

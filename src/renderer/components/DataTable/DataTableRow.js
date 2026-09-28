@@ -109,8 +109,6 @@ export class DataTableRow {
     </td>`;
 }
 
-  // src/renderer/components/DataTable/DataTableRow.js
-
   renderExpandableRow() {
     const action = this.config.onExpandAction;
     const showActionPanel = action !== undefined && action !== null;

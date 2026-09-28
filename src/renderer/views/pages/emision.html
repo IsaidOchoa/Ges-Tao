@@ -38,7 +38,7 @@
         </div>
 
         <!-- 4a. Periodo simple (para tipos que requieren periodo pero NO EE) -->
-        <div class="form-group" id="group-periodo-single" style="display:none;">
+        <div class="form-group" id="group-periodo-single" style="display: none">
           <label>Periodo Escolar *</label>
           <select id="sel-periodo" class="form-control">
             <option value="">Seleccione un periodo...</option>
@@ -46,8 +46,19 @@
         </div>
 
         <!-- 4b. Chips multi-periodo (para tipos que requieren EE) -->
-        <div class="form-group" id="group-periodos-ee" style="display:none;">
-          <label>Periodos incluidos *</label>
+        <div class="form-group" id="group-periodos-ee" style="display: none">
+          <div class="label-row">
+            <label for="chips-search">Periodos incluidos *</label>
+            <button
+              type="button"
+              class="btn-icon"
+              id="btn-asignar-periodos"
+              title="Seleccione un docente para gestionar sus asignaciones"
+              disabled
+            >
+              <i class="fa-solid fa-diagram-project"></i>
+            </button>
+          </div>
           <div class="chips-box">
             <!-- Buscador fijo arriba, con su dropdown -->
             <div class="chips-search-wrap">
@@ -62,6 +73,18 @@
             </div>
             <!-- Los chips se apilan aquí, debajo del buscador -->
             <div class="chips-container" id="chips-container"></div>
+          </div>
+          <div id="periodos-empty-state" class="periodos-empty hidden">
+            <i class="fa-regular fa-calendar-xmark"></i>
+            <p>El docente seleccionado no tiene periodos asignados.</p>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              id="btn-asignar-periodos-ctx"
+            >
+              <i class="fa-solid fa-diagram-project"></i> Asignar periodos a
+              este docente
+            </button>
           </div>
           <small class="form-help">
             Solo se muestran periodos con asignaciones del docente.
@@ -93,7 +116,7 @@
     <div class="card emission-preview">
       <div class="section-header preview-header">
         <h3 class="section-title">
-          <i class="fa-regular fa-eye"></i> Vista Previa Oficial
+          <i class="fa-regular fa-eye"></i> Vista Previa
         </h3>
         <div class="zoom-controls">
           <button id="btn-zoom-out" class="btn-icon" title="Alejar">
@@ -197,7 +220,10 @@
           <div class="logo-slot-preview" id="logo-msicu-preview"></div>
           <div class="logo-slot-info">
             <span class="options-label">MSICU</span>
-            <button class="btn btn-secondary btn-sm" id="btn-cambiar-logo-msicu">
+            <button
+              class="btn btn-secondary btn-sm"
+              id="btn-cambiar-logo-msicu"
+            >
               <i class="fa-solid fa-upload"></i> Cambiar
             </button>
           </div>
@@ -236,7 +262,10 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="cerrarModal('modal-confirmar-texto')">
+      <button
+        class="btn btn-secondary"
+        onclick="cerrarModal('modal-confirmar-texto')"
+      >
         Cancelar
       </button>
       <button class="btn btn-primary" id="btn-confirmar-texto">Aplicar</button>

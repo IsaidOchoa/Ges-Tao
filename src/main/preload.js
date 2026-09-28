@@ -230,6 +230,22 @@ try {
     obtenerEEDelDocente: (params) =>
       ipcRenderer.invoke("obtenerEEDelDocente", params),
 
+    // =========================================
+    // GENERACIÓN ↔ ALUMNO (relación permanente)
+    // =========================================
+    listarGeneracionesSelect: () =>
+      ipcRenderer.invoke("listarGeneracionesSelect"),
+    obtenerGeneracionDeAlumno: (p) =>
+      ipcRenderer.invoke("obtenerGeneracionDeAlumno", p),
+    obtenerAlumnosDeGeneracion: (p) =>
+      ipcRenderer.invoke("obtenerAlumnosDeGeneracion", p),
+    listarAlumnosSinGeneracion: () =>
+      ipcRenderer.invoke("listarAlumnosSinGeneracion"),
+    asignarGeneracionAlumno: (d) =>
+      ipcRenderer.invoke("asignarGeneracionAlumno", d),
+    removerGeneracionDeAlumno: (d) =>
+      ipcRenderer.invoke("removerGeneracionDeAlumno", d),
+
     // Gestión de Entidad-Periodo (usando tablas existentes)
     obtenerPeriodosDeEntidad: (params) =>
       ipcRenderer.invoke("obtener-periodos-de-entidad", params),

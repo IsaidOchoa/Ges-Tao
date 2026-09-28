@@ -43,12 +43,12 @@ export class WorkspaceManager {
     this._components.set(relationType, rendererInstance);
   }
 
-    async render(container) {
+  async render(container) {
     if (!container) return;
     this._workspaceContent = container;
 
     // 1. Generar los tabs correctos según el contexto (ALUMNO, EE o DOCENTE)
-    await this._generateTabs(); 
+    await this._generateTabs();
     // 2. Renderizar la vista de gestionar
     await this._ensureGestionarView();
     // 3. Renderizar el estado de los tabs (overlay, etc.)
@@ -111,9 +111,9 @@ export class WorkspaceManager {
     }
   }
 
-    async _generateTabs() {
+  async _generateTabs() {
     const { entityType } = this.stateManager.context || {};
-    
+
     // Obtener la configuración según el contexto (docente, alumno o ee)
     this._tabsConfig = TAB_CONFIGS[entityType] || TAB_CONFIGS.docente;
 
@@ -121,20 +121,25 @@ export class WorkspaceManager {
     if (!tabsContainer) return;
 
     // Generar los botones de los tabs dinámicamente
-    tabsContainer.innerHTML = this._tabsConfig.map((tab, index) => `
-      <button class="option-tab-btn ${index === 0 ? 'active' : ''}" data-option="${tab.key}">
+    tabsContainer.innerHTML = this._tabsConfig
+      .map(
+        (tab, index) => `
+      <button class="option-tab-btn ${index === 0 ? "active" : ""}" data-option="${tab.key}">
         <i class="fa-solid ${tab.icon}"></i> ${tab.label}
       </button>
-    `).join('');
+    `,
+      )
+      .join("");
 
     // Establecer la primera opción como la activa por defecto
-    this._activeOption = this._tabsConfig[0]?.key || 'ee_asignadas';
+    this._activeOption = this._tabsConfig[0]?.key || "ee_asignadas";
   }
 
   async _renderActiveOptionContent() {
     if (!this._workspaceContent) return;
 
-    const contentContainer = this._workspaceContent.querySelector("#option-content");
+    const contentContainer =
+      this._workspaceContent.querySelector("#option-content");
     if (!contentContainer) return;
 
     const { entityType, entityId } = this.stateManager.context || {};
@@ -142,32 +147,46 @@ export class WorkspaceManager {
 
     console.log("[DEBUG] _renderActiveOptionContent - periodId:", periodId);
 
-    // 1. Si no hay periodo, mostrar el mensaje
-    if (!periodId) {
-      contentContainer.innerHTML = '<p class="empty-text" style="text-align: center; padding: 2rem; color: var(--text-muted);">Seleccione un periodo para gestionar relaciones</p>';
+    // Determinar si la tab activa requiere periodo
+    const tabConfig = this._tabsConfig?.find(
+      (t) => t.key === this._activeOption,
+    );
+    const requiresPeriod = tabConfig?.requiresPeriod !== false;
+
+    // Solo exigir periodo si la tab lo requiere
+    if (requiresPeriod && !periodId) {
+      contentContainer.innerHTML =
+        '<p class="empty-text" style="text-align: center; padding: 2rem; color: var(--text-muted);">Seleccione un periodo para gestionar relaciones</p>';
       return;
     }
 
-    // 2. Si YA hay periodo, eliminar el mensaje de vacío si existe
-    const emptyMsg = contentContainer.querySelector('.empty-text');
+    // Si YA hay periodo (o no se requiere), eliminar el mensaje de vacío si existe
+    const emptyMsg = contentContainer.querySelector(".empty-text");
     if (emptyMsg) {
       emptyMsg.remove();
     }
 
     const renderer = this._renderers.get(this._activeOption);
     if (!renderer) {
-      contentContainer.innerHTML = '<p class="error-text">Renderer no encontrado</p>';
+      contentContainer.innerHTML =
+        '<p class="error-text">Renderer no encontrado</p>';
       return;
     }
 
     const cardConfig = this._getCardConfig(this._activeOption, entityId);
     const cardRefs = this._createOrUpdateCard(contentContainer, cardConfig);
 
-    const cacheKey = `${this._activeOption}_${entityId}_${periodId}`;
+    // Clave de caché normalizada: sin periodo usa 'sinperiodo'
+    const periodSuffix = requiresPeriod ? periodId : "sinperiodo";
+    const cacheKey = `${this._activeOption}_${entityId}_${periodSuffix}`;
 
     if (!this.stateManager.isCacheValid(cacheKey)) {
       console.log(`[${this._activeOption}] Cache inválido, renderizando...`);
-      await renderer.render({ entityType, entityId }, periodId, cardRefs);
+      await renderer.render(
+        { entityType, entityId },
+        requiresPeriod ? periodId : null,
+        cardRefs,
+      );
     } else {
       console.log(`[${this._activeOption}] Cache válido, no se re-renderiza`);
     }
@@ -196,19 +215,18 @@ export class WorkspaceManager {
           </div>
         </div>
         
+        <div class="assigned-list-header">
+          <h5><i class="fa-solid fa-${config.icon}"></i> ${config.title} asignados</h5>
+          <span class="badge badge-counter" id="${config.counterId}">0</span>
+        </div>
         <div class="table-container">
-          <div class="assigned-list-header">
-            <h5><i class="fa-solid fa-${config.icon}"></i> ${config.title} asignados</h5>
-            <span class="badge badge-counter" id="${config.counterId}">0</span>
-          </div>
-          
           <table class="relations-table" id="${config.listId}-table">
             <thead>
               <tr>
                 ${config.columns
                   .map(
                     (col) => `
-                  <th style="width: ${col.width}">${col.label.replace(/\n/g, '<br>')}</th>
+                  <th style="width: ${col.width}">${col.label.replace(/\n/g, "<br>")}</th>
                 `,
                   )
                   .join("")}
@@ -278,36 +296,6 @@ export class WorkspaceManager {
     consultSection.className = "workspace-section section-consult-view";
     consultSection.style.display = "block";
 
-    consultSection.innerHTML = `
-      <div class="section-header">
-        <h4>Histórico de Experiencias Educativas</h4>
-        <span class="section-desc">Todas las EE asignadas en periodos anteriores</span>
-      </div>
-      <div class="workspace-card">
-        <div class="card-body">
-          <div id="historial-ee-list" class="assigned-list">
-            <span class="loading-text">Cargando...</span>
-          </div>
-        </div>
-      </div>
-    `;
-
-    this._workspaceContent.appendChild(consultSection);
-
-    const consultRenderer = new ConsultRenderer({
-      api: this.api,
-      stateManager: this.stateManager,
-      container: consultSection,
-    });
-    this._components.set("consult", consultRenderer);
-    await consultRenderer.render();
-  }
-
-  async _createConsultSection() {
-    const consultSection = document.createElement("div");
-    consultSection.className = "workspace-section section-consult-view";
-    consultSection.style.display = "block";
-
     // El contenedor donde ConsultRenderer inyectará la tabla
     consultSection.innerHTML = `<div id="historial-container"></div>`;
 
@@ -316,9 +304,9 @@ export class WorkspaceManager {
     const consultRenderer = new ConsultRenderer({
       api: this.api,
       stateManager: this.stateManager,
-      container: consultSection.querySelector('#historial-container'),
+      container: consultSection.querySelector("#historial-container"),
     });
-    
+
     this._components.set("consult", consultRenderer);
     await consultRenderer.render();
   }
@@ -353,11 +341,12 @@ export class WorkspaceManager {
     });
   }
 
-    async _renderOptionTabs() {
+  async _renderOptionTabs() {
     if (!this._workspaceContent) return;
 
     const tabsContainer = this._workspaceContent.querySelector("#option-tabs");
-    const contentContainer = this._workspaceContent.querySelector("#option-content");
+    const contentContainer =
+      this._workspaceContent.querySelector("#option-content");
     const overlay = document.getElementById("relations-overlay");
 
     if (!tabsContainer || !overlay) return;
@@ -365,8 +354,35 @@ export class WorkspaceManager {
     const periodId = this._currentPeriodId;
     const { entityType, entityId } = this.stateManager.context || {};
 
-    console.log("[DEBUG] _renderOptionTabs - Periodo:", periodId, "Entidad:", entityType, entityId);
+    console.log(
+      "[DEBUG] _renderOptionTabs - Periodo:",
+      periodId,
+      "Entidad:",
+      entityType,
+      entityId,
+    );
 
+    // Determinar si la tab activa requiere periodo
+    const tabConfig = this._tabsConfig?.find(
+      (t) => t.key === this._activeOption,
+    );
+    const requiresPeriod = tabConfig?.requiresPeriod !== false;
+
+    // Si la tab NO requiere periodo, saltar todas las validaciones de periodo
+    if (!requiresPeriod) {
+      console.log("[DEBUG] Tab no requiere periodo, habilitando directamente");
+      tabsContainer.style.display = "flex";
+      tabsContainer.classList.remove("blurred");
+      if (contentContainer) {
+        contentContainer.style.display = "block";
+        contentContainer.classList.remove("blurred");
+      }
+      overlay.classList.add("hidden");
+      await this._renderActiveOptionContent();
+      return;
+    }
+
+    // Caso 1: Sin periodo (solo si la tab lo requiere)
     if (!periodId) {
       tabsContainer.style.display = "flex";
       tabsContainer.classList.add("blurred");
@@ -378,7 +394,8 @@ export class WorkspaceManager {
       this._updateOverlayContent(overlay, {
         icon: "fa-circle-info",
         title: "Seleccione un periodo académico",
-        message: "Seleccione un periodo para habilitar las relaciones operativas",
+        message:
+          "Seleccione un periodo para habilitar las relaciones operativas",
         showButton: false,
       });
 
@@ -489,6 +506,7 @@ export class WorkspaceManager {
       docente: "docente",
       alumno: "alumno",
       ee: "experiencia educativa",
+      generacion: "generación",
     };
     return labels[entityType] || "entidad";
   }

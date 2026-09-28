@@ -181,6 +181,13 @@ export class EmisionModule {
     }
   }
 
+    async _reloadPeriodosDocente() {
+    if (!this.contexto.docente) return;
+    await this.cargarPeriodosDocente();
+    this.renderControlPeriodos();
+    this._updatePeriodosUI();
+  }
+
   _deshabilitarFormulario(deshabilitar) {
     [
       "sel-tipo",
@@ -336,7 +343,7 @@ export class EmisionModule {
 
       bindWithCleanup("chips-search", "input", abrir);
       bindWithCleanup("chips-search", "focus", abrir);
-      bindWithCleanup("chips-search", "click", abrir); // tap con el input ya enfocado
+      bindWithCleanup("chips-search", "click", abrir);
 
       bindWithCleanup("chips-search", "blur", () => {
         setTimeout(() => this._cerrarChipsDropdown(), 150);
@@ -344,6 +351,25 @@ export class EmisionModule {
       bindWithCleanup("chips-search", "keydown", (e) => {
         if (e.key === "Escape") this._cerrarChipsDropdown();
       });
+    }
+
+    const btnAsignarCtx = document.getElementById("btn-asignar-periodos-ctx");
+    if (btnAsignarCtx) {
+      bindWithCleanup("btn-asignar-periodos-ctx", "click", () =>
+        this._openAsignacionesDocente(),
+      );
+    }
+
+    const btnAsignarPerm = document.getElementById("btn-asignar-periodos");
+    if (btnAsignarPerm) {
+      bindWithCleanup("btn-asignar-periodos", "click", () =>
+        this._openAsignacionesDocente(),
+      );
+    }
+    if (search) {
+      bindWithCleanup("chips-search", "focus", () =>
+        this._reloadPeriodosDocente(),
+      );
     }
   }
 
@@ -707,35 +733,109 @@ export class EmisionModule {
   renderChipsDropdown(query = "") {
     const dd = document.getElementById("chips-dropdown");
     if (!dd) return;
+
     const q = (query || "").toLowerCase();
     const opciones = this.periodosAsignadosDocente.filter(
       (p) =>
         !this.periodosIncluidos.has(String(p.id)) &&
         `${p.clave} ${p.descripcion}`.toLowerCase().includes(q),
     );
+
     dd.innerHTML = "";
+
+    // Si no hay docente o no hay periodos, no mostrar dropdown (el estado vacío ya comunica)
+    const docente = this._docenteSeleccionado();
+    if (!docente || this.periodosAsignadosDocente.length === 0) {
+      dd.classList.add("hidden");
+      this._updatePeriodosUI();
+      return;
+    }
+
     if (opciones.length === 0) {
       dd.classList.add("hidden");
       return;
     }
+
     opciones.forEach((p) => {
-  const item = document.createElement("div");
-  item.className = "dd-item";
-  item.textContent = `${p.clave} - ${p.descripcion}`;
+      const item = document.createElement("div");
+      item.className = "dd-item";
+      item.textContent = `${p.clave} - ${p.descripcion}`;
 
-  item.addEventListener("mousedown", (e) => e.preventDefault());
+      item.addEventListener("mousedown", (e) => e.preventDefault());
+      item.addEventListener("click", async () => {
+        this.periodosIncluidos.add(String(p.id));
+        const s = document.getElementById("chips-search");
+        if (s) s.value = "";
+        this.renderChips();
+        await this.cargarAsignacionesMulti();
+      });
 
-  item.addEventListener("click", async () => {
-    this.periodosIncluidos.add(String(p.id));
-    const s = document.getElementById("chips-search");
-    if (s) s.value = "";
-    this.renderChips();
-    await this.cargarAsignacionesMulti();
-  });
+      dd.appendChild(item);
+    });
 
-  dd.appendChild(item);
-});
     dd.classList.remove("hidden");
+    this._updatePeriodosUI();
+  }
+
+  _docenteSeleccionado() {
+    const id = this.contexto.docente;
+    if (!id) return null;
+    return (
+      this.datosMaestros.docentes.find((d) => String(d.id) === String(id)) ||
+      null
+    );
+  }
+
+  _docenteNombre(d) {
+    if (!d) return "";
+    return [d.nombres, d.apellido_paterno, d.apellido_materno]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  _openAsignacionesDocente() {
+    const docente = this._docenteSeleccionado();
+    if (!docente) {
+      Toast.warning("Seleccione un docente primero", 3000);
+      return;
+    }
+    window.assignmentModal.open({
+      entityType: "docente",
+      entityId: docente.id,
+      entityName: this._docenteNombre(docente),
+      codigo: docente.codigo,
+    });
+  }
+
+  _updatePeriodosUI() {
+    const docente = this._docenteSeleccionado();
+    const search = document.getElementById("chips-search");
+    const empty = document.getElementById("periodos-empty-state");
+    const btnPerm = document.getElementById("btn-asignar-periodos");
+
+    const sinDocente = !docente;
+    const sinPeriodos =
+      !sinDocente && (this.periodosAsignadosDocente || []).length === 0;
+
+    if (search) {
+      search.disabled = sinDocente || sinPeriodos;
+      search.placeholder = sinDocente
+        ? "Seleccione un docente primero..."
+        : sinPeriodos
+          ? "Docente sin periodos asignados"
+          : "Agregar periodo...";
+    }
+
+    if (empty) {
+      empty.classList.toggle("hidden", !sinPeriodos);
+    }
+
+    if (btnPerm) {
+      btnPerm.disabled = sinDocente;
+      btnPerm.title = sinDocente
+        ? "Seleccione un docente para gestionar sus asignaciones"
+        : "Gestionar asignaciones de " + this._docenteNombre(docente);
+    }
   }
 
   _cerrarChipsDropdown() {
@@ -1073,7 +1173,7 @@ export class EmisionModule {
     this.configuracionPanelDerecho = {};
 
     if (process?.env?.NODE_ENV === "development") {
-      console.log("♻️ EmisionModule destruido - recursos liberados");
+      console.log("EmisionModule destruido - recursos liberados");
     }
   }
 }

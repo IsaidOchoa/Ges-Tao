@@ -1,8 +1,10 @@
 // src/renderer/components/modals/AssignmentModal/sidebar/SidebarManager.js
+import { DOMHelpers } from "../utils/DOMHelpers.js";
 
 export class SidebarManager {
   constructor({ api, stateManager, periodAdminManager }) {
     this.api = api;
+    this.helpers = new DOMHelpers();
     this.stateManager = stateManager;
     this.periodAdminManager = periodAdminManager;
     this._abortController = null;
@@ -95,8 +97,17 @@ export class SidebarManager {
   renderContext(container, context) {
     if (!container || !context) return;
 
-    const { entityName, entityType, entityId, codigo, matricula, clave_ee } =
-      context;
+    const {
+      entityName,
+      entityType,
+      entityId,
+      codigo,
+      matricula,
+      clave_ee,
+      clave,
+      planNombre,
+      periodoIngreso,
+    } = context;
 
     const entityConfig = {
       docente: {
@@ -117,6 +128,12 @@ export class SidebarManager {
         icon: '<i class="fa-solid fa-book-open"></i>',
         meta: "EXPERIENCIA EDUCATIVA",
       },
+      generacion: {
+        label: "Clave",
+        value: clave,
+        icon: '<i class="fa-solid fa-users"></i>',
+        meta: "GENERACIÓN",
+      },
     };
 
     const config = entityConfig[entityType] || {
@@ -126,24 +143,52 @@ export class SidebarManager {
       meta: entityType.toUpperCase(),
     };
 
-    container.innerHTML = `
+    // 1) Tipo de entidad (encabezado jerárquico)
+    let html = `
+      <div class="entity-meta">
+        <h5 class="meta-item">${this.helpers.escapeHtml(config.meta)}</h5>
+      </div>
+    `;
+
+    // 2) Card de identidad pegada al encabezado
+    html += `
       <div class="entity-badge ${entityType}">
         <span class="icon">${config.icon}</span>
         <div>
-          <strong>${entityName}</strong>
-          <small>${config.label}: ${config.value || entityId}</small>
+          <strong>${this.helpers.escapeHtml(entityName || "")}</strong>
+          <small>${this.helpers.escapeHtml(config.label)}: ${this.helpers.escapeHtml(String(config.value ?? entityId))}</small>
         </div>
       </div>
-      <div class="entity-meta">
-        <span class="meta-item">${config.meta}</span>
-      </div>
     `;
+
+    // 3) Contexto estructural solo para generación
+    if (entityType === "generacion") {
+      const plan = this.helpers.escapeHtml(planNombre || "Sin plan");
+      const ingreso = this.helpers.escapeHtml(periodoIngreso || "Sin periodo");
+      html += `
+        <div class="context-section" style="margin-top: 1rem;">
+          <span class="section-label">Contexto</span>
+          <div class="context-info">
+            <div class="relation-block">
+              <span class="relation-label">Plan de estudio</span>
+              <span class="relation-value">${plan}</span>
+            </div>
+            <div class="relation-block">
+              <span class="relation-label">Periodo de ingreso</span>
+              <span class="relation-value">${ingreso}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
   }
 
   async renderRelationsPanel(container) {
     if (!container) return;
 
-    this._container = container; // Guardar referencia
+    this._container = container;
 
     const { entityType, entityId } = this.stateManager.context || {};
     const periodId = this.stateManager.activePeriod;

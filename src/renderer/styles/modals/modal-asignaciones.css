@@ -156,7 +156,7 @@
   display: flex; align-items: flex-end; gap: 4px; overflow-x: auto;
   overflow-y: hidden; white-space: nowrap; scrollbar-width: none;
   background: var(--bg-light); border-bottom: 1px solid var(--border-color);
-  padding: 0 1.25rem; height: 45px; flex-shrink: 0;
+  padding: 0 10px; height: 45px; flex-shrink: 0;
 }
 #modal-asignaciones .workspace-nav::-webkit-scrollbar { display: none; }
 #modal-asignaciones .tab-btn {
@@ -184,7 +184,7 @@
 #modal-asignaciones .workspace-body {
   position: relative; flex: 1 1 auto; min-width: 0; min-height: 0;
   overflow-y: auto !important; overflow-x: hidden !important;
-  padding: 1rem 1.25rem; background: var(--bg-body); scroll-behavior: smooth;
+  padding: 10px; background: var(--bg-body); scroll-behavior: smooth;
 }
 #modal-asignaciones .workspace-body::-webkit-scrollbar { width: 8px; }
 #modal-asignaciones .workspace-body::-webkit-scrollbar-thumb {
@@ -517,7 +517,7 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
 
 .option-content {
   min-height: 300px;
-  padding: 1.5rem 0 1rem 0;
+  padding: 10px 0;
 }
 
 .option-card {
@@ -590,13 +590,24 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   margin: 0;
 }
 
+/* Header = mitad superior de la card (esquinas arriba) */
 .option-card .assigned-list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
-  flex-wrap: nowrap;
+  border: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color); 
+  border-radius: 10px 10px 0 0;
+  background: var(--bg-light);
+  margin: 0;
+}
+
+/* Table-container = mitad inferior (esquinas abajo) */
+.option-card .table-container {
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--bg-white);
+  margin-top: 0;
 }
 
 .option-card .assigned-list-header h5 {
@@ -606,6 +617,15 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   margin: 0;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.option-card .table-container {
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--bg-white);
 }
 
 .badge-counter {
@@ -1076,13 +1096,24 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
 }
 
 /* === TABLE CONTAINER === */
-
 .table-container {
   margin-top: 0;
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   background: var(--bg-white);
+}
+
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+.table-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+}
+.table-container::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* === TABLE HEADER (título + contador) === */
@@ -1125,6 +1156,7 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
 
 .relations-table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
@@ -1177,6 +1209,16 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
   vertical-align: middle;
   color: var(--text-dark);
 }
+
+.relations-table thead th:last-child,
+.relations-table tbody td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+}
+.relations-table thead th:last-child { background: var(--bg-light); }
+.relations-table tbody td:last-child  { background: var(--bg-white); }
+.relations-table tbody tr:hover td:last-child { background: rgba(52, 152, 219, 0.05); }
 
 /* === COLUMNAS ESPECÍFICAS === */
 
@@ -1364,4 +1406,15 @@ body[data-theme="dark"] #modal-asignaciones .loader-inline {
 
 .sidebar-controls .period-admin-btn i {
   font-size: 1rem;
+}
+
+#modal-asignaciones .entity-meta h5.meta-item {
+  color: var(--text-primary);
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
 }

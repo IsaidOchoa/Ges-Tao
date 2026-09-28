@@ -5,18 +5,23 @@
       <h3 id="modal-titulo-alumno">Nuevo Alumno</h3>
       <button class="btn-close" id="btn-cerrar-modal-alumno">&times;</button>
     </div>
-    
+
     <form id="form-alumno">
       <!-- Campos ocultos -->
-      <input type="hidden" id="alumno-id">
-      <input type="hidden" id="alumno-estado" value="activo">
-      <input type="hidden" id="alumno-articulo" value="El">
-      
+      <input type="hidden" id="alumno-id" />
+      <input type="hidden" id="alumno-estado" value="activo" />
+      <input type="hidden" id="alumno-articulo" value="El" />
+
       <!-- Fila 1: Matricula y Programa -->
       <div class="form-row-flex">
         <div class="form-group flex-1">
           <label>Matricula *</label>
-          <input type="text" id="alumno-matricula" required placeholder="MAT-2024-XXX">
+          <input
+            type="text"
+            id="alumno-matricula"
+            required
+            placeholder="MAT-2024-XXX"
+          />
         </div>
         <div class="form-group flex-1">
           <label>Programa Academico</label>
@@ -53,43 +58,45 @@
       <div class="form-row-flex">
         <div class="form-group flex-2">
           <label>Apellido Paterno *</label>
-          <input type="text" id="alumno-ap-paterno" required>
+          <input type="text" id="alumno-ap-paterno" required />
         </div>
         <div class="form-group flex-1">
           <label>Apellido Materno</label>
-          <input type="text" id="alumno-ap-materno">
+          <input type="text" id="alumno-ap-materno" />
         </div>
       </div>
 
       <!-- Nombres -->
       <div class="form-group">
         <label>Nombres *</label>
-        <input type="text" id="alumno-nombres" required>
+        <input type="text" id="alumno-nombres" required />
       </div>
 
       <!-- Fila 3: Contacto -->
       <div class="form-row-flex">
         <div class="form-group flex-2">
           <label>Correo Institucional</label>
-          <input type="email" id="alumno-correo" placeholder="alumno@uv.mx">
+          <input type="email" id="alumno-correo" placeholder="alumno@uv.mx" />
         </div>
         <div class="form-group flex-1">
           <label>Telefono</label>
-          <input type="tel" id="alumno-telefono" placeholder="228...">
+          <input type="tel" id="alumno-telefono" placeholder="228..." />
         </div>
       </div>
 
-      <!-- ✅ CORRECCION: Periodo de Ingreso (reemplaza Fecha) -->
-      <div class="form-group">
-        <label>Periodo de Ingreso *</label>
-        <select id="alumno-periodo" required>
-          <option value="">Seleccione periodo...</option>
-          <!-- 💡 Recomendacion: Cargar estas opciones dinamicamente desde la BD al abrir el modal -->
-          <option value="AGO23-ENE24">AGO23-ENE24 (Ago 2023 - Ene 2024)</option>
-          <option value="FEB-JUL24">FEB-JUL24 (Feb - Jul 2024)</option>
-          <option value="AGO-DIC24">AGO-DIC24 (Ago - Dic 2024)</option>
-          <option value="FEB-JUL25">FEB-JUL25 (Feb - Jul 2025)</option>
-        </select>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="alumno-periodo">Período de Ingreso *</label>
+          <select id="alumno-periodo" class="form-select">
+            <option value="">Seleccione periodo...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="alumno-generacion">Generación</label>
+          <select id="alumno-generacion" class="form-select">
+            <option value="">Sin generación</option>
+          </select>
+        </div>
       </div>
     </form>
 

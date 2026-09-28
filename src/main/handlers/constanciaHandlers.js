@@ -592,7 +592,7 @@ module.exports = () => {
   // ==========================================================
   // HANDLER: Obtener asignaciones de un docente en múltiples periodos
   // ==========================================================
-  ipcMain.handle(
+    ipcMain.handle(
     "obtener-asignaciones-multi",
     async (event, { docenteId, periodoIds }) => {
       try {
@@ -621,7 +621,10 @@ module.exports = () => {
         INNER JOIN periodos p ON dea.periodo_id = p.id
         LEFT JOIN estadisticas_ee_periodo ep 
           ON ep.ee_id = ee.id AND ep.periodo_id = p.id
-        WHERE dea.docente_id = ? AND dea.periodo_id IN (${marks})
+        WHERE dea.docente_id = ? 
+          AND dea.periodo_id IN (${marks})
+          AND dea.estado = 'activo'
+          AND ee.estado = 'activa'
         ORDER BY p.fecha_inicio, ee.clave_ee
       `,
           )

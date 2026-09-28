@@ -30,6 +30,7 @@ export class GeneracionModule {
     if (this.initialized) {
       this._cleanup.forEach((fn) => fn());
       this._cleanup = [];
+      this.cachedSelectData = null;
     }
     this._injectModal();
     await this._waitForDOM("tabla-generaciones-body");
@@ -118,7 +119,9 @@ export class GeneracionModule {
         columns: this._getColumns(),
         expandable: true,
         actions: true,
+        onRowClick: "generacionModuleInstance.handleRowClick(event)",
         onExpand: "generacionModuleInstance.loadRowSummary(event)",
+        onExpandAction: "generacionModuleInstance.openAssignmentModal(this)",
       });
     }
     this.table.setData(this.data);
@@ -182,6 +185,38 @@ export class GeneracionModule {
       .querySelectorAll(".data-row.selected")
       .forEach((r) => r.classList.remove("selected"));
     row.classList.add("selected");
+  }
+
+  openAssignmentModal(buttonEl) {
+    const expandedRow = buttonEl?.closest(".sub-row-details");
+    const row = expandedRow
+      ? expandedRow.previousElementSibling
+      : buttonEl?.closest(".data-row");
+
+    if (!row?.classList.contains("data-row")) return;
+
+    const generacionId = row.dataset.id?.trim();
+    if (!generacionId || !this.data?.length) return;
+
+    const generacion = this._findGeneracion(generacionId);
+    if (!generacion) {
+      console.error(`❌ Generacion no encontrada: ${generacionId}`);
+      Toast.error("No se encontro la generación seleccionada", 4000);
+      return;
+    }
+
+    window.assignmentModal.open({
+      entityType: "generacion",
+      entityId: generacion.id,
+      entityName: generacion.nombre,
+      clave: generacion.clave,
+      planNombre: generacion.plan_nombre || null,
+      periodoIngreso: generacion.periodo_desc || null,
+    });
+
+    console.log(
+      `✅ [GeneracionModule] Modal abierto para: ${generacion.nombre}`,
+    );
   }
 
   _setupTableEvents() {

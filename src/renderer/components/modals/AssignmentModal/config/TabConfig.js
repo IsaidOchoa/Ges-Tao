@@ -31,7 +31,7 @@ export const TAB_CONFIGS = {
     }
   ],
 
-  alumno: [
+    alumno: [
     {
       key: 'tutor_asignado',
       label: 'Tutor',
@@ -43,7 +43,37 @@ export const TAB_CONFIGS = {
         { key: 'correo', label: 'Correo', width: '20%' }
       ],
       removeBtnText: 'Desasignar Tutor',
-      singleItem: true 
+      singleItem: true
+    },
+    {
+      key: 'generacion',
+      label: 'Generación',
+      icon: 'fa-users',
+      title: 'Generación del Alumno',
+      columns: [
+        { key: 'clave', label: 'Clave', width: '30%' },
+        { key: 'nombre', label: 'Nombre', width: '50%' },
+        { key: 'periodo_ingreso', label: 'Ingreso', width: '20%' }
+      ],
+      removeBtnText: 'Desasignar Generación',
+      singleItem: true,
+      requiresPeriod: false
+    }
+  ],
+
+  generacion: [
+    {
+      key: 'alumnos',
+      label: 'Alumnos',
+      icon: 'fa-user-graduate',
+      title: 'Alumnos de la Generación',
+      columns: [
+        { key: 'nombre_completo', label: 'Nombre del Alumno', width: '45%' },
+        { key: 'matricula', label: 'Matrícula', width: '30%' },
+        { key: 'programa_academico', label: 'Programa', width: '25%' }
+      ],
+      removeBtnText: 'Quitar de la Generación',
+      requiresPeriod: false
     }
   ],
 

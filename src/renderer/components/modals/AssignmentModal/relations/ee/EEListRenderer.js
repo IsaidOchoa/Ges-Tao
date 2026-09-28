@@ -186,6 +186,8 @@ async assign() {
       
       // 4. Forzar recarga de datos y renderizado
       await this.renderList();
+      await this.loadSelect();
+      await this.refreshCounter();
       
     } else {
       this.toast.error(res?.error || 'Error al asignar');
@@ -199,59 +201,75 @@ async assign() {
   }
 }
 
-async remove(eeId, eeName) {
-  if (!this._cardRefs || !this._context) return;
+  async remove(eeId, eeName) {
+    if (this._removeInProgress) return;
+    this._removeInProgress = true;
 
-  const confirmed = await this.confirm.ask(
-    `¿Desasignar Experiencia Educativa?`,
-    `¿Quitar <strong>"${this.helpers.escapeHtml(eeName)}"</strong>?`
-  );
+    try {
+      if (!this._cardRefs || !this._context) return;
 
-  if (!confirmed) return;
+      const confirmed = await this.confirm.ask(
+        `¿Desasignar Experiencia Educativa?`,
+        `¿Quitar <strong>"${this.helpers.escapeHtml(eeName)}"</strong>?`,
+      );
 
-  const btn = this._cardRefs.listContainer.querySelector(`button[data-id="${eeId}"]`);
-  const originalState = btn ? { html: btn.innerHTML, disabled: btn.disabled } : null;
+      if (!confirmed) return;
 
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Quitando...';
-  }
+      const btn = this._cardRefs.listContainer.querySelector(
+        `button[data-id="${eeId}"]`,
+      );
+      const originalState = btn
+        ? { html: btn.innerHTML, disabled: btn.disabled }
+        : null;
 
-  try {
-    const { entityId } = this._context;
-    
-    const res = await this.api.removerDocenteEE({ 
-      docenteId: entityId, 
-      eeId: eeId, 
-      periodoId: this._periodId 
-    });
-    
-    if (!res?.success) throw new Error(res?.error || 'Error al desasignar');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Quitando...';
+      }
 
-    this.toast.success('EE desasignada correctamente');
-    
-    // 1. Invalidar módulos globales
-    this.stateManager.invalidateModules(['ee_asignadas', 'counters', 'sidebar']);
-    
-    // 2. Pequeño delay
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    // 3. Limpiar cache local
-    this._currentItems.clear();
-    
-    // 4. Forzar recarga de datos y renderizado
-    await this.renderList();
-    
-  } catch (error) {
-    console.error('❌ Error desasignando EE:', error);
-    this.toast.error(`No se pudo desasignar: ${error.message}`);
-    
-    if (btn && originalState) {
-      btn.disabled = originalState.disabled;
-      btn.innerHTML = originalState.html;
+      const { entityId } = this._context;
+
+      const res = await this.api.removerDocenteEE({
+        docenteId: entityId,
+        eeId: eeId,
+        periodoId: this._periodId,
+      });
+
+      if (!res?.success) throw new Error(res?.error || "Error al desasignar");
+
+      this.toast.success("EE desasignada correctamente");
+
+      // 1. Invalidar módulos globales
+      this.stateManager.invalidateModules(["ee_asignadas", "counters", "sidebar"]);
+
+      // 2. Pequeño delay
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // 3. Limpiar cache local
+      this._currentItems.clear();
+
+      // 4. Recargar lista y select (la EE vuelve a estar disponible)
+      await this.renderList();
+      await this.loadSelect();
+    } catch (error) {
+      console.error("❌ Error desasignando EE:", error);
+      this.toast.error(`No se pudo desasignar: ${error.message}`);
+
+      const btn = this._cardRefs?.listContainer?.querySelector(
+        `button[data-id="${eeId}"]`,
+      );
+      const originalState = btn
+        ? { html: btn.innerHTML, disabled: btn.disabled }
+        : null;
+
+      if (btn && originalState) {
+        btn.disabled = originalState.disabled;
+        btn.innerHTML = originalState.html;
+      }
+    } finally {
+      this._removeInProgress = false;
     }
   }
-}
 
    _createItem(ee) {
   const row = document.createElement('tr');
@@ -301,53 +319,33 @@ async remove(eeId, eeName) {
   return row;
 }
 
-bindEvents() {
-  // 1. LLAMAR AL MÉTODO PADRE UNA SOLA VEZ
-  if (!this._parentBound) {
+  bindEvents() {
     super.bindEvents();
-    this._parentBound = true;
-  }
-  
-  if (!this._cardRefs?.listContainer) {
-    console.error('❌ [EEListRenderer] listContainer no existe en bindEvents');
-    return;
-  }
 
-  // 2. Remover listener anterior si existe (evitar duplicados)
-  if (this._editableClickHandler) {
-    this._cardRefs.listContainer.removeEventListener('click', this._editableClickHandler);
-  }
+    if (!this._cardRefs?.listContainer) return;
 
-  // 3. Crear handler
-  this._editableClickHandler = (e) => {
-    const editableField = e.target.closest('.editable-field');
-    if (editableField) {
-      e.stopPropagation();
-      
-      const eeId = editableField.dataset.id;
-      const field = editableField.dataset.field;
-      const currentValue = editableField.dataset.value;
-      
-      if (field === 'num_alumnos') {
-        this._editNumAlumnos(eeId, currentValue, editableField);
+    if (this._editableClickHandler) {
+      this._cardRefs.listContainer.removeEventListener("click", this._editableClickHandler);
+    }
+
+    this._editableClickHandler = (e) => {
+      const editableField = e.target.closest(".editable-field");
+      if (editableField) {
+        e.stopPropagation();
+        const { id, field, value } = editableField.dataset;
+        if (field === "num_alumnos") this._editNumAlumnos(id, value, editableField);
+        return;
       }
-      return;
-    }
 
-    const removeBtn = e.target.closest('.btn-remove-row');
-    if (removeBtn) {
-      e.stopPropagation();
-      
-      const eeId = removeBtn.dataset.id;
-      const eeName = removeBtn.dataset.name;
-      
-      this.remove(eeId, eeName);
-      return;
-    }
-  };
+      const removeBtn = e.target.closest(".btn-remove-row");
+      if (removeBtn) {
+        e.stopPropagation();
+        this.remove(removeBtn.dataset.id, removeBtn.dataset.name);
+      }
+    };
 
-  this._cardRefs.listContainer.addEventListener('click', this._editableClickHandler);
-}
+    this._cardRefs.listContainer.addEventListener("click", this._editableClickHandler);
+  }
 
   async _editNumAlumnos(eeId, currentValue, fieldElement) {
     console.log('✏️ [EEListRenderer] Iniciando edición en línea para:', { eeId, currentValue });

@@ -3,6 +3,7 @@
 import { uiLoader } from "../../../utils/uiLoader.js";
 import { Toast } from "../../common/Toast.js";
 import { globalConfirm } from "../../../utils/confirmationModal.js";
+import { TAB_CONFIGS } from "./config/TabConfig.js";
 import modalAsignacionesHtml from "../../../config/relationships/templates/modal-asignaciones.html";
 
 import { StateManager } from "./core/StateManager.js";
@@ -13,6 +14,8 @@ import { EEListRenderer } from "./relations/ee/EEListRenderer.js";
 import { TutoradoListRenderer } from "./relations/tutorados/TutoradoListRenderer.js";
 import { TutorRenderer } from "./relations/tutor/TutorRenderer.js";
 import { DocenteRenderer } from "./relations/docente/DocenteRenderer.js";
+import { GeneracionAlumnosRenderer } from "./relations/generacion/GeneracionAlumnosRenderer.js";
+import { AlumnosGeneracionRenderer } from "./relations/generacion/AlumnosGeneracionRenderer.js";
 
 export class AssignmentModal {
   constructor() {
@@ -114,11 +117,33 @@ export class AssignmentModal {
           uiLoader: uiLoader,
         }),
       );
+      this.workspaceManager.registerRenderer(
+        "generacion",
+        new GeneracionAlumnosRenderer({
+          api: window.electronAPI,
+          toast: Toast,
+          confirm: globalConfirm,
+          stateManager: this.stateManager,
+          uiLoader: uiLoader,
+        }),
+      );
     } else if (entityType === "ee") {
       console.log("[AssignmentModal] Registrando renderers para EE");
       this.workspaceManager.registerRenderer(
         "docente_asignado",
         new DocenteRenderer({
+          api: window.electronAPI,
+          toast: Toast,
+          confirm: globalConfirm,
+          stateManager: this.stateManager,
+          uiLoader: uiLoader,
+        }),
+      );
+    } else if (entityType === "generacion") {
+      console.log("[AssignmentModal] Registrando renderers para GENERACION");
+      this.workspaceManager.registerRenderer(
+        "alumnos",
+        new AlumnosGeneracionRenderer({
           api: window.electronAPI,
           toast: Toast,
           confirm: globalConfirm,
@@ -240,7 +265,14 @@ export class AssignmentModal {
 
   async _loadInitialData() {
     try {
-      await this.sidebarManager.loadPeriods(this.elements.sidebarPeriodSelect);
+      if (this._contextRequiresPeriod()) {
+        await this.sidebarManager.loadPeriods(
+          this.elements.sidebarPeriodSelect,
+        );
+      } else {
+        this._hidePeriodRelatedSidebar();
+      }
+
       this.sidebarManager.renderContext(
         this.elements.sidebarContextInfo,
         this.stateManager.context,
@@ -255,6 +287,35 @@ export class AssignmentModal {
       console.error("Error cargando modal:", error);
       Toast.error("Error al cargar datos del modal.");
     }
+  }
+
+  // Un contexto requiere periodo solo si ALGUNA de sus tabs lo requiere.
+  // generacion: [alumnos (requiresPeriod:false)] → no requiere.
+  // alumno: [tutor_asignado, generacion] → sí requiere (por tutor_asignado).
+  _contextRequiresPeriod() {
+    const { entityType } = this.stateManager.context || {};
+    const tabs = TAB_CONFIGS[entityType] || [];
+    return tabs.some((t) => t.requiresPeriod !== false);
+  }
+
+  // Oculta todo el bloque de periodos/relaciones del sidebar en contextos sin periodo
+  _hidePeriodRelatedSidebar() {
+    const overlay = this.elements.overlay;
+    if (!overlay) return;
+
+    // Sección 2: "Contexto activo" + selector de periodo
+    const periodSection = overlay
+      .querySelector("#ctx-period-selector")
+      ?.closest("section.context-section");
+    if (periodSection) periodSection.style.display = "none";
+
+    // Sección 3: panel "Relaciones actuales"
+    const relationsPanel = overlay.querySelector("#sidebar-relations-panel");
+    if (relationsPanel) relationsPanel.style.display = "none";
+
+    // Sección 4: chips + tuerca
+    const periodsManager = overlay.querySelector("#sidebar-periods-manager");
+    if (periodsManager) periodsManager.style.display = "none";
   }
 
   async _switchTab(tabId) {
@@ -275,15 +336,15 @@ export class AssignmentModal {
 
   async _handlePeriodChange(periodId) {
     console.log("[AssignmentModal] Cambiando a periodo:", periodId);
-    
+
     // 1. Establecer en StateManager
     this.stateManager.setActivePeriod(periodId);
-    
+
     // 2.PARCHES DE SEGURIDAD: Guardar también en WorkspaceManager por si StateManager lo pierde
     if (this.workspaceManager) {
       this.workspaceManager._lastKnownPeriod = periodId;
     }
-    
+
     // 3. Invalidar caché
     this.stateManager.invalidateAll();
 
