@@ -1,0 +1,33 @@
+<!-- src/renderer/views/partials/modals/modal-firmantes.html -->
+<div id="modal-firmantes" class="modal hidden">
+  <div class="modal-content modal-lg">
+    <div class="modal-header">
+      <h3>Catálogo de Firmantes</h3>
+      <button class="btn-close" id="btn-close-firmantes">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">
+        Edita, agrega o elimina los firmantes disponibles. Estos aparecerán en el
+        selector al generar constancias.
+      </p>
+
+      <div class="firmante-form">
+        <input
+          type="text"
+          id="firmante-texto"
+          class="form-control"
+          placeholder="Ej: Dr. Juan Pérez — Director de la Facultad"
+        />
+        <input type="hidden" id="firmante-id" value="" />
+        <button class="btn btn-primary" id="btn-guardar-firmante">
+          <i class="fa-solid fa-save"></i> Guardar
+        </button>
+        <button class="btn btn-secondary" id="btn-cancelar-firmante">
+          <i class="fa-solid fa-times"></i> Cancelar
+        </button>
+      </div>
+
+      <div class="firmante-list" id="firmante-list"></div>
+    </div>
+  </div>
+</div>

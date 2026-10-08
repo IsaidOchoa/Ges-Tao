@@ -26,28 +26,30 @@
               >{{DATO:docente_articulo}} {{DATO:docente_tratamiento}}
               {{DATO:docente_nombre}}</strong
             >, con número de personal <strong>{{DATO:docente_codigo}}</strong>,
-            participó en los siguientes eventos académicos:
+            ha sido designado como jurado de examen de grado del Programa
+            Educativo de Posgrado Maestría en Sistemas Interactivos Centrados en
+            el Usuario, para evaluar los siguientes trabajos recepcionales:
           </p>
           <table class="cert-table">
             <thead>
               <tr>
-                <th>Evento</th>
-                <th>Tipo de Participación</th>
-                <th>Fecha de Inicio</th>
-                <th>Fecha de Fin</th>
-                <th>Horas</th>
+                <th>Alumno</th>
+                <th>Fecha de Examen</th>
+                <th>Título del Trabajo</th>
+                <th>Modalidad</th>
+                <th>Rol en el Jurado</th>
               </tr>
             </thead>
             <tbody>
-              {{#LOOP:eventos}}
+              {{#LOOP:jurados}}
               <tr>
-                <td>{{nombre}}</td>
-                <td>{{tipo_participacion}}</td>
-                <td>{{fecha_inicio}}</td>
-                <td>{{fecha_fin}}</td>
-                <td>{{horas}}</td>
+                <td>{{alumno}}</td>
+                <td>{{fecha_examen}}</td>
+                <td>{{titulo}}</td>
+                <td>{{modalidad}}</td>
+                <td>{{rol}}</td>
               </tr>
-              {{/LOOP:eventos}}
+              {{/LOOP:jurados}}
             </tbody>
           </table>
           {{INCLUDE:pie}}

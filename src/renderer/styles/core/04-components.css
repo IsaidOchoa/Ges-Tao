@@ -614,3 +614,35 @@ label:has(input[type="checkbox"]):not(.radio-option-compact) {
   width: auto;
   margin-bottom: 0;
 }
+
+/* =========================================
+   11. SCROLLBAR GLOBAL: integrado al tema
+   Aplica a todos los contenedores con scroll del renderer.
+   Usa variables de tema, así que se adapta a claro/oscuro solo.
+   ========================================= */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* El preview conserva scrollbar claro (su contenido siempre es blanco) */
+#preview-frame-wrap::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+}
+
+#preview-frame-wrap::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}

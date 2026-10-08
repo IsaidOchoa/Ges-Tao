@@ -91,8 +91,11 @@ export class PlanModule {
       this.table = new DataTable({
         tbodyId: "tabla-planes-body",
         columns: this._getColumns(),
-        expandable: false, // ✅ catálogo de solo consumo, sin fila de relaciones
+        expandable: true,
         actions: true,
+        onRowClick: "planModuleInstance.handleRowClick(event)",
+        onExpand: "planModuleInstance.loadRowSummary(event)",
+        onExpandAction: "planModuleInstance.openAssignmentModal(this)",
       });
     }
     this.table.setData(this.data);
@@ -133,6 +136,79 @@ export class PlanModule {
       (p) =>
         String(p.id) === String(rowId) || String(p.clave) === String(rowId),
     );
+  }
+
+  handleRowClick(event) {
+    const row = event.target.closest(".data-row");
+    if (!row) return;
+    if (
+      event.target.closest(".btn-action-menu") ||
+      event.target.closest(".context-menu")
+    )
+      return;
+    row.classList.toggle("expanded");
+    const detailsRow = row.nextElementSibling;
+    if (detailsRow && detailsRow.classList.contains("sub-row-details")) {
+      detailsRow.classList.toggle("hidden");
+      if (!detailsRow.classList.contains("hidden")) this.loadRowSummary(event);
+    }
+    document
+      .querySelectorAll(".data-row.selected")
+      .forEach((r) => r.classList.remove("selected"));
+    row.classList.add("selected");
+  }
+
+  async loadRowSummary(event) {
+    const row = event.target ? event.target.closest(".data-row") : null;
+    if (!row) return;
+    const detailsRow = row.nextElementSibling;
+    if (!detailsRow || !detailsRow.classList.contains("sub-row-details"))
+      return;
+    const chips = detailsRow.querySelector(".summary-chips");
+    if (!chips) return;
+
+    const plan = this._findPlan(row.dataset.id);
+    if (!plan) {
+      chips.innerHTML = '<span class="chip">Sin datos</span>';
+      return;
+    }
+
+    chips.innerHTML = '<span class="chip">⏳ Cargando...</span>';
+    try {
+      const res = await window.electronAPI.obtenerGeneracionesDePlan({
+        planId: plan.id,
+      });
+      const gens = res?.success ? res.data : [];
+      chips.innerHTML =
+        `<span class="chip accent">Nivel: ${plan.nivel || "-"}</span>` +
+        `<span class="chip">Generaciones: ${gens.length}</span>`;
+    } catch (error) {
+      console.error("Error cargando resumen del plan:", error);
+      chips.innerHTML = '<span class="chip">Error al cargar</span>';
+    }
+  }
+
+  openAssignmentModal(buttonEl) {
+    const expandedRow = buttonEl?.closest(".sub-row-details");
+    const row = expandedRow
+      ? expandedRow.previousElementSibling
+      : buttonEl?.closest(".data-row");
+    if (!row?.classList.contains("data-row")) return;
+
+    const plan = this._findPlan(row.dataset.id);
+    if (!plan) {
+      Toast.error("No se encontró el plan seleccionado", 4000);
+      return;
+    }
+
+    window.assignmentModal.open({
+      entityType: "plan",
+      entityId: plan.id,
+      entityName: plan.nombre,
+      clave: plan.clave,
+      nivel: plan.nivel,
+    });
+    console.log(`✅ [PlanModule] Modal abierto para: ${plan.nombre}`);
   }
 
   _openEditFromMenu(id) {

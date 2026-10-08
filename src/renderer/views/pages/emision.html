@@ -13,12 +13,20 @@
       </div>
 
       <form id="form-constancia">
-        <!-- 1. Tipo de Constancia -->
+        <!-- 1. Tipo de Constancia (buscador de opción única) -->
         <div class="form-group">
-          <label>Tipo de Constancia *</label>
-          <select id="sel-tipo" class="form-control" required>
-            <option value="">Seleccione un tipo...</option>
-          </select>
+          <label for="tipo-search">Tipo de Constancia *</label>
+          <div class="chips-search-wrap">
+            <input
+              type="text"
+              id="tipo-search"
+              class="chips-search"
+              placeholder="Buscar tipo de constancia..."
+              autocomplete="off"
+            />
+            <div id="tipo-dropdown" class="chips-dropdown hidden"></div>
+          </div>
+          <small class="form-help" id="tipo-formato-hint"></small>
         </div>
 
         <!-- 2. Programa Institucional -->
@@ -112,7 +120,7 @@
       </form>
     </div>
 
-    <!-- 📄 VISTA PREVIA (Centro) -->
+    <!-- VISTA PREVIA (Centro) -->
     <div class="card emission-preview">
       <div class="section-header preview-header">
         <h3 class="section-title">
@@ -132,23 +140,22 @@
         </div>
       </div>
 
-      <div id="preview-area" class="preview-area">
+      <div id="preview-area" class="preview-area preview-empty">
         <div id="preview-placeholder" class="preview-placeholder">
           <i class="fa-solid fa-file-lines"></i>
-          <p>
-            Seleccione un tipo de constancia y un docente para generar la vista
-            previa.
-          </p>
+          <p>Seleccione un tipo de constancia para generar la vista previa.</p>
         </div>
-        <iframe
-          id="preview-frame"
-          class="preview-frame"
-          title="Vista previa de constancia"
-        ></iframe>
+        <div id="preview-frame-wrap">
+          <iframe
+            id="preview-frame"
+            class="preview-frame"
+            title="Vista previa de constancia"
+          ></iframe>
+        </div>
       </div>
     </div>
 
-    <!-- ⚙️ PANEL DERECHO (Opciones de Salida) -->
+    <!-- PANEL DERECHO (Opciones de Salida) -->
     <div class="card emission-options" id="panel-derecho">
       <div class="section-header options-header">
         <h3 class="section-title">
@@ -194,12 +201,67 @@
         <button class="btn btn-secondary btn-sm" id="btn-agregar-firma">
           <i class="fa-solid fa-plus"></i> Agregar Firma
         </button>
-        <button class="btn btn-link btn-sm" id="btn-gestionar-firmantes">
-          <i class="fa-solid fa-list"></i> Gestionar catálogo
+        <button class="btn btn-secondary btn-sm" id="btn-gestionar-firmantes">
+          <i class="fa-solid fa-list"></i> Gestionar Firmas
         </button>
       </div>
 
-      <!-- Sección 3: Logotipos del membrete -->
+      <!-- Sección 3: Color de fondo de la vista previa -->
+      <div class="options-section">
+        <h4 title="Color de fondo de la vista previa">
+          <i class="fa-solid fa-palette"></i>
+          <span class="options-label">Fondo de vista previa</span>
+        </h4>
+        <div class="bg-swatches" id="bg-swatches">
+          <button
+            type="button"
+            class="bg-swatch active"
+            data-bg="#ffffff"
+            title="Blanco (default)"
+            style="--swatch: #ffffff"
+          ></button>
+          <button
+            type="button"
+            class="bg-swatch"
+            data-bg="#f8f5ec"
+            title="Crema"
+            style="--swatch: #f8f5ec"
+          ></button>
+          <button
+            type="button"
+            class="bg-swatch"
+            data-bg="#f4f4f4"
+            title="Gris claro"
+            style="--swatch: #f4f4f4"
+          ></button>
+          <button
+            type="button"
+            class="bg-swatch"
+            data-bg="#d9d9d9"
+            title="Gris medio"
+            style="--swatch: #d9d9d9"
+          ></button>
+          <button
+            type="button"
+            class="bg-swatch"
+            data-bg="#bdbdbd"
+            title="Gris oscuro suave"
+            style="--swatch: #bdbdbd"
+          ></button>
+          <button
+            type="button"
+            class="bg-swatch"
+            data-bg="#9c9c9c"
+            title="Gris oscuro (límite legible)"
+            style="--swatch: #9c9c9c"
+          ></button>
+        </div>
+        <small class="form-help options-label">
+          Solo afecta la vista previa; el PDF se emite en blanco.
+        </small>
+      </div>
+
+      <!-- Sección 4: Logotipos del membrete -->
       <div class="options-section">
         <h4 title="Logotipos">
           <i class="fa-solid fa-image"></i>

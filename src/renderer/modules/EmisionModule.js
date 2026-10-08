@@ -1,10 +1,11 @@
-/** src/renderer/modules/EmisionModule.js */
+// src/renderer/modules/EmisionModule.js
 /**
  * @description Gestiona la interfaz y lógica para la generación de constancias docentes
- * @version 2.2.0
+ * @version 2.3.0
  */
 
 import { Toast } from "../components/common/Toast.js";
+import { FirmanteModule } from "./FirmanteModule.js";
 
 export class EmisionModule {
   constructor() {
@@ -51,11 +52,17 @@ export class EmisionModule {
 
     this.periodosAsignadosDocente = [];
     this.periodosIncluidos = new Set();
+    this.firmanteModule = new FirmanteModule();
     this._listenersCleanup = [];
     this._previewDebounceTimer = null;
     this._firmaSlotIdCounter = 0;
     this._isGenerando = false;
-    this._previewZoom = 1;
+    this._pageW = 816;
+    this._pageH = 1056;
+    this._userZoom = 1;
+    this._baseFitZoom = 1;
+    this._resizeTimer = null;
+    this._previewBgColor = "#ffffff";
   }
 
   async init() {
@@ -75,16 +82,20 @@ export class EmisionModule {
     try {
       await this.cargarDatosIniciales();
       this.configurarFormulario();
+      this._baseFitZoom = this._calcularZoomAjuste();
       await this.configurarPanelDerecho();
       this.establecerFechaDefault();
       this.actualizarPreview();
       this._restaurarEstadoPanel();
+      await this.firmanteModule.init();
+
+      window.emisionModuleInstance = this;
 
       if (process?.env?.NODE_ENV === "development") {
-        console.log("✅ EmisionModule inicializado correctamente");
+        console.log("EmisionModule inicializado correctamente");
       }
     } catch (err) {
-      console.error("❌ Error crítico en init():", err);
+      console.error("Error crítico en init():", err);
       Toast.error("No se pudo cargar el módulo de emisión", 10000);
     }
   }
@@ -119,7 +130,8 @@ export class EmisionModule {
   _verificarElementosCriticos() {
     const elementosRequeridos = [
       "form-constancia",
-      "sel-tipo",
+      "tipo-search",
+      "tipo-dropdown",
       "sel-programa",
       "sel-docente",
       "input-fecha-emision",
@@ -181,7 +193,7 @@ export class EmisionModule {
     }
   }
 
-    async _reloadPeriodosDocente() {
+  async _reloadPeriodosDocente() {
     if (!this.contexto.docente) return;
     await this.cargarPeriodosDocente();
     this.renderControlPeriodos();
@@ -190,7 +202,7 @@ export class EmisionModule {
 
   _deshabilitarFormulario(deshabilitar) {
     [
-      "sel-tipo",
+      "tipo-search",
       "sel-programa",
       "sel-periodo",
       "sel-docente",
@@ -243,13 +255,6 @@ export class EmisionModule {
     };
 
     fill(
-      "sel-tipo",
-      this.datosMaestros.tipos,
-      "Seleccione un tipo...",
-      "id",
-      (i) => i.nombre,
-    );
-    fill(
       "sel-programa",
       this.datosMaestros.programas,
       "Seleccione un programa...",
@@ -293,7 +298,45 @@ export class EmisionModule {
       });
     };
 
-    bindWithCleanup("sel-tipo", "change", () => this.actualizarContexto());
+    const swatches = document.getElementById("bg-swatches");
+    if (swatches) {
+      bindWithCleanup("bg-swatches", "click", (e) => {
+        const btn = e.target.closest(".bg-swatch");
+        if (!btn) return;
+        swatches
+          .querySelectorAll(".bg-swatch")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        this._previewBgColor = btn.dataset.bg;
+        this._aplicarColorFondo();
+      });
+    }
+
+    const onResize = () => {
+      clearTimeout(this._resizeTimer);
+      this._resizeTimer = setTimeout(() => {
+        this._baseFitZoom = this._calcularZoomAjuste();
+        this._aplicarZoom();
+      }, 150);
+    };
+    window.addEventListener("resize", onResize);
+    this._listenersCleanup.push(() =>
+      window.removeEventListener("resize", onResize),
+    );
+    // Buscador de tipos de constancia
+    bindWithCleanup("tipo-search", "input", (e) =>
+      this.renderTipoDropdown(e.target.value),
+    );
+    bindWithCleanup("tipo-search", "focus", (e) =>
+      this.renderTipoDropdown(e.target.value),
+    );
+    bindWithCleanup("tipo-search", "blur", () => {
+      setTimeout(() => this._cerrarTipoDropdown(), 150);
+    });
+    bindWithCleanup("tipo-search", "keydown", (e) => {
+      if (e.key === "Escape") this._cerrarTipoDropdown();
+    });
+
     bindWithCleanup("sel-programa", "change", () => this.actualizarContexto());
     bindWithCleanup("sel-periodo", "change", () => this.actualizarContexto());
 
@@ -328,10 +371,10 @@ export class EmisionModule {
     });
 
     bindWithCleanup("btn-zoom-in", "click", () =>
-      this._setZoom(this._previewZoom + 0.1),
+      this._setZoom(this._userZoom + 0.1),
     );
     bindWithCleanup("btn-zoom-out", "click", () =>
-      this._setZoom(this._previewZoom - 0.1),
+      this._setZoom(this._userZoom - 0.1),
     );
     bindWithCleanup("btn-zoom-reset", "click", () => this._setZoom(1));
 
@@ -371,22 +414,143 @@ export class EmisionModule {
         this._reloadPeriodosDocente(),
       );
     }
+
+    const onModalClosed = () => this._reloadPeriodosDocente();
+    window.addEventListener("assignmentModalClosed", onModalClosed);
+    this._listenersCleanup.push(() =>
+      window.removeEventListener("assignmentModalClosed", onModalClosed),
+    );
+  }
+
+  _tipoLabel(t) {
+    return `${t.clave} — ${t.nombre}`;
+  }
+
+  renderTipoDropdown(query = "") {
+    const dd = document.getElementById("tipo-dropdown");
+    if (!dd) return;
+
+    const q = (query || "").toLowerCase().trim();
+    const opciones = this.datosMaestros.tipos.filter((t) =>
+      `${t.clave} ${t.nombre} ${t.descripcion || ""}`.toLowerCase().includes(q),
+    );
+
+    dd.innerHTML = "";
+    if (opciones.length === 0) {
+      dd.classList.add("hidden");
+      return;
+    }
+
+    opciones.forEach((t) => {
+      const item = document.createElement("div");
+      item.className = "dd-item";
+      item.innerHTML = `
+        <span>${this._escapeHtml(this._tipoLabel(t))}</span>
+        ${t.plantilla_archivo ? "" : '<span class="dd-item-tag">sin formato</span>'}
+      `;
+      item.addEventListener("mousedown", (e) => e.preventDefault());
+      item.addEventListener("click", () => this._selectTipo(t.id));
+      dd.appendChild(item);
+    });
+    dd.classList.remove("hidden");
+  }
+
+  _selectTipo(id) {
+    const tipo = this.datosMaestros.tipos.find(
+      (t) => String(t.id) === String(id),
+    );
+    if (!tipo) return;
+
+    this.contexto.tipo = String(tipo.id);
+    const input = document.getElementById("tipo-search");
+    if (input) input.value = this._tipoLabel(tipo);
+    this._cerrarTipoDropdown();
+    this._updateTipoHint(tipo);
+    this.actualizarContexto();
+  }
+
+  _updateTipoHint(tipo) {
+    const hint = document.getElementById("tipo-formato-hint");
+    if (!hint) return;
+    if (!tipo) {
+      hint.textContent = "";
+      return;
+    }
+    hint.textContent = tipo.plantilla_archivo
+      ? `Formato activo: ${tipo.nombre_version || "v" + (tipo.version_formato ?? "?")}`
+      : "Esta opcion aún no tiene formato registrado: la vista previa no esta disponible.";
+  }
+
+  _cerrarTipoDropdown() {
+    const dd = document.getElementById("tipo-dropdown");
+    if (dd) dd.classList.add("hidden");
+  }
+
+  _calcularZoomAjuste() {
+    const wrap = document.getElementById("preview-frame-wrap");
+    const area = document.getElementById("preview-area");
+    const target = wrap && wrap.clientWidth > 0 ? wrap : area;
+    if (!target) return 1;
+
+    const pad = 24;
+    const availW = target.clientWidth - pad;
+    const availH = target.clientHeight - pad;
+    if (availW <= 0 || availH <= 0) return 1;
+
+    const z = Math.min(availW / this._pageW, availH / this._pageH);
+    return Math.min(1, Math.round(z * 100) / 100);
   }
 
   _setZoom(z) {
-    this._previewZoom = Math.min(2, Math.max(0.5, Math.round(z * 10) / 10));
+    this._userZoom = Math.min(2.5, Math.max(0.5, Math.round(z * 10) / 10));
     const label = document.getElementById("zoom-level");
-    if (label) label.textContent = `${Math.round(this._previewZoom * 100)}%`;
+    if (label) label.textContent = `${Math.round(this._userZoom * 100)}%`;
     this._aplicarZoom();
   }
 
   _aplicarZoom() {
+    const frame = document.getElementById("preview-frame");
+    if (!frame) return;
+
+    const z = this._baseFitZoom * this._userZoom;
+
+    frame.style.width = `${Math.round(this._pageW * z)}px`;
+    frame.style.height = `${Math.round(this._pageH * z)}px`;
+
+    try {
+      const doc = frame?.contentDocument;
+      if (doc?.body) doc.body.style.zoom = z;
+    } catch (e) {
+      /* el iframe aún no está listo */
+    }
+  }
+
+  _setPlaceholder(visible, message) {
+    const placeholder = document.getElementById("preview-placeholder");
+    const area = document.getElementById("preview-area");
+    if (!placeholder || !area) return;
+
+    if (message) {
+      const p = placeholder.querySelector("p");
+      if (p) p.textContent = message;
+    }
+    placeholder.style.display = visible ? "flex" : "none";
+    area.classList.toggle("preview-empty", visible);
+  }
+
+  _aplicarColorFondo() {
     try {
       const frame = document.getElementById("preview-frame");
       const doc = frame?.contentDocument;
-      if (doc?.body) doc.body.style.zoom = this._previewZoom;
+      if (doc?.body) {
+        doc.body.style.setProperty(
+          "background-color",
+          this._previewBgColor,
+          "important",
+        );
+      }
     } catch (e) {
-      /* el iframe aún no está listo */
+      /* iframe aún no listo */
     }
   }
 
@@ -429,6 +593,20 @@ export class EmisionModule {
     const btnAgregarFirma = document.getElementById("btn-agregar-firma");
     if (btnAgregarFirma) {
       btnAgregarFirma.addEventListener("click", () => this.agregarSlotFirma());
+    }
+
+        const btnGestionarFirmantes = document.getElementById("btn-gestionar-firmantes");
+    console.log("[EmisionModule] btnGestionarFirmantes:", btnGestionarFirmantes);
+    
+    if (btnGestionarFirmantes) {
+      btnGestionarFirmantes.addEventListener("click", () => {
+        console.log("[EmisionModule] Click en btn-gestionar-firmantes");
+        console.log("[EmisionModule] firmanteModule:", this.firmanteModule);
+        this.firmanteModule.open();
+      });
+      console.log("[EmisionModule] Listener registrado para btn-gestionar-firmantes");
+    } else {
+      console.warn("[EmisionModule] btn-gestionar-firmantes NO encontrado");
     }
 
     ["uv", "msicu"].forEach((clave) => {
@@ -507,6 +685,15 @@ export class EmisionModule {
     this.configuracionPanelDerecho.rutaResumen = resumen;
   }
 
+  async recargarFirmantes() {
+    try {
+      await this.cargarDatosIniciales();
+      this.renderizarSlotsFirmas();
+    } catch (error) {
+      console.error("Error recargando firmantes:", error);
+    }
+  }
+
   async cargarFirmasPorDefecto() {
     if (!this.contexto.tipo) {
       this.datosAutoCargados.firmas = [];
@@ -534,11 +721,13 @@ export class EmisionModule {
   agregarSlotFirma() {
     this.datosAutoCargados.firmas.push({ firmante_id: null, texto: "" });
     this.renderizarSlotsFirmas();
+    this.actualizarPreview();
   }
 
   eliminarSlotFirma(index) {
     this.datosAutoCargados.firmas.splice(index, 1);
     this.renderizarSlotsFirmas();
+    this.actualizarPreview();
   }
 
   renderizarSlotsFirmas() {
@@ -590,6 +779,14 @@ export class EmisionModule {
     });
   }
 
+  _inyectarColorFondo(html) {
+    const style = `<style id="preview-bg">body{background-color:${this._previewBgColor} !important;}</style>`;
+    if (html.includes("</head>")) {
+      return html.replace("</head>", `${style}</head>`);
+    }
+    return style + html;
+  }
+
   togglePanelDerecho() {
     const container = document.querySelector(".emission-container");
     const btn = document.getElementById("btn-toggle-panel-derecho");
@@ -607,6 +804,11 @@ export class EmisionModule {
         icon.classList.replace("fa-chevron-left", "fa-chevron-right");
       }
     }
+
+    setTimeout(() => {
+      this._baseFitZoom = this._calcularZoomAjuste();
+      this._aplicarZoom();
+    }, 250);
 
     window.electronAPI
       ?.guardarConfig?.({
@@ -660,7 +862,6 @@ export class EmisionModule {
   }
 
   actualizarContexto() {
-    this.contexto.tipo = document.getElementById("sel-tipo")?.value || null;
     this.contexto.programa =
       document.getElementById("sel-programa")?.value || null;
     this.contexto.periodo =
@@ -886,12 +1087,29 @@ export class EmisionModule {
     clearTimeout(this._previewDebounceTimer);
     this._previewDebounceTimer = setTimeout(async () => {
       const frame = document.getElementById("preview-frame");
-      const placeholder = document.getElementById("preview-placeholder");
-      if (!frame || !placeholder) return;
+      if (!frame) return;
 
       if (!this.contexto.tipo) {
+        frame.srcdoc = "";
         frame.classList.remove("visible");
-        placeholder.style.display = "flex";
+        this._setPlaceholder(
+          true,
+          "Seleccione un tipo de constancia para generar la vista previa.",
+        );
+        return;
+      }
+
+      const tipo = this.datosMaestros.tipos.find(
+        (t) => String(t.id) === String(this.contexto.tipo),
+      );
+
+      if (!tipo?.plantilla_archivo) {
+        frame.srcdoc = "";
+        frame.classList.remove("visible");
+        this._setPlaceholder(
+          true,
+          "Este tipo de constancia aún no tiene un formato registrado.",
+        );
         return;
       }
 
@@ -899,10 +1117,17 @@ export class EmisionModule {
         const payload = this._buildPayload();
         const resp = await window.electronAPI.previsualizarConstancia(payload);
         if (resp?.success) {
-          frame.srcdoc = resp.html;
+          frame.srcdoc = this._inyectarColorFondo(resp.html);
           frame.classList.add("visible");
-          placeholder.style.display = "none";
+          this._setPlaceholder(false);
           frame.onload = () => this._habilitarEditables(frame);
+        } else {
+          frame.srcdoc = "";
+          frame.classList.remove("visible");
+          this._setPlaceholder(
+            true,
+            resp?.error || "No se pudo generar la vista previa.",
+          );
         }
       } catch (err) {
         console.warn("[EmisionModule] Error en preview:", err);
@@ -1028,18 +1253,20 @@ export class EmisionModule {
     this.periodosAsignadosDocente = [];
 
     this.limpiarAutoCarga();
+    this._updateTipoHint(null);
+    this._cerrarTipoDropdown();
 
     this.establecerFechaDefault();
 
     const frame = document.getElementById("preview-frame");
-    const placeholder = document.getElementById("preview-placeholder");
     if (frame) {
       frame.srcdoc = "";
       frame.classList.remove("visible");
     }
-    if (placeholder) {
-      placeholder.style.display = "flex";
-    }
+    this._setPlaceholder(
+      true,
+      "Seleccione un tipo de constancia para generar la vista previa.",
+    );
 
     Toast.success("Formulario restablecido", 3000);
   }
@@ -1048,6 +1275,12 @@ export class EmisionModule {
     e.preventDefault();
 
     if (this._isGenerando) return;
+
+    if (!this.contexto.tipo) {
+      Toast.warning("Seleccione un tipo de constancia para continuar.", 6000);
+      document.getElementById("tipo-search")?.focus();
+      return;
+    }
 
     const docenteVal = document.getElementById("sel-docente")?.value;
     if (!docenteVal) {

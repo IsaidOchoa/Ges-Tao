@@ -197,7 +197,7 @@ body[data-theme="dark"] .preview-area {
    ENCABEZADO DE SECCIÓN
    ======================================================= */
 .section-header {
-  margin-bottom: 20px;
+  margin-bottom: 0px;
 }
 
 .section-title {
@@ -647,7 +647,8 @@ input[type="date"].form-control {
 .zoom-controls {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  margin: 0 0 8px 0;
 }
 
 .zoom-level {
@@ -655,6 +656,11 @@ input[type="date"].form-control {
   text-align: center;
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+.zoom-controls .btn-icon,
+.zoom-controls .zoom-level {
+  margin: 0;
 }
 
 /* =======================================================
@@ -736,6 +742,84 @@ input[type="date"].form-control {
   line-height: 1;
 }
 
+#tipo-dropdown .dd-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.dd-item-tag {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.bg-swatches {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.bg-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--swatch);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.bg-swatch:hover {
+  transform: scale(1.1);
+}
+
+.bg-swatch.active {
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+#preview-area {
+  position: relative;
+}
+
+#preview-frame-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: auto;
+}
+
+#preview-area.preview-empty #preview-frame-wrap {
+  display: none;
+}
+
+.preview-frame {
+  display: none;          /* oculto hasta que haya contenido */
+  margin: auto;
+  flex-shrink: 0;
+  border: none;
+  background: #ffffff;
+}
+
+.preview-frame.visible {
+  display: block;
+}
+
+#preview-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 /* =======================================================
    MODO OSCURO: PAPEL GRIS + AJUSTES DE CONTRASTE
    ======================================================= */
@@ -773,10 +857,6 @@ body[data-theme="dark"] .watermark {
   opacity: 0.12;
 }
 
-/* =======================================================
-   CADENA DE ALTURA: emisión llena hasta el padding de content-area
-   (scopeado con :has para no tocar otras vistas)
-   ======================================================= */
 #content-area:has(.emission-container) {
   display: flex;
   flex-direction: column;
@@ -788,6 +868,148 @@ body[data-theme="dark"] .watermark {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+#btn-agregar-firma,
+#btn-gestionar-firmantes {
+  margin-bottom: 0.5rem;
+}
+
+.options-section h4 {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Contenedor del modal (overlay) */
+#modal-firmantes {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+#modal-firmantes.hidden {
+  display: none;
+}
+
+#modal-firmantes .modal-content {
+  background: var(--bg-white);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#modal-firmantes .modal-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#modal-firmantes .modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+#modal-firmantes .modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+#modal-firmantes .btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-speed);
+}
+
+#modal-firmantes .btn-close:hover {
+  background: var(--bg-light);
+}
+/* Modal de Firmantes */
+.firmante-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.firmante-form input {
+  flex: 1;
+}
+
+.firmante-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.firmante-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+  background: var(--bg-light);
+}
+
+.firmante-texto {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.firmante-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.firmante-actions .btn-icon {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.modal-lg {
+  max-width: 700px;
+}
+
+.modal-desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.loading,
+.empty-state,
+.error {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+}
+
+.error {
+  color: var(--danger-color);
 }
 
 /* =======================================================

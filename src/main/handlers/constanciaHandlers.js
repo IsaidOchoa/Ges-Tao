@@ -151,14 +151,30 @@ module.exports = () => {
       const tipos = db
         .prepare(
           `
-          SELECT id, clave, nombre, descripcion, requiere_ee, requiere_periodo 
-          FROM tipos_constancia 
-          WHERE estado = ? 
+          SELECT t.id, t.clave, t.nombre, t.descripcion, t.requiere_ee, t.requiere_periodo,
+                 f.plantilla_archivo, f.nombre_version, f.version_formato
+          FROM tipos_constancia t
+          LEFT JOIN formatos_constancia f
+            ON f.tipo_constancia_id = t.id AND f.es_actual = 1
+          WHERE t.estado = ?
           ORDER BY 
-            CASE clave 
-              WHEN 'EE' THEN 1 WHEN 'DT' THEN 2 WHEN 'JE' THEN 3 
-              WHEN 'SNP' THEN 4 WHEN 'EV' THEN 5 WHEN 'TUT' THEN 6 
-              ELSE 7 END, nombre ASC
+            CASE t.clave 
+              WHEN 'CAP' THEN 1
+              WHEN 'DDT' THEN 2
+              WHEN 'DJG' THEN 3
+              WHEN 'DTA' THEN 4
+              WHEN 'DT' THEN 5
+              WHEN 'PE' THEN 6
+              WHEN 'SNP' THEN 7
+              WHEN 'EV' THEN 8
+              WHEN 'EE' THEN 9
+              WHEN 'TUT' THEN 10
+              WHEN 'JE' THEN 11
+              WHEN 'CA' THEN 12
+              WHEN 'NAB' THEN 13
+              ELSE 99
+            END,
+            t.nombre ASC
         `,
         )
         .all("activo");
@@ -592,7 +608,7 @@ module.exports = () => {
   // ==========================================================
   // HANDLER: Obtener asignaciones de un docente en múltiples periodos
   // ==========================================================
-    ipcMain.handle(
+  ipcMain.handle(
     "obtener-asignaciones-multi",
     async (event, { docenteId, periodoIds }) => {
       try {

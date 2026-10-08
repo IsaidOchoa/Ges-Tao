@@ -676,9 +676,15 @@ function initSchema(db) {
     FOREIGN KEY (tesis_id) REFERENCES tesis(id),
     FOREIGN KEY (docente_id) REFERENCES docentes(id)
   )`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_id_global ON tesis_participante(id_global)`,);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_tesis ON tesis_participante(tesis_id)`,);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_tesis_participante_docente ON tesis_participante(docente_id)`,);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_tesis_participante_id_global ON tesis_participante(id_global)`,
+  );
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_tesis_participante_tesis ON tesis_participante(tesis_id)`,
+  );
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_tesis_participante_docente ON tesis_participante(docente_id)`,
+  );
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_tesis_participante_activos
     ON tesis_participante(tesis_id, rol, nombre)
     WHERE deleted_at IS NULL`);
@@ -868,12 +874,26 @@ function instalarTriggersCaptura(db) {
     {
       nombre: "malla_curricular",
       softDelete: false,
-      columnas: ["plan_id", "ee_id", "semestre_id", "creditos_asignados", "estado"],
+      columnas: [
+        "plan_id",
+        "ee_id",
+        "semestre_id",
+        "creditos_asignados",
+        "estado",
+      ],
     },
     {
       nombre: "inscripciones",
       softDelete: false,
-      columnas: ["alumno_id", "ee_id", "periodo_id", "fecha_asignacion", "fecha_baja", "activo", "asignado_por"],
+      columnas: [
+        "alumno_id",
+        "ee_id",
+        "periodo_id",
+        "fecha_asignacion",
+        "fecha_baja",
+        "activo",
+        "asignado_por",
+      ],
     },
     {
       nombre: "entity_period",
@@ -1408,72 +1428,75 @@ function seedData(db) {
     );
   }
 
-  // 10. FORMATOS CONSTANCIA (configuración; el HTML vive en archivos)
+    // 10. FORMATOS CONSTANCIA (configuración; el HTML vive en archivos)
   if (
     db.prepare("SELECT count(*) as c FROM formatos_constancia").get().c === 0
   ) {
-    const tipoEE = db
-      .prepare("SELECT id FROM tipos_constancia WHERE clave = 'EE'")
-      .get();
-    const tipoTUT = db
-      .prepare("SELECT id FROM tipos_constancia WHERE clave = 'TUT'")
-      .get();
-    const tipoEV = db
-      .prepare("SELECT id FROM tipos_constancia WHERE clave = 'EV'")
-      .get();
-
     const s = db.prepare(`INSERT INTO formatos_constancia
       (id_global, tipo_constancia_id, version_formato, nombre_version, plantilla_archivo, es_actual)
       VALUES (?,?,?,?,?,1)`);
-    s.run(
-      generarIdGlobal(installationId),
-      tipoEE.id,
-      1,
-      "v1.0 EE",
-      "constancia-ee.html",
-    );
-    s.run(
-      generarIdGlobal(installationId),
-      tipoTUT.id,
-      1,
-      "v1.0 TUT",
-      "constancia-tut.html",
-    );
-    s.run(
-      generarIdGlobal(installationId),
-      tipoEV.id,
-      1,
-      "v1.0 EV",
-      "constancia-ev.html",
-    );
+
+    const registrar = (clave, archivo, nombreVersion) => {
+      const tipo = db
+        .prepare("SELECT id FROM tipos_constancia WHERE clave = ?")
+        .get(clave);
+      if (!tipo) {
+        console.warn(`[seed] Tipo "${clave}" no existe, se omite formato`);
+        return null;
+      }
+      const info = s.run(
+        generarIdGlobal(installationId),
+        tipo.id,
+        1,
+        nombreVersion,
+        archivo,
+      );
+      return info.lastInsertRowid;
+    };
+
+    // Tipos con plantilla lista
+    const fmtEE = registrar("EE", "constancia-ee.html", "v1.0 Impartición de EE");
+    const fmtEV = registrar("EV", "constancia-eventosAcademicos.html", "v1.0 Eventos Académicos");
+    const fmtTUT = registrar("TUT", "constancia-tutoriaAcademica.html", "v1.0 Tutoría Académica");
+    const fmtDT = registrar("DT", "constancia-direccionTesis.html", "v1.0 Dirección de Tesis");
+    const fmtJE = registrar("JE", "constancia-participacionSinodal.html", "v1.0 Participación Sinodal");
+    const fmtDJG = registrar("DJG", "constancia-designacionJuradoExamenGrado.html", "v1.0 Designación Jurado");
+
+    // Los tipos restantes (CAP, DDT, DTA, SNP, PE, NAB, CA) quedan sin formato
+    // hasta que se creen sus plantillas correspondientes.
 
     // Firmas por defecto de cada formato (el orden define aparición en el documento)
     const firmantes = db.prepare("SELECT id FROM firmantes ORDER BY id").all();
-    const sf = db.prepare(
-      `INSERT INTO formato_firmas (id_global, formato_id, firmante_id, orden) VALUES (?,?,?,?)`,
-    );
+    if (firmantes.length < 3) {
+      console.warn("[seed] Menos de 3 firmantes, firmas por defecto omitidas");
+    } else {
+      const sf = db.prepare(
+        `INSERT INTO formato_firmas (id_global, formato_id, firmante_id, orden) VALUES (?,?,?,?)`,
+      );
 
-    const fmtEE = db
-      .prepare(
-        "SELECT id FROM formatos_constancia WHERE tipo_constancia_id = ?",
-      )
-      .get(tipoEE.id);
-    const fmtTUT = db
-      .prepare(
-        "SELECT id FROM formatos_constancia WHERE tipo_constancia_id = ?",
-      )
-      .get(tipoTUT.id);
-    const fmtEV = db
-      .prepare(
-        "SELECT id FROM formatos_constancia WHERE tipo_constancia_id = ?",
-      )
-      .get(tipoEV.id);
-
-    sf.run(generarIdGlobal(installationId), fmtEE.id, firmantes[2].id, 1);
-    sf.run(generarIdGlobal(installationId), fmtEE.id, firmantes[0].id, 2);
-    sf.run(generarIdGlobal(installationId), fmtTUT.id, firmantes[2].id, 1);
-    sf.run(generarIdGlobal(installationId), fmtEV.id, firmantes[1].id, 1);
-    sf.run(generarIdGlobal(installationId), fmtEV.id, firmantes[0].id, 2);
+      if (fmtEE) {
+        sf.run(generarIdGlobal(installationId), fmtEE, firmantes[2].id, 1);
+        sf.run(generarIdGlobal(installationId), fmtEE, firmantes[0].id, 2);
+      }
+      if (fmtTUT) {
+        sf.run(generarIdGlobal(installationId), fmtTUT, firmantes[2].id, 1);
+      }
+      if (fmtEV) {
+        sf.run(generarIdGlobal(installationId), fmtEV, firmantes[1].id, 1);
+        sf.run(generarIdGlobal(installationId), fmtEV, firmantes[0].id, 2);
+      }
+      if (fmtDT) {
+        sf.run(generarIdGlobal(installationId), fmtDT, firmantes[2].id, 1);
+        sf.run(generarIdGlobal(installationId), fmtDT, firmantes[0].id, 2);
+      }
+      if (fmtJE) {
+        sf.run(generarIdGlobal(installationId), fmtJE, firmantes[2].id, 1);
+        sf.run(generarIdGlobal(installationId), fmtJE, firmantes[1].id, 2);
+      }
+      if (fmtDJG) {
+        sf.run(generarIdGlobal(installationId), fmtDJG, firmantes[2].id, 1);
+      }
+    }
   }
 
   console.log("[DB] Seeds cargados ✅");

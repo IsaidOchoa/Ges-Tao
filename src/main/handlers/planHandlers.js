@@ -52,6 +52,23 @@ module.exports = () => {
     }
   });
 
+  ipcMain.handle('obtenerGeneracionesDePlan', async (event, { planId }) => {
+    try {
+      const db = getDB();
+      const rows = db.prepare(`
+        SELECT g.id, g.clave, g.nombre, g.estado, p.clave AS periodo_ingreso
+        FROM generaciones g
+        LEFT JOIN periodos p ON g.periodo_ingreso_id = p.id
+        WHERE g.plan_id = ? AND g.deleted_at IS NULL
+        ORDER BY g.clave
+      `).all(planId);
+      return { success: true, data: rows || [] };
+    } catch (error) {
+      console.error('❌ [planHandlers] Error obteniendo generaciones del plan:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   ipcMain.handle('guardar-plan', async (event, datos) => {
     try {
       const db = getDB();

@@ -15,6 +15,7 @@ const relacionHandlers = require('./relaciones');
 const entityPeriodHandlers = require('./entityPeriodHadlers');
 const configHandlers = require('./configHandlers');
 const tesisHandlers = require('./tesisHandlers');
+const firmanteHandlers = require('./firmanteHandlers');
 
 module.exports = () => {
   authHandlers();
@@ -33,6 +34,7 @@ module.exports = () => {
   entityPeriodHandlers();
   configHandlers();
   tesisHandlers();
+  firmanteHandlers();
   
   console.log('[HANDLERS] Todos los handlers IPC registrados correctamente.');
 };

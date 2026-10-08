@@ -16,6 +16,7 @@ import { TutorRenderer } from "./relations/tutor/TutorRenderer.js";
 import { DocenteRenderer } from "./relations/docente/DocenteRenderer.js";
 import { GeneracionAlumnosRenderer } from "./relations/generacion/GeneracionAlumnosRenderer.js";
 import { AlumnosGeneracionRenderer } from "./relations/generacion/AlumnosGeneracionRenderer.js";
+import { PlanGeneracionesRenderer } from "./relations/plan/PlanGeneracionesRenderer.js";
 
 export class AssignmentModal {
   constructor() {
@@ -151,6 +152,18 @@ export class AssignmentModal {
           uiLoader: uiLoader,
         }),
       );
+    } else if (entityType === "plan") {
+      console.log("[AssignmentModal] Registrando renderers para PLAN");
+      this.workspaceManager.registerRenderer(
+        "generaciones",
+        new PlanGeneracionesRenderer({
+          api: window.electronAPI,
+          toast: Toast,
+          confirm: globalConfirm,
+          stateManager: this.stateManager,
+          uiLoader: uiLoader,
+        }),
+      );
     } else {
       console.warn("[AssignmentModal] entityType no reconocido:", entityType);
     }
@@ -190,6 +203,8 @@ export class AssignmentModal {
 
     // Resetear estado
     this._initialized = false;
+
+    window.dispatchEvent(new CustomEvent("assignmentModalClosed"));
   }
 
   _ensureInitialized() {

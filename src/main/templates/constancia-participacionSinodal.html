@@ -26,40 +26,46 @@
               >{{DATO:docente_articulo}} {{DATO:docente_tratamiento}}
               {{DATO:docente_nombre}}</strong
             >, con número de personal <strong>{{DATO:docente_codigo}}</strong>,
-            dirigió el siguiente tema de tesis del alumno del Programa Educativo
-            de Posgrado Maestría en Sistemas Interactivos Centrados en el
-            Usuario.
+            participó como Jurado/Sinodal analizando el trabajo escrito,
+            haciendo las observaciones pertinentes y valorando la disertación
+            oral para la obtención del grado del siguiente alumno de la Maestría
+            en Sistemas Interactivos Centrados en el Usuario:
           </p>
+
           <table class="cert-table">
             <colgroup>
-              <col style="width: 20%" />  <!-- Alumno -->
-              <col style="width: 25%" />  <!-- Tema -->
-              <col style="width: 20%" />  <!-- Periodo -->
-              <col style="width: 15%" />  <!-- Fecha de Presentación -->
-              <col style="width: 20%" />  <!-- Resultado -->
+              <col style="width: 20%" />
+              <!-- Alumno -->
+              <col style="width: 15%" />
+              <!-- Fecha de Examen -->
+              <col style="width: 25%" />
+              <!-- Título de Trabajo -->
+              <col style="width: 14%" />
+              <!-- Resultado -->
+              <col style="width: 13%" />
+              <!-- Modalidad -->
+              <col style="width: 13%" />
+              <!-- Sinodal/Jurado -->
             </colgroup>
             <thead>
               <tr>
-                <th colspan="5">Dirección</th>
-              </tr>
-              <tr>
                 <th>Alumno</th>
-                <th>Tema</th>
-                <th>Periodo</th>
-                <th>Fecha de Presentación</th>
+                <th>Fecha de Examen</th>
+                <th>Título de Trabajo</th>
                 <th>Resultado</th>
+                <th>Modalidad</th>
+                <th>Sinodal/Jurado</th>
               </tr>
             </thead>
             <tbody>
-              {{#LOOP:tesis}}
               <tr>
-                <td>{{alumno}}</td>
-                <td>{{tema}}</td>
-                <td>{{periodo}}</td>
-                <td>{{fecha_presentacion}}</td>
-                <td>{{resultado}}</td>
+                <td>{{DATO:alumno}}</td>
+                <td>{{DATO:fecha_examen}}</td>
+                <td>{{DATO:titulo}}</td>
+                <td>{{DATO:resultado}}</td>
+                <td>{{DATO:modalidad}}</td>
+                <td>{{DATO:rol}}</td>
               </tr>
-              {{/LOOP:tesis}}
             </tbody>
           </table>
           {{INCLUDE:pie}}

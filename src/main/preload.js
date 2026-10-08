@@ -64,6 +64,11 @@ try {
     generarConstanciaPDF: (payload) =>
       ipcRenderer.invoke("generar-constancia-pdf", payload),
 
+    // FIRMANTES
+    listarFirmantes: () => ipcRenderer.invoke("listar-firmantes"),
+    guardarFirmante: (d) => ipcRenderer.invoke("guardar-firmante", d),
+    eliminarFirmante: (id) => ipcRenderer.invoke("eliminar-firmante", id),
+
     // ==========================================
     // 4. BIBLIOTECA DE CONSTANCIAS
     // ==========================================
@@ -158,7 +163,7 @@ try {
     },
 
     // ==========================================
-    // 9. PLANES DE ESTUDIO 
+    // 9. PLANES DE ESTUDIO
     // ==========================================
     listarPlanes: () => {
       console.log("[PRELOAD] Obteniendo lista de planes de estudio...");
@@ -204,7 +209,8 @@ try {
       console.log("[PRELOAD] Obteniendo datos para selects de generación...");
       return ipcRenderer.invoke("obtener-datos-selects-generacion");
     },
-    cambiarEstadoGeneracion: (d) => ipcRenderer.invoke("cambiar-estado-generacion", d),
+    cambiarEstadoGeneracion: (d) =>
+      ipcRenderer.invoke("cambiar-estado-generacion", d),
 
     listarPeriodosSelect: () => ipcRenderer.invoke("listarPeriodosSelect"),
     listarDocentesSelect: (params) =>
@@ -245,6 +251,10 @@ try {
       ipcRenderer.invoke("asignarGeneracionAlumno", d),
     removerGeneracionDeAlumno: (d) =>
       ipcRenderer.invoke("removerGeneracionDeAlumno", d),
+
+    //planes
+    obtenerGeneracionesDePlan: (p) =>
+      ipcRenderer.invoke("obtenerGeneracionesDePlan", p),
 
     // Gestión de Entidad-Periodo (usando tablas existentes)
     obtenerPeriodosDeEntidad: (params) =>

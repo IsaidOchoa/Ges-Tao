@@ -198,9 +198,9 @@ export class WorkspaceManager {
     );
 
     if (!card) {
-      const temp = document.createElement("div");
-      temp.innerHTML = `
-      <div class="option-card" data-option="${config.selectId}" style="display: none;">
+      const controlsHTML = config.readOnly
+        ? ""
+        : `
         <div class="controls-inline">
           <div class="select-wrapper">
             <label class="form-label">Asignar nuevo ${config.title.toLowerCase()}</label>
@@ -213,10 +213,18 @@ export class WorkspaceManager {
               <i class="fa-solid fa-plus"></i> Asignar
             </button>
           </div>
-        </div>
-        
+        </div>`;
+
+      const actionsTh = config.readOnly
+        ? ""
+        : `<th style="width: 60px; text-align: center;">Acciones</th>`;
+
+      const temp = document.createElement("div");
+      temp.innerHTML = `
+      <div class="option-card" data-option="${config.selectId}" style="display: none;">
+        ${controlsHTML}
         <div class="assigned-list-header">
-          <h5><i class="fa-solid fa-${config.icon}"></i> ${config.title} asignados</h5>
+          <h5><i class="fa-solid fa-${config.icon}"></i> ${config.listHeader}</h5>
           <span class="badge badge-counter" id="${config.counterId}">0</span>
         </div>
         <div class="table-container">
@@ -226,11 +234,11 @@ export class WorkspaceManager {
                 ${config.columns
                   .map(
                     (col) => `
-                  <th style="width: ${col.width}">${col.label.replace(/\n/g, "<br>")}</th>
+                  <th style="width: ${col.width}; text-align: ${col.align || "left"};">${col.label.replace(/\n/g, "<br>")}</th>
                 `,
                   )
                   .join("")}
-                <th style="width: 60px; text-align: center;">Acciones</th>
+                ${actionsTh}
               </tr>
             </thead>
             <tbody id="${config.listId}">
@@ -275,6 +283,8 @@ export class WorkspaceManager {
         removeBtnText: "Eliminar",
         singleItem: false,
         allowEditRelation: false,
+        readOnly: false,
+        listHeader: "Elementos asignados",
       };
     }
 
@@ -288,6 +298,8 @@ export class WorkspaceManager {
       removeBtnText: tabConfig.removeBtnText,
       singleItem: tabConfig.singleItem || false,
       allowEditRelation: tabConfig.allowEditRelation || false,
+      readOnly: tabConfig.readOnly || false,
+      listHeader: tabConfig.listHeader || `${tabConfig.title} asignados`,
     };
   }
 
@@ -314,7 +326,13 @@ export class WorkspaceManager {
   async _ensureGestionarView() {
     if (this._viewsInitialized.gestionar) return;
 
-    await this.periodAdhesion.render(this._workspaceContent);
+    const firstTab = this._tabsConfig?.[0];
+    const requiresPeriod = firstTab?.requiresPeriod !== false;
+
+    if (requiresPeriod) {
+      await this.periodAdhesion.render(this._workspaceContent);
+    }
+
     this._viewsInitialized.gestionar = true;
   }
 
